@@ -1,0 +1,15 @@
+[submodule "deps/enet"]
+	path = deps/enet
+	url = https://github.com/lsalzman/enet
+[submodule "deps/glm"]
+	path = deps/glm
+	url = https://github.com/g-truc/glm/
+[submodule "deps/sdl"]
+	path = deps/sdl
+	url = https://github.com/libsdl-org/SDL
+[submodule "deps/shaderc"]
+	path = deps/shaderc
+	url = https://github.com/google/shaderc
+[submodule "deps/webgpu"]
+	path = deps/webgpu
+	url = https://github.com/eliemichel/WebGPU-Cpp
