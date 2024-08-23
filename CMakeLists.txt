@@ -9,13 +9,18 @@ project(wegs VERSION 0.1.0 LANGUAGES CXX C)
 
 add_subdirectory(deps)
 
-add_executable( App "src/main.cpp")
+
+file(GLOB_RECURSE src "src/*.cpp")
+list(FILTER src EXCLUDE REGEX "src/main.cpp")
+
+add_executable( App ${src} src/main.cpp )
  #"sdl2webgpu/sdl2webgpu.c" "sdl2webgpu/sdl2webgpu.h")
 
 target_link_libraries(App PRIVATE SDL2-static webgpu sdl2webgpu shaderc)
-target_include_directories(App PRIVATE "deps/sdl/include")
+target_include_directories(App PRIVATE src "deps/sdl/include")
 
 target_copy_webgpu_binaries(App)
+
 
 set_target_properties(App PROPERTIES
 	CXX_STANDARD 17
