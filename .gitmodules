@@ -10,6 +10,3 @@
 [submodule "deps/webgpu"]
 	path = deps/webgpu
 	url = https://github.com/eliemichel/WebGPU-Cpp
-[submodule "deps/glslang"]
-	path = deps/glslang
-	url = https://github.com/KhronosGroup/glslang

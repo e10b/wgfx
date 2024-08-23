@@ -2,8 +2,6 @@
 
 #include "shader.h"
 
-#include "help.h"
-
 const char* sr = R"(
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4f {
@@ -26,39 +24,6 @@ fn fs_main() -> @location(0) vec4f {
 
 int main(int _argc, char** _argv)
 {
-	/*
-	SPIRVHelper::Init();
-
-	std::string glslSource = R"(
-    #version 450
-    layout(location = 0) in vec3 aPos;
-    void main() {
-        gl_Position = vec4(aPos, 1.0);
-    })";
-
-	std::vector<unsigned int> spirvCode;
-	bool success = SPIRVHelper::GLSLtoSPV(EShLangVertex, glslSource.c_str(), spirvCode);
-
-	if (success) {
-		std::cout << "GLSL to SPIR-V conversion successful." << std::endl;
-		// You can use spirvCode here
-	}
-	else {
-		std::cout << "GLSL to SPIR-V conversion failed." << std::endl;
-	}
-
-	SPIRVHelper::Finalize();
-	*/
-
-
-
-
-
-
-
-
-
-	//Context context;
 	Context& context = Context::getInstance();
 	context.init();
 
