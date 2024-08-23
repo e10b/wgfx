@@ -31,7 +31,13 @@ int main(int _argc, char** _argv)
 
 	while (context.isRunning())
 	{
-		context.update();
+		//context.update();
+
+		context.encode();
+
+		shader.use();
+		
+		context.submit();
 
 
 		//context.draw();

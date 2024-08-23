@@ -52,11 +52,6 @@ public:
 		return surfaceFormat;
 	}
 
-	void setShader(RenderPipeline p)
-	{
-		pipeline = p;
-	}
-
 	Context() {}
 
 	void init()
@@ -136,7 +131,7 @@ public:
 
 	~Context()
 	{
-		pipeline.release();
+		//	pipeline.release();
 		surface.unconfigure();
 		queue.release();
 		surface.release();
@@ -145,19 +140,33 @@ public:
 		SDL_Quit();
 	}
 
-	void update()
+	void encode()
 	{
 		//glfwPollEvents();
 		pollEvents();
 
 		// Get the next target texture view
-		TextureView targetView = getNextSurfaceTextureView();
+		targetView = getNextSurfaceTextureView();
 		if (!targetView) return;
 
 		// Create a command encoder for the draw call
 		CommandEncoderDescriptor encoderDesc = {};
 		encoderDesc.label = "My command encoder";
-		CommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+		encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+
+
+	}
+	CommandEncoder getEncoder()
+	{
+		return encoder;
+	}
+
+	TextureView getView()
+	{
+		return targetView;
+	}
+
+	/*
 
 		// Create the render pass that clears the screen with our color
 		RenderPassDescriptor renderPassDesc = {};
@@ -185,9 +194,15 @@ public:
 		// Draw 1 instance of a 3-vertices shape
 			renderPass.draw(3, 1, 0, 0);
 
+			//renderPass.setPipeline(pipline2);
+
 		//////////////////////////////////////////////////// me thinks a draw.
 		renderPass.end();
 		renderPass.release();
+
+	*/
+	void submit()
+	{
 
 		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
@@ -264,6 +279,7 @@ private:
 		return targetView;
 	}
 
+	/*
 	void initPipeline() 
 	{
 		// Load the shader module
@@ -367,14 +383,19 @@ private:
 		shaderModule.release();
 	
 	}
+	*/
 
 
 private:
+
+	CommandEncoder encoder = nullptr;
+	TextureView targetView = nullptr;
+
 	SDL_Window* window = nullptr;
 	Device device = nullptr;
 	Queue queue = nullptr;
 	Surface surface = nullptr;
 	std::unique_ptr<ErrorCallback> uncapturedErrorCallbackHandle;
 	TextureFormat surfaceFormat = TextureFormat::Undefined;
-	RenderPipeline pipeline = nullptr;
+		//RenderPipeline pipeline = nullptr;
 };

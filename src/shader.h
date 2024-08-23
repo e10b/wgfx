@@ -12,14 +12,73 @@ public:
 	{
 		device = Context::getInstance().getDevice();
 		createShaderModule(shaderSource);
-		makePipeline();
-		Context::getInstance().setShader(pipeline);
+		pipeline = makePipeline();
+		//Context::getInstance().setShader(pipeline);
+	
+		/*make();
+		renderPass.setPipeline(pipeline);
+		renderPass.draw(3, 1, 0, 0);
+		use();*/
 	}
 
+	void use()
+	{
+		make();
+		renderPass.setPipeline(pipeline);
+		renderPass.draw(3, 1, 0, 0);
+		submit();
+	}
+
+	void make() //private
+	{
+
+		// Create the render pass that clears the screen with our color
+		RenderPassDescriptor renderPassDesc = {};
+
+		// The attachment part of the render pass descriptor describes the target texture of the pass
+		RenderPassColorAttachment renderPassColorAttachment = {};
+		renderPassColorAttachment.view = Context::getInstance().getView();
+		renderPassColorAttachment.resolveTarget = nullptr;
+		renderPassColorAttachment.loadOp = LoadOp::Clear;
+		renderPassColorAttachment.storeOp = StoreOp::Store;
+		renderPassColorAttachment.clearValue = WGPUColor{ 0.9, 0.1, 0.2, 1.0 };
+#ifndef WEBGPU_BACKEND_WGPU
+		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif // NOT WEBGPU_BACKEND_WGPU
+
+		renderPassDesc.colorAttachmentCount = 1;
+		renderPassDesc.colorAttachments = &renderPassColorAttachment;
+		renderPassDesc.depthStencilAttachment = nullptr;
+		renderPassDesc.timestampWrites = nullptr;
+
+		renderPass = Context::getInstance().getEncoder().beginRenderPass(renderPassDesc);
+
+		// Select which render pipeline to use
+				//renderPass.setPipeline(pipeline);
+		// Draw 1 instance of a 3-vertices shape
+				//renderPass.draw(3, 1, 0, 0);
+
+			//renderPass.setPipeline(pipline2);
+
+		//////////////////////////////////////////////////// me thinks a draw.
+	//	renderPass.end();
+	//	renderPass.release();
+	}
+
+	void submit()
+	{
+		renderPass.end();
+		renderPass.release();
+	}
+
+
 private:
+
+	RenderPassEncoder renderPass = nullptr;
+
 	Device* device = nullptr;
 	ShaderModule shaderModule = nullptr;
-	RenderPipeline pipeline = nullptr;
+		RenderPipeline pipeline = nullptr;
 
 	void createShaderModule(const char* shaderSource)
 	{
@@ -39,7 +98,7 @@ private:
 		shaderModule = device->createShaderModule(shaderDesc);
 	}
 
-	void makePipeline()
+	RenderPipeline makePipeline()
 	{
 
 
@@ -115,9 +174,11 @@ private:
 		pipelineDesc.multisample.alphaToCoverageEnabled = false;
 		pipelineDesc.layout = nullptr;
 
-		pipeline = device->createRenderPipeline(pipelineDesc);
+		RenderPipeline pipeline = device->createRenderPipeline(pipelineDesc);
 
 		// We no longer need to access the shader module
 		shaderModule.release();
+
+		return pipeline;
 	}
 };
