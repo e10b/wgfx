@@ -1,19 +1,73 @@
 #include "context.h"
 
+#include "shader.h"
+
+#include "help.h"
+
+const char* sr = R"(
+@vertex
+fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4f {
+	var p = vec2f(0.0, 0.0);
+	if (in_vertex_index == 0u) {
+		p = vec2f(-0.5, -0.5);
+	} else if (in_vertex_index == 1u) {
+		p = vec2f(0.5, -0.5);
+	} else {
+		p = vec2f(0.0, 0.5);
+	}
+	return vec4f(p, 0.0, 1.0);
+}
+
+@fragment
+fn fs_main() -> @location(0) vec4f {
+	return vec4f(0.0, 0.4, 1.0, 1.0);
+}
+)";
 
 int main(int _argc, char** _argv)
 {
-	Context context;
-	//Shader shader("shaders");
+	/*
+	SPIRVHelper::Init();
 
+	std::string glslSource = R"(
+    #version 450
+    layout(location = 0) in vec3 aPos;
+    void main() {
+        gl_Position = vec4(aPos, 1.0);
+    })";
+
+	std::vector<unsigned int> spirvCode;
+	bool success = SPIRVHelper::GLSLtoSPV(EShLangVertex, glslSource.c_str(), spirvCode);
+
+	if (success) {
+		std::cout << "GLSL to SPIR-V conversion successful." << std::endl;
+		// You can use spirvCode here
+	}
+	else {
+		std::cout << "GLSL to SPIR-V conversion failed." << std::endl;
+	}
+
+	SPIRVHelper::Finalize();
+	*/
+
+
+
+
+
+
+
+
+
+	//Context context;
+	Context& context = Context::getInstance();
 	context.init();
 
+	Shader shader(sr);
 
 	while (context.isRunning())
 	{
 		context.update();
 
-		//shader.use();
 
 		//context.draw();
 

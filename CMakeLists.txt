@@ -16,7 +16,7 @@ list(FILTER src EXCLUDE REGEX "src/main.cpp")
 add_executable( App ${src} src/main.cpp )
  #"sdl2webgpu/sdl2webgpu.c" "sdl2webgpu/sdl2webgpu.h")
 
-target_link_libraries(App PRIVATE SDL2-static webgpu sdl2webgpu shaderc)
+target_link_libraries(App PRIVATE SDL2-static webgpu sdl2webgpu glslang::glslang)
 target_include_directories(App PRIVATE src "deps/sdl/include")
 
 target_copy_webgpu_binaries(App)

@@ -7,9 +7,9 @@
 [submodule "deps/sdl"]
 	path = deps/sdl
 	url = https://github.com/libsdl-org/SDL
-[submodule "deps/shaderc"]
-	path = deps/shaderc
-	url = https://github.com/google/shaderc
 [submodule "deps/webgpu"]
 	path = deps/webgpu
 	url = https://github.com/eliemichel/WebGPU-Cpp
+[submodule "deps/glslang"]
+	path = deps/glslang
+	url = https://github.com/KhronosGroup/glslang

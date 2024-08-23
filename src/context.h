@@ -36,6 +36,27 @@ fn fs_main() -> @location(0) vec4f {
 class Context
 {
 public:
+	static Context& getInstance()
+	{
+		static Context inst;
+		return inst;
+	}
+
+	Device* getDevice()
+	{
+		return &device;
+	}
+
+	TextureFormat getFormat()
+	{
+		return surfaceFormat;
+	}
+
+	void setShader(RenderPipeline p)
+	{
+		pipeline = p;
+	}
+
 	Context() {}
 
 	void init()
@@ -160,9 +181,9 @@ public:
 		RenderPassEncoder renderPass = encoder.beginRenderPass(renderPassDesc);
 
 		// Select which render pipeline to use
-			//renderPass.setPipeline(pipeline);
+			renderPass.setPipeline(pipeline);
 		// Draw 1 instance of a 3-vertices shape
-			//renderPass.draw(3, 1, 0, 0);
+			renderPass.draw(3, 1, 0, 0);
 
 		//////////////////////////////////////////////////// me thinks a draw.
 		renderPass.end();
@@ -248,6 +269,7 @@ private:
 		// Load the shader module
 		ShaderModuleDescriptor shaderDesc;
 
+		
 		// We use the extension mechanism to specify the WGSL part of the shader module descriptor
 		ShaderModuleWGSLDescriptor shaderCodeDesc;
 		//ShaderModuleGLSLDescriptor; // nice!
