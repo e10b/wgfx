@@ -2,6 +2,8 @@
 
 #include "shader.h"
 
+#include "wgfx.h"
+
 const char* sr = R"(
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4f {
@@ -24,6 +26,7 @@ fn fs_main() -> @location(0) vec4f {
 
 int main(int _argc, char** _argv)
 {
+	/*
 	Context& context = Context::getInstance();
 	context.init();
 
@@ -42,6 +45,24 @@ int main(int _argc, char** _argv)
 
 		//context.draw();
 
+	}
+
+	*/
+
+	SDL_SetMainReady();
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		std::cerr << "Could not initialize SDL! Error: " << SDL_GetError() << std::endl;
+		//return 1;
+	}
+
+	int windowFlags = 0;//SDL_WINDOW_RESIZABLE;
+	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, windowFlags);
+
+	wgfx::init(window);
+
+	for (;;)
+	{
+		wgfx::loop();
 	}
 
 }
