@@ -107,8 +107,8 @@ namespace wgfx
 		SurfaceConfiguration config = {};
 
 		// Configuration of the textures created for the underlying swap chain
-		config.width = 640;
-		config.height = 480;
+		config.width = init.width;
+		config.height = init.height;
 		config.usage = TextureUsage::RenderAttachment;
 		surfaceFormat = surface.getPreferredFormat(adapter);
 		config.format = surfaceFormat;

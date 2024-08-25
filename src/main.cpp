@@ -1,7 +1,3 @@
-#include "context.h"
-
-#include "shader.h"
-
 #include "wgfx.h"
 
 const char* sr = R"(
@@ -56,7 +52,7 @@ int main(int _argc, char** _argv)
 	}
 
 	int windowFlags = 0;//SDL_WINDOW_RESIZABLE;
-	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, windowFlags);
+	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, windowFlags);
 
 	wgfx::Init init;
 	init.surface = wgfx::getSurface(window);
