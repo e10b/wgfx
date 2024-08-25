@@ -7,6 +7,3 @@
 [submodule "deps/sdl"]
 	path = deps/sdl
 	url = https://github.com/libsdl-org/SDL
-[submodule "deps/webgpu"]
-	path = deps/webgpu
-	url = https://github.com/eliemichel/WebGPU-Cpp
