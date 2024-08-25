@@ -53,12 +53,8 @@ int main(int _argc, char** _argv)
 
 	int windowFlags = SDL_WINDOW_RESIZABLE;//SDL_WINDOW_RESIZABLE;
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, windowFlags);
-
-	wgfx::Init init;
-	init.surface = wgfx::getSurface(window);
-	init.width = 1280;
-	init.height = 720;
-	wgfx::init(init);
+	
+	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
 	bool shouldClose = false;
 	while(!shouldClose)
@@ -78,6 +74,13 @@ int main(int _argc, char** _argv)
 		}
 
 		wgfx::loop();
+
+
+
+
+		// hmm pseudocode
+
+		//wgfx::
 	}
 
 }
