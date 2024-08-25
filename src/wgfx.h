@@ -27,6 +27,8 @@ namespace wgfx
 	std::unique_ptr<ErrorCallback> uncapturedErrorCallbackHandle;
 	TextureFormat surfaceFormat = TextureFormat::Undefined;
 
+	Instance instance = nullptr;
+
 	TextureView getNextSurfaceTextureView()
 	{
 		// Get the surface texture
@@ -54,17 +56,23 @@ namespace wgfx
 
 	struct Init
 	{
+		Surface surface = nullptr;
 		uint32_t width, height;
 	};
 
-
-	void init(SDL_Window* window)
+	Surface getSurface(SDL_Window* window)
 	{
-		Instance instance = wgpuCreateInstance(nullptr);
-
+		instance = wgpuCreateInstance(nullptr);
 		std::cout << "Requesting adapter..." << std::endl;
-		surface = SDL_GetWGPUSurface(instance, window);
-		//surface = glfwGetWGPUSurface(instance, window);
+		return surface = SDL_GetWGPUSurface(instance, window);
+	}
+
+	void init(Init init)
+	{
+		//Instance instance = wgpuCreateInstance(nullptr);
+
+		//std::cout << "Requesting adapter..." << std::endl;
+		//surface = SDL_GetWGPUSurface(instance, window);
 		RequestAdapterOptions adapterOpts = {};
 		adapterOpts.compatibleSurface = surface;
 		Adapter adapter = instance.requestAdapter(adapterOpts);

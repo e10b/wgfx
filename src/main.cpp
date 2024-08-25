@@ -52,13 +52,17 @@ int main(int _argc, char** _argv)
 	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		std::cerr << "Could not initialize SDL! Error: " << SDL_GetError() << std::endl;
-		//return 1;
+		return 1;
 	}
 
 	int windowFlags = 0;//SDL_WINDOW_RESIZABLE;
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, windowFlags);
 
-	wgfx::init(window);
+	wgfx::Init init;
+	init.surface = wgfx::getSurface(window);
+	init.width = 1280;
+	init.height = 720;
+	wgfx::init(init);
 
 	for (;;)
 	{
