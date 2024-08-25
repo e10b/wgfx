@@ -61,6 +61,21 @@ namespace wgfx
 		return surface = SDL_GetWGPUSurface(instance, window);
 	}
 
+	struct RenderPass
+	{
+		RenderPassDescriptor descriptor;
+		WGPUColor clearColor;
+
+		RenderPass() { }
+
+		void setClear(WGPUColor color)
+		{
+			clearColor = color;
+		}
+
+
+	};
+
 	void init(Surface surface, int width, int height)
 	{
 		//Instance instance = wgpuCreateInstance(nullptr);
@@ -121,7 +136,7 @@ namespace wgfx
 		adapter.release();
 	}
 
-	void loop()
+	void touch(RenderPass view)
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
@@ -133,7 +148,7 @@ namespace wgfx
 		encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
 
 		// Create the render pass that clears the screen with our color
-		RenderPassDescriptor renderPassDesc = {};
+		view.descriptor = {};
 
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
@@ -141,18 +156,23 @@ namespace wgfx
 		renderPassColorAttachment.resolveTarget = nullptr;
 		renderPassColorAttachment.loadOp = LoadOp::Clear;
 		renderPassColorAttachment.storeOp = StoreOp::Store;
-		renderPassColorAttachment.clearValue = WGPUColor{ 0.9, 0.9, 0.2, 1.0 };
+		renderPassColorAttachment.clearValue = view.clearColor;
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU
 
-		renderPassDesc.colorAttachmentCount = 1;
-		renderPassDesc.colorAttachments = &renderPassColorAttachment;
-		renderPassDesc.depthStencilAttachment = nullptr;
-		renderPassDesc.timestampWrites = nullptr;
+		view.descriptor.colorAttachmentCount = 1;
+		view.descriptor.colorAttachments = &renderPassColorAttachment;
+		view.descriptor.depthStencilAttachment = nullptr;
+		view.descriptor.timestampWrites = nullptr;
 
-		renderPass = encoder.beginRenderPass(renderPassDesc);
+		renderPass = encoder.beginRenderPass(view.descriptor);
 
+	}
+
+	void submit(RenderPass view)
+	{
+		
 		// pipelines and all sorts of things << frankely. we might state different elements but within the grounds of some name statement like 
 		//wgfx::Pipeline pipeline;
 

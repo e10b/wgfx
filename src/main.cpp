@@ -56,6 +56,9 @@ int main(int _argc, char** _argv)
 	
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
+	wgfx::RenderPass view;
+	view.setClear({ .2, .2, .2, 1.0 });
+
 	bool shouldClose = false;
 	while(!shouldClose)
 	{
@@ -73,7 +76,10 @@ int main(int _argc, char** _argv)
 			}
 		}
 
-		wgfx::loop();
+		wgfx::touch(view);
+
+		wgfx::submit(view);
+		//wgfx::loop();
 
 
 
