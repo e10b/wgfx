@@ -35,7 +35,7 @@ int main(int _argc, char** _argv)
 		context.encode();
 
 		shader.use();
-		
+
 		context.submit();
 
 
@@ -53,14 +53,11 @@ int main(int _argc, char** _argv)
 
 	int windowFlags = SDL_WINDOW_RESIZABLE;//SDL_WINDOW_RESIZABLE;
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, windowFlags);
-	
+
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
-	wgfx::RenderPass view;
-	view.setClear({ .2, .2, .2, 1.0 });
-
 	bool shouldClose = false;
-	while(!shouldClose)
+	while (!shouldClose)
 	{
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
@@ -76,10 +73,7 @@ int main(int _argc, char** _argv)
 			}
 		}
 
-		wgfx::touch(view);
-
-		wgfx::submit(view);
-		//wgfx::loop();
+		wgfx::loop();
 
 
 

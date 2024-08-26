@@ -25,4 +25,3 @@ using vec3 = glm::vec3;
 using ivec3 = glm::ivec3;
 using mat4 = glm::mat4;
 using mat3 = glm::mat3;
-

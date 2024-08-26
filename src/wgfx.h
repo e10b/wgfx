@@ -61,21 +61,6 @@ namespace wgfx
 		return surface = SDL_GetWGPUSurface(instance, window);
 	}
 
-	struct RenderPass
-	{
-		RenderPassDescriptor descriptor;
-		WGPUColor clearColor;
-
-		RenderPass() { }
-
-		void setClear(WGPUColor color)
-		{
-			clearColor = color;
-		}
-
-
-	};
-
 	void init(Surface surface, int width, int height)
 	{
 		//Instance instance = wgpuCreateInstance(nullptr);
@@ -129,14 +114,14 @@ namespace wgfx
 		config.device = device;
 		config.presentMode = PresentMode::Fifo;
 		config.alphaMode = CompositeAlphaMode::Auto;
-		
+
 		surface.configure(config);
 
 		// Release the adapter only after it has been fully utilized
 		adapter.release();
 	}
 
-	void touch(RenderPass view)
+	void loop()
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
@@ -148,7 +133,7 @@ namespace wgfx
 		encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
 
 		// Create the render pass that clears the screen with our color
-		view.descriptor = {};
+		RenderPassDescriptor renderPassDesc = {};
 
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
@@ -156,23 +141,18 @@ namespace wgfx
 		renderPassColorAttachment.resolveTarget = nullptr;
 		renderPassColorAttachment.loadOp = LoadOp::Clear;
 		renderPassColorAttachment.storeOp = StoreOp::Store;
-		renderPassColorAttachment.clearValue = view.clearColor;
+		renderPassColorAttachment.clearValue = WGPUColor{ 0.9, 0.9, 0.2, 1.0 };
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU
 
-		view.descriptor.colorAttachmentCount = 1;
-		view.descriptor.colorAttachments = &renderPassColorAttachment;
-		view.descriptor.depthStencilAttachment = nullptr;
-		view.descriptor.timestampWrites = nullptr;
+		renderPassDesc.colorAttachmentCount = 1;
+		renderPassDesc.colorAttachments = &renderPassColorAttachment;
+		renderPassDesc.depthStencilAttachment = nullptr;
+		renderPassDesc.timestampWrites = nullptr;
 
-		renderPass = encoder.beginRenderPass(view.descriptor);
+		renderPass = encoder.beginRenderPass(renderPassDesc);
 
-	}
-
-	void submit(RenderPass view)
-	{
-		
 		// pipelines and all sorts of things << frankely. we might state different elements but within the grounds of some name statement like 
 		//wgfx::Pipeline pipeline;
 
@@ -230,7 +210,7 @@ namespace wgfx
 
 		// layout.setAttribute(0, vec3);
 		// layout.setAttribute(1, vec2);
-		
+
 		// now we cant just allow sending multiple for creating vbos, we must define the process clearly.
 		// in webgpu you do properlly say setVertexBuffer(0, posbuffer, , size .... and
 		//								  setVBO(		  1, colorbuffer, size ... etc);
@@ -251,7 +231,7 @@ namespace wgfx
 		// firstly a similar but different declaration of attributes
 		// pipeline.setAttrib(0, vec3)
 		// pipeline.setAttrib(1, vec2) .. etc;
-		
+
 		//		intermission .. .. .. .. .. i think the thing to realize is that any buffer represents just a store of data.  - the statement of any vertexattribute represents a declaration of where in the code there
 		// is going to be a representation of some amount of data
 
@@ -260,7 +240,7 @@ namespace wgfx
 		// in the case whereby you wish to have multiple buffers instead of interleaved buffers the change** is that you need to null the byte offset for the proceeding attribs and state the byte stride. whereas
 		// if you have interleaved attributes its the opposite, you state the byte offset in the vertex buffer but leave byte stride at something different. the byte offset represent the offset in the vbo. whereas the byte stride 
 		// represents it's "length".
-		
+
 		// further if you havem multiple you need to declare another buffer to store the data.
 
 		// so how can i make that intuitive??
@@ -309,8 +289,8 @@ namespace wgfx
 
 // maybe;
 
-		
-		
+
+
 
 
 
@@ -324,10 +304,10 @@ namespace wgfx
 		CommandBuffer command = encoder.finish(cmdBufferDescriptor);
 		encoder.release();
 
-		//std::cout << "Submitting command..." << std::endl;
+		std::cout << "Submitting command..." << std::endl;
 		queue.submit(1, &command);
 		command.release();
-		//std::cout << "Command submitted." << std::endl;
+		std::cout << "Command submitted." << std::endl;
 
 		// At the end of the frame
 		targetView.release();
