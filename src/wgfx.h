@@ -13,46 +13,6 @@
 
 using namespace wgpu;
 
-const char* shaderSource = R"(
-/**
- * A structure with fields labeled with vertex attribute locations can be used
- * as input to the entry point of a shader.
- */
-struct VertexInput {
-	@location(0) position: vec2f,
-	@location(1) color: vec3f,
-};
-
-/**
- * A structure with fields labeled with builtins and locations can also be used
- * as *output* of the vertex shader, which is also the input of the fragment
- * shader.
- */
-struct VertexOutput {
-	@builtin(position) position: vec4f,
-	// The location here does not refer to a vertex attribute, it just means
-	// that this field must be handled by the rasterizer.
-	// (It can also refer to another field of another struct that would be used
-	// as input to the fragment shader.)
-	@location(0) color: vec3f,
-};
-
-@vertex
-fn vs_main(in: VertexInput) -> VertexOutput {
-	//                         ^^^^^^^^^^^^ We return a custom struct
-	var out: VertexOutput; // create the output struct
-	out.position = vec4f(in.position, 0.0, 1.0); // same as what we used to directly return
-	out.color = in.color; // forward the color attribute to the fragment shader
-	return out;
-}
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-	//     ^^^^^^^^^^^^^^^^ Use for instance the same struct as what the vertex outputs
-	return vec4f(in.color, 1.0); // use the interpolated color coming from the vertex shader
-}
-)";
-
 namespace wgfx
 {
 
@@ -60,28 +20,12 @@ namespace wgfx
 	{
 		std::vector<VertexAttribute> vertexAttribs;
 
-		void setAttribute(int location, int type)
+		void setAttribute(int location, VertexFormat type, int offset)
 		{
-			/*
-			vertexAttribs[location].shaderLocation = location;
-			if (type == 0) {
-				vertexAttribs[location].format = VertexFormat::Float32x2;
-
-			}
-			else
-			{
-				vertexAttribs[location].format = VertexFormat::Float32x3;
-			}
-			vertexAttribs[location].offset = type * sizeof(float);
-			*/
-			
-			
-			
 			VertexAttribute attrib;
 			attrib.shaderLocation = location;
-			if (type == 0) { attrib.format = VertexFormat::Float32x2; }
-			else { attrib.format = VertexFormat::Float32x3; }
-			attrib.offset = type * sizeof(float);
+			attrib.format = type;
+			attrib.offset = offset * sizeof(float);
 
 			vertexAttribs.emplace_back(attrib);
 
@@ -217,9 +161,11 @@ namespace wgfx
 
 	uint32_t vertexCount;
 
-	Program program;
-	VertexBuffer buffer;
-	Buffer vertexBuffer;
+	//Program program;
+	//VertexBuffer buffer;
+	Buffer pointBuffer;
+	Buffer indexBuffer;
+	uint32_t indexCount;
 
 	TextureView getNextSurfaceTextureView()
 	{
@@ -256,6 +202,7 @@ namespace wgfx
 	void initbuffers()
 	{
 		// Vertex buffer data
+		/*
 		std::vector<float> vertexData = {
 			// x0,  y0,  r0,  g0,  b0
 			-0.5, -0.5, 1.0, 0.0, 0.0,
@@ -269,19 +216,43 @@ namespace wgfx
 			-0.05f, +0.5, 1.0, 0.0, 1.0,
 			-0.55f, +0.5, 0.0, 1.0, 1.0
 		};
+		*/
+		std::vector<float> pointData = {
+			// x,   y,     r,   g,   b
+			-0.5, -0.5,   1.0, 0.0, 0.0, // Point #0
+			+0.5, -0.5,   0.0, 1.0, 0.0, // Point #1
+			+0.5, +0.5,   0.0, 0.0, 1.0, // Point #2
+			-0.5, +0.5,   1.0, 1.0, 0.0  // Point #3
+		};
+
+		// Define index data
+		// This is a list of indices referencing positions in the pointData
+		std::vector<uint16_t> indexData = {
+			0, 1, 2, // Triangle #0 connects points #0, #1 and #2
+			0, 2, 3  // Triangle #1 connects points #0, #2 and #3
+		};
 
 		// We now divide the vector size by 5 fields.
-		vertexCount = static_cast<uint32_t>(vertexData.size() / 5);
+		//vertexCount = static_cast<uint32_t>(vertexData.size() / 5);
+		indexCount = static_cast<uint32_t>(indexData.size());
 
+	
 		// Create vertex buffer
 		BufferDescriptor bufferDesc;
-		bufferDesc.size = vertexData.size() * sizeof(float);
+		bufferDesc.size = pointData.size() * sizeof(float);
 		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Vertex; // Vertex usage here!
 		bufferDesc.mappedAtCreation = false;
-		vertexBuffer = device.createBuffer(bufferDesc);
+		pointBuffer = device.createBuffer(bufferDesc);
 
 		// Upload geometry data to the buffer
-		queue.writeBuffer(vertexBuffer, 0, vertexData.data(), bufferDesc.size);
+		queue.writeBuffer(pointBuffer, 0, pointData.data(), bufferDesc.size);
+	
+		bufferDesc.size = indexData.size() * sizeof(uint16_t);
+		bufferDesc.size = (bufferDesc.size + 3) & ~3; // round up to the next multiple of 4
+		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Index;
+		indexBuffer = device.createBuffer(bufferDesc);
+
+		queue.writeBuffer(indexBuffer, 0, indexData.data(), bufferDesc.size);
 	}
 
 	void init(Surface surface, int width, int height)
@@ -345,17 +316,22 @@ namespace wgfx
 
 
 
-		//
+		/*
 		program = wgfx::loadProgram(shaderSource);
 		buffer.setAttribute(0, 0);
 		buffer.setAttribute(1, 2);
 		program.setVertexBuffer(buffer);
+		*/
 
 		initbuffers();
 	}
 
+	RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
+	void touch()
+	{
+	}
 
-	void loop()
+	void submit(Program program)
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
@@ -367,7 +343,7 @@ namespace wgfx
 		encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
 
 		// Create the render pass that clears the screen with our color
-		RenderPassDescriptor renderPassDesc = {};
+		renderPassDesc = {};
 
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
@@ -375,7 +351,7 @@ namespace wgfx
 		renderPassColorAttachment.resolveTarget = nullptr;
 		renderPassColorAttachment.loadOp = LoadOp::Clear;
 		renderPassColorAttachment.storeOp = StoreOp::Store;
-		renderPassColorAttachment.clearValue = WGPUColor{ 0.9, 0.9, 0.2, 1.0 };
+		renderPassColorAttachment.clearValue = WGPUColor{ 0.05, 0.05, 0.05, 1.0 };
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU
@@ -384,19 +360,21 @@ namespace wgfx
 		renderPassDesc.colorAttachments = &renderPassColorAttachment;
 		renderPassDesc.depthStencilAttachment = nullptr;
 		renderPassDesc.timestampWrites = nullptr;
-
+		
 		renderPass = encoder.beginRenderPass(renderPassDesc);
+
+
 		// things pipeline wise\
 		
 		renderPass.setPipeline(program.pipeline);
-		renderPass.setVertexBuffer(0, vertexBuffer, 0, vertexBuffer.getSize());
+		renderPass.setVertexBuffer(0, pointBuffer, 0, pointBuffer.getSize());
+		renderPass.setIndexBuffer(indexBuffer, IndexFormat::Uint16, 0, indexBuffer.getSize());
 
-		renderPass.draw(vertexCount, 1, 0, 0);
-
+		//renderPass.draw(vertexCount, 1, 0, 0);
+		renderPass.drawIndexed(indexCount, 1, 0, 0, 0);
 
 		renderPass.end();
 		renderPass.release();
-
 		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
 		cmdBufferDescriptor.label = "Command buffer";
@@ -421,4 +399,9 @@ namespace wgfx
 		//device.ti
 #endif
 	}
+	
+	void frame()
+	{
+	}
+
 }
