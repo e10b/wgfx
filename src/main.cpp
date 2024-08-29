@@ -42,6 +42,21 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 }
 )";
 
+std::vector<float> pointData = {
+	// x,   y,     r,   g,   b
+	-0.5, -0.5,   1.0, 0.0, 0.0, // Point #0
+	+0.5, -0.5,   0.0, 1.0, 0.0, // Point #1
+	+0.5, +0.5,   0.0, 0.0, 1.0, // Point #2
+	-0.5, +0.5,   1.0, 1.0, 0.0  // Point #3
+};
+
+// Define index data
+// This is a list of indices referencing positions in the pointData
+std::vector<uint16_t> indexData = {
+	0, 1, 2, // Triangle #0 connects points #0, #1 and #2
+	0, 2, 3  // Triangle #1 connects points #0, #2 and #3
+};
+
 int main(int _argc, char** _argv)
 {
 	
@@ -57,11 +72,16 @@ int main(int _argc, char** _argv)
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
 	wgfx::Program program = wgfx::loadProgram(shaderSource);
-	wgfx::VertexBuffer vbo;
+	
+	wgfx::VertexBuffer vbo(pointData);
+	wgfx::IndexBuffer ibo(indexData);
+
 	vbo.setAttribute(0, VertexFormat::Float32x2, 0);
 	vbo.setAttribute(1, VertexFormat::Float32x3, 2); // take in a type
-	program.setVertexBuffer(vbo);
+	
 
+	program.setVertexBuffer(vbo);
+	program.setIndexBuffer(ibo);
 
 	bool shouldClose = false;
 	while (!shouldClose)

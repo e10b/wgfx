@@ -15,10 +15,35 @@ using namespace wgpu;
 
 namespace wgfx
 {
+	Device device = nullptr;
+	Queue queue = nullptr;
 
+	BufferDescriptor bufferDesc;
 	struct VertexBuffer
 	{
 		std::vector<VertexAttribute> vertexAttribs;
+		Buffer buffer;
+		uint32_t vertexCount = 0;
+
+		VertexBuffer() {};
+
+		VertexBuffer(std::vector<float> vertices)
+		{
+			// We now divide the vector size by 5 fields.
+			vertexCount = static_cast<uint32_t>(vertices.size() / 5);
+			//indexCount = static_cast<uint32_t>(indexData.size());
+
+
+			// Create vertex buffer
+			bufferDesc.size = vertices.size() * sizeof(float);
+			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Vertex; // Vertex usage here!
+			bufferDesc.mappedAtCreation = false;
+			buffer = device.createBuffer(bufferDesc);
+
+			// Upload geometry data to the buffer
+			queue.writeBuffer(buffer, 0, vertices.data(), bufferDesc.size);
+
+		}
 
 		void setAttribute(int location, VertexFormat type, int offset)
 		{
@@ -32,7 +57,29 @@ namespace wgfx
 			//all the calculations needed for attributes << 
 		}
 	};
-	Device device = nullptr;
+
+	struct IndexBuffer
+	{
+		Buffer buffer;
+		uint32_t indexCount;
+		
+		IndexBuffer() : buffer(nullptr), indexCount(0) {} // allow for no index buff
+
+		IndexBuffer(std::vector<uint16_t> indices)
+		{
+			indexCount = static_cast<uint32_t>(indices.size());
+
+			bufferDesc.size = indices.size() * sizeof(uint16_t);
+			bufferDesc.size = (bufferDesc.size + 3) & ~3; // round up to the next multiple of 4
+			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Index;
+			buffer = device.createBuffer(bufferDesc);
+
+			queue.writeBuffer(buffer, 0, indices.data(), bufferDesc.size);
+		}
+
+	};
+
+
 	TextureFormat surfaceFormat = TextureFormat::Undefined;
 
 	struct Program
@@ -42,6 +89,9 @@ namespace wgfx
 		RenderPipelineDescriptor pipelineDesc;
 		ShaderModule shaderModule;
 
+		VertexBuffer vertexBuffer;
+		IndexBuffer indexBuffer;
+
 		Program()
 		{
 			std::cout << "Creating render pipeline..." << std::endl;
@@ -50,9 +100,15 @@ namespace wgfx
 
 		}
 
+		void setIndexBuffer(IndexBuffer buffer)
+		{
+			indexBuffer = buffer;
+		}
 
 		void setVertexBuffer(VertexBuffer buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
 		{
+			vertexBuffer = buffer;
+
 			VertexBufferLayout vertexBufferLayout;
 			vertexBufferLayout.attributeCount = (uint32_t)buffer.vertexAttribs.size();
 			vertexBufferLayout.attributes = buffer.vertexAttribs.data();
@@ -153,7 +209,6 @@ namespace wgfx
 	TextureView targetView = nullptr;
 
 	//SDL_Window* window = nullptr;
-	Queue queue = nullptr;
 	Surface surface = nullptr;
 	std::unique_ptr<ErrorCallback> uncapturedErrorCallbackHandle;
 
@@ -163,9 +218,9 @@ namespace wgfx
 
 	//Program program;
 	//VertexBuffer buffer;
-	Buffer pointBuffer;
+	/*Buffer pointBuffer;
 	Buffer indexBuffer;
-	uint32_t indexCount;
+	uint32_t indexCount;*/
 
 	TextureView getNextSurfaceTextureView()
 	{
@@ -217,6 +272,7 @@ namespace wgfx
 			-0.55f, +0.5, 0.0, 1.0, 1.0
 		};
 		*/
+		/*
 		std::vector<float> pointData = {
 			// x,   y,     r,   g,   b
 			-0.5, -0.5,   1.0, 0.0, 0.0, // Point #0
@@ -253,6 +309,7 @@ namespace wgfx
 		indexBuffer = device.createBuffer(bufferDesc);
 
 		queue.writeBuffer(indexBuffer, 0, indexData.data(), bufferDesc.size);
+		*/
 	}
 
 	void init(Surface surface, int width, int height)
@@ -367,11 +424,15 @@ namespace wgfx
 		// things pipeline wise\
 		
 		renderPass.setPipeline(program.pipeline);
-		renderPass.setVertexBuffer(0, pointBuffer, 0, pointBuffer.getSize());
-		renderPass.setIndexBuffer(indexBuffer, IndexFormat::Uint16, 0, indexBuffer.getSize());
+		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
 
 		//renderPass.draw(vertexCount, 1, 0, 0);
-		renderPass.drawIndexed(indexCount, 1, 0, 0, 0);
+		if (program.indexBuffer.buffer) {
+		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
+		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+		} else {
+			renderPass.draw(program.vertexBuffer.vertexCount, 1, 0, 0);
+		}
 
 		renderPass.end();
 		renderPass.release();
