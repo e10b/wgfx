@@ -15,6 +15,9 @@ using namespace wgpu;
 
 namespace wgfx
 {
+	
+
+
 	Device device = nullptr;
 	Queue queue = nullptr;
 
@@ -465,4 +468,7 @@ namespace wgfx
 	{
 	}
 
+	// types
+	wgpu::VertexFormat vec2f = VertexFormat::Float32x2;
+	wgpu::VertexFormat vec3f = VertexFormat::Float32x3;
 }

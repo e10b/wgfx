@@ -59,26 +59,19 @@ std::vector<uint16_t> indexData = {
 
 int main(int _argc, char** _argv)
 {
-	
-	SDL_SetMainReady();
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		std::cerr << "Could not initialize SDL! Error: " << SDL_GetError() << std::endl;
-		return 1;
-	}
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) { return 1; }
 
-	int windowFlags = SDL_WINDOW_RESIZABLE;//SDL_WINDOW_RESIZABLE;
-	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, windowFlags);
+	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_RESIZABLE);
 
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
 	wgfx::Program program = wgfx::loadProgram(shaderSource);
 	
 	wgfx::VertexBuffer vbo(pointData);
-	wgfx::IndexBuffer ibo(indexData);
+	vbo.setAttribute(0, wgfx::vec2f, 0);
+	vbo.setAttribute(1, wgfx::vec3f, 2); // take in a type
 
-	vbo.setAttribute(0, VertexFormat::Float32x2, 0);
-	vbo.setAttribute(1, VertexFormat::Float32x3, 2); // take in a type
-	
+	wgfx::IndexBuffer ibo(indexData);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
