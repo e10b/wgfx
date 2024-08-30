@@ -10,6 +10,8 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
+#include <filesystem>
+#include <fstream>
 
 using namespace wgpu;
 
@@ -182,7 +184,7 @@ namespace wgfx
 		}
 	};
 
-	Program loadProgram(const char* source)
+	Program loadProgram(std::string source)
 	{
 		// Load the shader module
 		ShaderModuleDescriptor shaderDesc;
@@ -198,7 +200,7 @@ namespace wgfx
 		shaderCodeDesc.chain.sType = SType::ShaderModuleWGSLDescriptor;
 		// Connect the chain
 		shaderDesc.nextInChain = &shaderCodeDesc.chain;
-		shaderCodeDesc.code = source;
+		shaderCodeDesc.code = source.c_str();
 		ShaderModule shaderModule = device.createShaderModule(shaderDesc);
 
 		Program program;
@@ -466,6 +468,21 @@ namespace wgfx
 	
 	void frame()
 	{
+	}
+
+	inline std::string loadFromFile(const std::filesystem::path& path)
+	{
+		std::ifstream file(path);
+		if (!file.is_open()) {
+			return nullptr;
+		}
+		file.seekg(0, std::ios::end);
+		size_t size = file.tellg();
+		std::string shaderSource(size, ' ');
+		file.seekg(0);
+		file.read(shaderSource.data(), size);
+
+		return shaderSource;
 	}
 
 	// types

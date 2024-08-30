@@ -65,8 +65,9 @@ int main(int _argc, char** _argv)
 
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
-	wgfx::Program program = wgfx::loadProgram(shaderSource);
-	
+	//wgfx::Program program = wgfx::loadProgram(shaderSource);
+	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
+
 	wgfx::VertexBuffer vbo(pointData);
 	vbo.setAttribute(0, wgfx::vec2f, 0);
 	vbo.setAttribute(1, wgfx::vec3f, 2); // take in a type
