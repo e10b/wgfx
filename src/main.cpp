@@ -71,11 +71,15 @@ int main(int _argc, char** _argv)
 	wgfx::VertexBuffer vbo(pointData);
 	vbo.setAttribute(0, wgfx::vec2f, 0);
 	vbo.setAttribute(1, wgfx::vec3f, 2); // take in a type
-
 	wgfx::IndexBuffer ibo(indexData);
+
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
+
+	wgfx::Uniform uniform(1);
+	program.linkUniform(uniform);
+	//program.setUniform(uniform);
 
 	bool shouldClose = false;
 	while (!shouldClose)
@@ -93,6 +97,9 @@ int main(int _argc, char** _argv)
 				break;
 			}
 		}
+
+		float t = SDL_GetTicks() / 1000.0f;
+		program.updateUniform(uniform, t);
 
 		wgfx::submit(program);
 

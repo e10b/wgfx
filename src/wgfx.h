@@ -17,13 +17,45 @@ using namespace wgpu;
 
 namespace wgfx
 {
-	
-
-
 	Device device = nullptr;
 	Queue queue = nullptr;
 
 	BufferDescriptor bufferDesc;
+	struct Uniform
+	{
+		Buffer buffer;
+		BindGroupEntry binding;
+
+		Uniform(float a) // need a wgfx::createUniform
+		{
+			// Create uniform buffer
+	// The buffer will only contain 1 float with the value of uTime
+			bufferDesc.size = sizeof(float);
+			// Make sure to flag the buffer as BufferUsage::Uniform
+			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
+			bufferDesc.mappedAtCreation = false;
+			buffer = device.createBuffer(bufferDesc);
+
+			float currentTime = 1.0f;
+			queue.writeBuffer(buffer, 0, &currentTime, sizeof(float));
+
+			// Create a binding
+			//BindGroupEntry binding;
+			// The index of the binding (the entries in bindGroupDesc can be in any order)
+			binding.binding = 0;
+			// The buffer it is actually bound to
+			binding.buffer = buffer;
+			// We can specify an offset within the buffer, so that a single buffer can hold
+			// multiple uniform blocks.
+			binding.offset = 0;
+			// And we specify again the size of the buffer.
+			binding.size = sizeof(float);
+
+			
+
+		}
+	};
+
 	struct VertexBuffer
 	{
 		std::vector<VertexAttribute> vertexAttribs;
@@ -32,7 +64,7 @@ namespace wgfx
 
 		VertexBuffer() {};
 
-		VertexBuffer(std::vector<float> vertices)
+		VertexBuffer(std::vector<float> vertices) // need a wgfx::createVertexBuffer()<<<
 		{
 			// We now divide the vector size by 5 fields.
 			vertexCount = static_cast<uint32_t>(vertices.size() / 5);
@@ -109,7 +141,8 @@ namespace wgfx
 		{
 			indexBuffer = buffer;
 		}
-
+		BindGroupLayout bindGroupLayout;
+		BindGroupLayoutDescriptor bindGroupLayoutDesc;
 		void setVertexBuffer(VertexBuffer buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
 		{
 			vertexBuffer = buffer;
@@ -162,26 +195,49 @@ namespace wgfx
 			pipelineDesc.multisample.mask = ~0u;
 			pipelineDesc.multisample.alphaToCoverageEnabled = false;
 
-			fragmentState.targetCount = 1;
-			fragmentState.targets = &colorTarget;
-			pipelineDesc.fragment = &fragmentState;
+			// Create binding layout (don't forget to = Default)
+			BindGroupLayoutEntry bindingLayout = Default;
+			// The binding index as used in the @binding attribute in the shader
+			bindingLayout.binding = 0;
+			// The stage that needs to access this resource
+			bindingLayout.visibility = ShaderStage::Vertex;
+			bindingLayout.buffer.type = BufferBindingType::Uniform;
+			bindingLayout.buffer.minBindingSize = sizeof(float);
 
-			// We do not use stencil/depth testing for now
-			pipelineDesc.depthStencil = nullptr;
+			// Create a bind group layout
+			bindGroupLayoutDesc;
+			bindGroupLayoutDesc.entryCount = 1;
+			bindGroupLayoutDesc.entries = &bindingLayout;
+			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
 
-			// Samples per pixel
-			pipelineDesc.multisample.count = 1;
-
-			// Default value for the mask, meaning "all bits on"
-			pipelineDesc.multisample.mask = ~0u;
-
-			// Default value as well (irrelevant for count = 1 anyways)
-			pipelineDesc.multisample.alphaToCoverageEnabled = false;
-			pipelineDesc.layout = nullptr;
+			// Create the pipeline layout
+			PipelineLayoutDescriptor layoutDesc;
+			layoutDesc.bindGroupLayoutCount = 1;
+			layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bindGroupLayout;
+			PipelineLayout layout = device.createPipelineLayout(layoutDesc);
+			pipelineDesc.layout = layout;
 
 			pipeline = device.createRenderPipeline(pipelineDesc);
+			std::cout << "Render pipeline: " << pipeline << std::endl;
 			shaderModule.release();
 		}
+		BindGroup bindGroup;
+		void linkUniform(Uniform uniform)
+		{
+			// A bind group contains one or multiple bindings
+			BindGroupDescriptor bindGroupDesc;
+			bindGroupDesc.layout = bindGroupLayout;
+			// There must be as many bindings as declared in the layout!
+			bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
+			bindGroupDesc.entries = &uniform.binding;
+			bindGroup = device.createBindGroup(bindGroupDesc);
+		}
+
+		void updateUniform(Uniform uniform, float data)
+		{
+			queue.writeBuffer(uniform.buffer, 0, &data, sizeof(float));
+		}
+
 	};
 
 	Program loadProgram(std::string source)
@@ -431,6 +487,7 @@ namespace wgfx
 		renderPass.setPipeline(program.pipeline);
 		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
 
+		renderPass.setBindGroup(0, program.bindGroup, 0, nullptr);
 		//renderPass.draw(vertexCount, 1, 0, 0);
 		if (program.indexBuffer.buffer) {
 		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
