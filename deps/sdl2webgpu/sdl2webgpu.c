@@ -40,13 +40,17 @@
 #include <QuartzCore/CAMetalLayer.h>
 #endif
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
+#include <wtypes.h>
+
+//#include <SDL2/SDL.h>
+//#include <SDL2/SDL_syswm.h>
 
 WGPUSurface SDL_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
+    /*
     SDL_SysWMinfo windowWMInfo;
     SDL_VERSION(&windowWMInfo.version);
     SDL_GetWindowWMInfo(window, &windowWMInfo);
+    */
 
 #if defined(SDL_VIDEO_DRIVER_COCOA)
     {
@@ -114,9 +118,11 @@ WGPUSurface SDL_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
                 },
         });
   }
-#elif defined(SDL_VIDEO_DRIVER_WINDOWS)
+#elif defined(SDL_PLATFORM_WIN32)
     {
-        HWND hwnd = windowWMInfo.info.win.window;
+        //HWND hwnd = windowWMInfo.info.win.window;
+        HWND hwnd = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+
         HINSTANCE hinstance = GetModuleHandle(NULL);
         return wgpuInstanceCreateSurface(
             instance,
@@ -137,7 +143,7 @@ WGPUSurface SDL_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
   }
 #else
     // TODO: See SDL_syswm.h for other possible enum values!
-#error "Unsupported WGPU_TARGET"
+//#error "Unsupported WGPU_TARGET"
 #endif
 }
 

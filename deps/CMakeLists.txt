@@ -1,4 +1,4 @@
-add_subdirectory(sdl)
+add_subdirectory(sdl3)
 
 add_subdirectory(webgpu)
 add_subdirectory(sdl2webgpu)

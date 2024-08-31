@@ -5,7 +5,9 @@
 
 #define SDL_MAIN_HANDLED
 #include <sdl2webgpu.h>
-#include <SDL.h>
+//#include <SDL.h>
+
+#include <SDL3/SDL.h>
 
 #include <iostream>
 #include <cassert>
@@ -19,6 +21,7 @@ namespace wgfx
 {
 	Device device = nullptr;
 	Queue queue = nullptr;
+	Surface surface = nullptr;
 
 	BufferDescriptor bufferDesc;
 	struct Uniform
@@ -270,7 +273,6 @@ namespace wgfx
 	TextureView targetView = nullptr;
 
 	//SDL_Window* window = nullptr;
-	Surface surface = nullptr;
 	std::unique_ptr<ErrorCallback> uncapturedErrorCallbackHandle;
 
 	Instance instance = nullptr;
@@ -307,81 +309,54 @@ namespace wgfx
 
 		return targetView;
 	}
-
+	SDL_Window* swindow;
 	Surface getSurface(SDL_Window* window)
 	{
+		swindow = window;
 		instance = wgpuCreateInstance(nullptr);
 		std::cout << "Requesting adapter..." << std::endl;
 		return surface = SDL_GetWGPUSurface(instance, window);
 	}
-
-	void initbuffers()
+	Adapter adapter;
+	void initSurface()
 	{
-		// Vertex buffer data
-		/*
-		std::vector<float> vertexData = {
-			// x0,  y0,  r0,  g0,  b0
-			-0.5, -0.5, 1.0, 0.0, 0.0,
+		int w, h;
+		SDL_GetWindowSize(swindow, &w, &h);
 
-			// x1,  y1,  r1,  g1,  b1
-			+0.5, -0.5, 0.0, 1.0, 0.0,
+		std::cout << "Creating swapchain...\n";
+		// Configure the surface
+		SurfaceConfiguration config = {};
 
-			// ...
-			+0.0,   +0.5, 0.0, 0.0, 1.0,
-			-0.55f, -0.5, 1.0, 1.0, 0.0,
-			-0.05f, +0.5, 1.0, 0.0, 1.0,
-			-0.55f, +0.5, 0.0, 1.0, 1.0
-		};
-		*/
-		/*
-		std::vector<float> pointData = {
-			// x,   y,     r,   g,   b
-			-0.5, -0.5,   1.0, 0.0, 0.0, // Point #0
-			+0.5, -0.5,   0.0, 1.0, 0.0, // Point #1
-			+0.5, +0.5,   0.0, 0.0, 1.0, // Point #2
-			-0.5, +0.5,   1.0, 1.0, 0.0  // Point #3
-		};
+		// Configuration of the textures created for the underlying swap chain
+		config.width = w;
+		config.height = h;
+		config.usage = TextureUsage::RenderAttachment;
+		surfaceFormat = surface.getPreferredFormat(adapter);
+		config.format = surfaceFormat;//TextureFormat::BGRA8Unorm; //surfaceFormat
 
-		// Define index data
-		// This is a list of indices referencing positions in the pointData
-		std::vector<uint16_t> indexData = {
-			0, 1, 2, // Triangle #0 connects points #0, #1 and #2
-			0, 2, 3  // Triangle #1 connects points #0, #2 and #3
-		};
+		// And we do not need any particular view format:
+		config.viewFormatCount = 0;
+		config.viewFormats = nullptr;
+		config.device = device;
+		config.presentMode = PresentMode::Fifo;
+		config.alphaMode = CompositeAlphaMode::Auto;
 
-		// We now divide the vector size by 5 fields.
-		//vertexCount = static_cast<uint32_t>(vertexData.size() / 5);
-		indexCount = static_cast<uint32_t>(indexData.size());
+		surface.configure(config);
 
-	
-		// Create vertex buffer
-		BufferDescriptor bufferDesc;
-		bufferDesc.size = pointData.size() * sizeof(float);
-		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Vertex; // Vertex usage here!
-		bufferDesc.mappedAtCreation = false;
-		pointBuffer = device.createBuffer(bufferDesc);
-
-		// Upload geometry data to the buffer
-		queue.writeBuffer(pointBuffer, 0, pointData.data(), bufferDesc.size);
-	
-		bufferDesc.size = indexData.size() * sizeof(uint16_t);
-		bufferDesc.size = (bufferDesc.size + 3) & ~3; // round up to the next multiple of 4
-		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Index;
-		indexBuffer = device.createBuffer(bufferDesc);
-
-		queue.writeBuffer(indexBuffer, 0, indexData.data(), bufferDesc.size);
-		*/
+		// Release the adapter only after it has been fully utilized
+		//adapter.release(); << maintain the adapter for reinit surface 
+	}
+	void destroySurface()
+	{
+		surface.release();
 	}
 
 	void init(Surface surface, int width, int height)
 	{
-		//Instance instance = wgpuCreateInstance(nullptr);
-
-		//std::cout << "Requesting adapter..." << std::endl;
-		//surface = SDL_GetWGPUSurface(instance, window);
+		// INIT DEVICE
 		RequestAdapterOptions adapterOpts = {};
 		adapterOpts.compatibleSurface = surface;
-		Adapter adapter = instance.requestAdapter(adapterOpts);
+		adapter = instance.requestAdapter(adapterOpts);
 		std::cout << "Got adapter: " << adapter << std::endl;
 
 		instance.release();
@@ -409,6 +384,9 @@ namespace wgfx
 
 		queue = device.getQueue();
 
+
+
+		// INIT SURFACE(SWAP)
 		std::cout << "Creating swapchain...\n";
 		// Configure the surface
 		SurfaceConfiguration config = {};
@@ -430,7 +408,7 @@ namespace wgfx
 		surface.configure(config);
 
 		// Release the adapter only after it has been fully utilized
-		adapter.release();
+		//adapter.release();
 
 
 
@@ -441,7 +419,6 @@ namespace wgfx
 		program.setVertexBuffer(buffer);
 		*/
 
-		initbuffers();
 	}
 
 	RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct

@@ -4,8 +4,9 @@
 
 # The sdl2webgpu target
 add_library(sdl2webgpu STATIC "sdl2webgpu.c" "sdl2webgpu.h")
-target_include_directories(sdl2webgpu PUBLIC .)
-target_link_libraries(sdl2webgpu PUBLIC SDL2-static webgpu)
+target_include_directories(sdl2webgpu PUBLIC . "../sdl3/include")
+target_link_libraries(sdl2webgpu PUBLIC SDL3::SDL3 webgpu)
+
 
 if (APPLE)
   target_compile_options(sdl2webgpu PRIVATE -x objective-c)
