@@ -61,7 +61,7 @@ int main(int _argc, char** _argv)
 
 	//SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_RESIZABLE);
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", 1280, 720, SDL_WINDOW_RESIZABLE);
-	SDL_SetWindowAspectRatio(window, 16.f / 9.f, 16.f / 9.f);
+	//SDL_SetWindowAspectRatio(window, 16.f / 9.f, 16.f / 9.f);
 
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
@@ -110,6 +110,10 @@ int main(int _argc, char** _argv)
 			case SDL_EVENT_QUIT:
 				shouldClose = true;
 				break;
+
+				case SDL_EVENT_WINDOW_EXPOSED:
+				wgfx::initSurface();
+				program.updateUniform(uniform, t);
 
 			default:
 				break;
