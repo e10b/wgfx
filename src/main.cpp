@@ -74,16 +74,20 @@ int main(int _argc, char** _argv)
 	wgfx::IndexBuffer ibo(indexData);
 
 
-	program.setVertexBuffer(vbo);
-	program.setIndexBuffer(ibo);
-
 	wgfx::Uniform uniform(0);
 	wgfx::Uniform uniform2(1);
 	//program.linkUniform(uniform);
-	program.setUniform(uniform);
+	program.setUniform(uniform);				// how can we me make it more natural<< i mean, uniform object so that we can update it. but wgfx::setUniform <<  
 	program.setUniform(uniform2);
 
-	program.linkUniforms();
+	program.setVertexBuffer(vbo);
+	program.setIndexBuffer(ibo);
+
+	// uniforms are relative to the program << naturally.	// i am thinking a uniform a set and an update uniform makes the most sense to me in the natural way.
+
+	//a single connective call should do.
+
+	//program.linkUniforms();
 
 	bool shouldClose = false;
 	while (!shouldClose)

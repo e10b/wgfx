@@ -28,9 +28,10 @@ namespace wgfx
 	{
 		Buffer buffer;
 		BindGroupEntry binding;
-
-		Uniform(float a) // need a wgfx::createUniform
+		int index;
+		Uniform(int i) // need a wgfx::createUniform
 		{
+			index = i;
 			// Create uniform buffer
 	// The buffer will only contain 1 float with the value of uTime
 			bufferDesc.size = sizeof(float);
@@ -45,7 +46,7 @@ namespace wgfx
 			// Create a binding
 			//BindGroupEntry binding;
 			// The index of the binding (the entries in bindGroupDesc can be in any order)
-			binding.binding = a;
+			binding.binding = i;
 			// The buffer it is actually bound to
 			binding.buffer = buffer;
 			// We can specify an offset within the buffer, so that a single buffer can hold
@@ -146,6 +147,8 @@ namespace wgfx
 		}
 		BindGroupLayout bindGroupLayout;
 		BindGroupLayoutDescriptor bindGroupLayoutDesc;
+		std::vector<BindGroupLayoutEntry> entries;
+		std::vector<BindGroupEntry> bindings;
 		void setVertexBuffer(VertexBuffer buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
 		{
 			vertexBuffer = buffer;
@@ -198,33 +201,67 @@ namespace wgfx
 			pipelineDesc.multisample.mask = ~0u;
 			pipelineDesc.multisample.alphaToCoverageEnabled = false;
 
-			// Create binding layout (don't forget to = Default)
-			BindGroupLayoutEntry bindingLayout = Default;
+			// Create a bind group layout
+			bindGroupLayoutDesc;
+			bindGroupLayoutDesc.entryCount = entries.size(); // uh
+			bindGroupLayoutDesc.entries = entries.data();
+			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
+
+			// uniform groups
+
+
+			// Create the pipeline layout
+			PipelineLayoutDescriptor layoutDesc;
+			layoutDesc.bindGroupLayoutCount = 1;
+			layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bindGroupLayout;
+			PipelineLayout layout = device.createPipelineLayout(layoutDesc);
+			pipelineDesc.layout = layout;
+
+			pipeline = device.createRenderPipeline(pipelineDesc);
+			std::cout << "Render pipeline: " << pipeline << std::endl;
+			shaderModule.release();
+
+
+
+
+
+			// A bind group contains one or multiple bindings
+			BindGroupDescriptor bindGroupDesc;
+			bindGroupDesc.layout = bindGroupLayout;
+			// There must be as many bindings as declared in the layout!
+			//bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
+			//bindGroupDesc.entries = &uniform.binding;
+			bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
+			bindGroupDesc.entries = bindings.data(); // Pass the array of entries
+			bindGroup = device.createBindGroup(bindGroupDesc);
+		}
+		
+
+		void setUniform(Uniform uniform)
+		{
+			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			// The binding index as used in the @binding attribute in the shader
-			bindingLayout.binding = 0;
+			bindingLayout.binding = uniform.index;
 			// The stage that needs to access this resource
 			bindingLayout.visibility = ShaderStage::Vertex;
 			bindingLayout.buffer.type = BufferBindingType::Uniform;
 			bindingLayout.buffer.minBindingSize = sizeof(float);
 
-			// Create binding layout (don't forget to = Default)
-			BindGroupLayoutEntry bindingLayout2 = Default;
-			// The binding index as used in the @binding attribute in the shader
-			bindingLayout2.binding = 1;
-			// The stage that needs to access this resource
-			bindingLayout2.visibility = ShaderStage::Vertex;
-			bindingLayout2.buffer.type = BufferBindingType::Uniform;
-			bindingLayout2.buffer.minBindingSize = sizeof(float);
 
-			std::vector<BindGroupLayoutEntry> entrys;
-			entrys.push_back(bindingLayout);
-			entrys.push_back(bindingLayout2);
+			entries.push_back(bindingLayout);
+			bindings.push_back(uniform.binding);
+		}
 
+		void touch()
+		{
 			// Create a bind group layout
 			bindGroupLayoutDesc;
-			bindGroupLayoutDesc.entryCount = 2; // uh
-			bindGroupLayoutDesc.entries = entrys.data();
+			bindGroupLayoutDesc.entryCount = entries.size(); // uh
+			bindGroupLayoutDesc.entries = entries.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
+			
+			// uniform groups
+
 
 			// Create the pipeline layout
 			PipelineLayoutDescriptor layoutDesc;
@@ -237,11 +274,12 @@ namespace wgfx
 			std::cout << "Render pipeline: " << pipeline << std::endl;
 			shaderModule.release();
 		}
-		std::vector<BindGroupEntry> bindings;
-		void setUniform(Uniform uniform)
-		{
-			bindings.push_back(uniform.binding);
-		}
+
+		//std::vector<BindGroupEntry> bindings;
+		//void setUniform(Uniform uniform)
+		//{
+		//	bindings.push_back(uniform.binding);
+		//}
 
 		BindGroup bindGroup;
 		void linkUniforms()
