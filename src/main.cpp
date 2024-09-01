@@ -77,15 +77,20 @@ int main(int _argc, char** _argv)
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
 
-	wgfx::Uniform uniform(1);
-	program.linkUniform(uniform);
-	//program.setUniform(uniform);
+	wgfx::Uniform uniform(0);
+	wgfx::Uniform uniform2(1);
+	//program.linkUniform(uniform);
+	program.setUniform(uniform);
+	program.setUniform(uniform2);
+
+	program.linkUniforms();
 
 	bool shouldClose = false;
 	while (!shouldClose)
 	{
 		SDL_Event event;
 		float t = SDL_GetTicks() / 1000.0f;
+		float r = SDL_GetTicks() / 100.0f;
 		while (SDL_PollEvent(&event))
 		{
 			switch (event.type)
@@ -121,6 +126,7 @@ int main(int _argc, char** _argv)
 		}
 
 		program.updateUniform(uniform, t);
+		program.updateUniform(uniform2, r);
 
 		wgfx::submit(program);
 

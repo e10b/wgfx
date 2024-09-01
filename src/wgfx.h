@@ -45,7 +45,7 @@ namespace wgfx
 			// Create a binding
 			//BindGroupEntry binding;
 			// The index of the binding (the entries in bindGroupDesc can be in any order)
-			binding.binding = 0;
+			binding.binding = a;
 			// The buffer it is actually bound to
 			binding.buffer = buffer;
 			// We can specify an offset within the buffer, so that a single buffer can hold
@@ -207,10 +207,23 @@ namespace wgfx
 			bindingLayout.buffer.type = BufferBindingType::Uniform;
 			bindingLayout.buffer.minBindingSize = sizeof(float);
 
+			// Create binding layout (don't forget to = Default)
+			BindGroupLayoutEntry bindingLayout2 = Default;
+			// The binding index as used in the @binding attribute in the shader
+			bindingLayout2.binding = 1;
+			// The stage that needs to access this resource
+			bindingLayout2.visibility = ShaderStage::Vertex;
+			bindingLayout2.buffer.type = BufferBindingType::Uniform;
+			bindingLayout2.buffer.minBindingSize = sizeof(float);
+
+			std::vector<BindGroupLayoutEntry> entrys;
+			entrys.push_back(bindingLayout);
+			entrys.push_back(bindingLayout2);
+
 			// Create a bind group layout
 			bindGroupLayoutDesc;
-			bindGroupLayoutDesc.entryCount = 1;
-			bindGroupLayoutDesc.entries = &bindingLayout;
+			bindGroupLayoutDesc.entryCount = 2; // uh
+			bindGroupLayoutDesc.entries = entrys.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
 
 			// Create the pipeline layout
@@ -224,17 +237,26 @@ namespace wgfx
 			std::cout << "Render pipeline: " << pipeline << std::endl;
 			shaderModule.release();
 		}
+		std::vector<BindGroupEntry> bindings;
+		void setUniform(Uniform uniform)
+		{
+			bindings.push_back(uniform.binding);
+		}
+
 		BindGroup bindGroup;
-		void linkUniform(Uniform uniform)
+		void linkUniforms()
 		{
 			// A bind group contains one or multiple bindings
 			BindGroupDescriptor bindGroupDesc;
 			bindGroupDesc.layout = bindGroupLayout;
 			// There must be as many bindings as declared in the layout!
-			bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
-			bindGroupDesc.entries = &uniform.binding;
+			//bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
+			//bindGroupDesc.entries = &uniform.binding;
+			bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
+			bindGroupDesc.entries = bindings.data(); // Pass the array of entries
 			bindGroup = device.createBindGroup(bindGroupDesc);
 		}
+
 
 		void updateUniform(Uniform uniform, float data)
 		{
