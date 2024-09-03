@@ -79,12 +79,9 @@ int main(int _argc, char** _argv)
 	wgfx::IndexBuffer ibo(indexData);
 
 
-	float b[4] = { 0.0f, 1.0f, 0.4f, 1.0f };
+	float color[] = { 0.1, 0.2, 0.3, 0.4 };
 	wgfx::Uniform uniform(0, sizeof(float), 1.0f);
-	MyUniforms uniforms;
-	uniforms.color = { 0.98f, 0.7f, 0.54f, 1.0f };
-	wgfx::Uniform uniform2(1, sizeof(MyUniforms), uniforms);
-	//program.linkUniform(uniform);
+	wgfx::Uniform uniform2(1, sizeof(color), color);
 	program.setUniform(uniform);				// how can we me make it more natural<< i mean, uniform object so that we can update it. but wgfx::setUniform <<  
 	program.setUniform(uniform2);
 
@@ -137,7 +134,17 @@ int main(int _argc, char** _argv)
 			}
 		}
 
+		
+		float d = 0.2;
+		const Uint8* state = SDL_GetKeyboardState(NULL);
+
+		if (state[SDL_SCANCODE_G]) {
+			d = 0.4;
+		}
+		float cc[] = { 1.0, d, 1, 0.4 };
+
 		program.updateUniform(uniform, t);
+		program.updateUniform(uniform2, cc);
 		//program.updateUniform(uniform2, r);
 
 		wgfx::submit(program);

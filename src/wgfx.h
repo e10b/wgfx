@@ -17,10 +17,6 @@
 
 #include <array>
 
-struct MyUniforms
-{
-	std::array<float, 4> color;
-};
 using namespace wgpu;
 namespace wgfx
 {
@@ -53,8 +49,8 @@ namespace wgfx
 			binding.offset = 0;
 			binding.size = size;
 		}
-
-		Uniform(int i, size_t size, MyUniforms u) // need a wgfx::createUniform
+		template <size_t N>
+		Uniform(int i, size_t size, const float(&array)[N]) // need a wgfx::createUniform
 		{
 			index = i;
 			scale = size;
@@ -64,7 +60,7 @@ namespace wgfx
 			bufferDesc.mappedAtCreation = false;
 			buffer = device.createBuffer(bufferDesc);
 
-			queue.writeBuffer(buffer, 0, &u, size);
+			queue.writeBuffer(buffer, 0, &array, size);
 
 			binding.binding = i;
 			binding.buffer = buffer;
@@ -313,6 +309,11 @@ namespace wgfx
 		{
 			queue.writeBuffer(uniform.buffer, 0, &data, uniform.scale);
 		}
+		template <size_t N>
+		void updateUniform(Uniform uniform, const float(&array)[N])
+		{
+			queue.writeBuffer(uniform.buffer, 0, &array, uniform.scale);
+		}
 
 	};
 
@@ -554,10 +555,10 @@ namespace wgfx
 		CommandBuffer command = encoder.finish(cmdBufferDescriptor);
 		encoder.release();
 
-		std::cout << "Submitting command..." << std::endl;
+		//std::cout << "Submitting command..." << std::endl;
 		queue.submit(1, &command);
 		command.release();
-		std::cout << "Command submitted." << std::endl;
+		//std::cout << "Command submitted." << std::endl;
 
 		// At the end of the frame
 		targetView.release();
