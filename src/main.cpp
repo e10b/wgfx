@@ -1,5 +1,7 @@
 #include "wgfx.h"
 
+#include <array>
+
 const char* shaderSource = R"(
 /**
  * A structure with fields labeled with vertex attribute locations can be used
@@ -55,6 +57,9 @@ std::vector<uint16_t> indexData = {
 	0, 1, 2, // Triangle #0 connects points #0, #1 and #2
 	0, 2, 3  // Triangle #1 connects points #0, #2 and #3
 };
+
+
+
 int main(int _argc, char** _argv)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) { return 1; }
@@ -74,8 +79,11 @@ int main(int _argc, char** _argv)
 	wgfx::IndexBuffer ibo(indexData);
 
 
-	wgfx::Uniform uniform(0);
-	wgfx::Uniform uniform2(1);
+	float b[4] = { 0.0f, 1.0f, 0.4f, 1.0f };
+	wgfx::Uniform uniform(0, sizeof(float), 1.0f);
+	MyUniforms uniforms;
+	uniforms.color = { 0.98f, 0.7f, 0.54f, 1.0f };
+	wgfx::Uniform uniform2(1, sizeof(MyUniforms), uniforms);
 	//program.linkUniform(uniform);
 	program.setUniform(uniform);				// how can we me make it more natural<< i mean, uniform object so that we can update it. but wgfx::setUniform <<  
 	program.setUniform(uniform2);
@@ -130,7 +138,7 @@ int main(int _argc, char** _argv)
 		}
 
 		program.updateUniform(uniform, t);
-		program.updateUniform(uniform2, r);
+		//program.updateUniform(uniform2, r);
 
 		wgfx::submit(program);
 

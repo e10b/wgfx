@@ -15,8 +15,13 @@
 #include <filesystem>
 #include <fstream>
 
-using namespace wgpu;
+#include <array>
 
+struct MyUniforms
+{
+	std::array<float, 4> color;
+};
+using namespace wgpu;
 namespace wgfx
 {
 	Device device = nullptr;
@@ -29,34 +34,42 @@ namespace wgfx
 		Buffer buffer;
 		BindGroupEntry binding;
 		int index;
-		Uniform(int i) // need a wgfx::createUniform
+		size_t scale;
+
+		Uniform(int i, size_t size, float data) // need a wgfx::createUniform
 		{
 			index = i;
-			// Create uniform buffer
-	// The buffer will only contain 1 float with the value of uTime
-			bufferDesc.size = sizeof(float);
-			// Make sure to flag the buffer as BufferUsage::Uniform
+			scale = size;
+
+			bufferDesc.size = size;
 			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 			bufferDesc.mappedAtCreation = false;
 			buffer = device.createBuffer(bufferDesc);
 
-			float currentTime = 1.0f;
-			queue.writeBuffer(buffer, 0, &currentTime, sizeof(float));
+			queue.writeBuffer(buffer, 0, &data, size);
 
-			// Create a binding
-			//BindGroupEntry binding;
-			// The index of the binding (the entries in bindGroupDesc can be in any order)
 			binding.binding = i;
-			// The buffer it is actually bound to
 			binding.buffer = buffer;
-			// We can specify an offset within the buffer, so that a single buffer can hold
-			// multiple uniform blocks.
 			binding.offset = 0;
-			// And we specify again the size of the buffer.
-			binding.size = sizeof(float);
+			binding.size = size;
+		}
 
-			
+		Uniform(int i, size_t size, MyUniforms u) // need a wgfx::createUniform
+		{
+			index = i;
+			scale = size;
 
+			bufferDesc.size = size;
+			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
+			bufferDesc.mappedAtCreation = false;
+			buffer = device.createBuffer(bufferDesc);
+
+			queue.writeBuffer(buffer, 0, &u, size);
+
+			binding.binding = i;
+			binding.buffer = buffer;
+			binding.offset = 0;
+			binding.size = size;
 		}
 	};
 
@@ -243,9 +256,9 @@ namespace wgfx
 			// The binding index as used in the @binding attribute in the shader
 			bindingLayout.binding = uniform.index;
 			// The stage that needs to access this resource
-			bindingLayout.visibility = ShaderStage::Vertex;
+			bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
 			bindingLayout.buffer.type = BufferBindingType::Uniform;
-			bindingLayout.buffer.minBindingSize = sizeof(float);
+			bindingLayout.buffer.minBindingSize = uniform.scale;
 
 
 			entries.push_back(bindingLayout);
@@ -298,7 +311,7 @@ namespace wgfx
 
 		void updateUniform(Uniform uniform, float data)
 		{
-			queue.writeBuffer(uniform.buffer, 0, &data, sizeof(float));
+			queue.writeBuffer(uniform.buffer, 0, &data, uniform.scale);
 		}
 
 	};
