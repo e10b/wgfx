@@ -75,12 +75,16 @@ namespace wgfx
 		Buffer buffer;
 		uint32_t vertexCount = 0;
 
+		int fields;
+
 		VertexBuffer() {};
 
-		VertexBuffer(std::vector<float> vertices) // need a wgfx::createVertexBuffer()<<<
+		VertexBuffer(std::vector<float> vertices, int fields) // need a wgfx::createVertexBuffer()<<<
 		{
 			// We now divide the vector size by 5 fields.
-			vertexCount = static_cast<uint32_t>(vertices.size() / 5);
+			//vertexCount = static_cast<uint32_t>(vertices.size() / 5);
+			this->fields = fields;
+			vertexCount = static_cast<uint32_t>(vertices.size() / fields);
 			//indexCount = static_cast<uint32_t>(indexData.size());
 
 
@@ -165,7 +169,7 @@ namespace wgfx
 			VertexBufferLayout vertexBufferLayout;
 			vertexBufferLayout.attributeCount = (uint32_t)buffer.vertexAttribs.size();
 			vertexBufferLayout.attributes = buffer.vertexAttribs.data();
-			vertexBufferLayout.arrayStride = 5 * sizeof(float);
+			vertexBufferLayout.arrayStride = (buffer.fields) * sizeof(float);
 			vertexBufferLayout.stepMode = VertexStepMode::Vertex;
 
 			pipelineDesc.vertex.bufferCount = 1;
