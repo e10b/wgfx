@@ -20,11 +20,16 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 	offset += 0.3 * vec2f(cos(uTime), sin(uTime));
 		offset = vec2f(0, 0);
 
+	let angle = uTime;
+	let alpha = cos(angle);
+	let beta = sin(angle);
+
 	var position = vec3f(
 		in.position.x,
-		in.position.z,
-		in.position.y
+		alpha * in.position.y + beta * in.position.z,
+		alpha * in.position.z - beta * in.position.y
 	);
+
 
 
 	out.position = vec4f(position.x + offset.x, (position.y + offset.y) * ratio, 0.0, 1.0);
