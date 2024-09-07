@@ -1,6 +1,10 @@
 #include "wgfx.h"
 
 #include <array>
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 const char* shaderSource = R"(
 /**
@@ -66,7 +70,7 @@ std::vector<uint16_t> indexData = {
 };
 
 
-
+float aa = 1;
 int main(int _argc, char** _argv)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) { return 1; }
@@ -89,8 +93,24 @@ int main(int _argc, char** _argv)
 	float color[] = { 0.1, 0.2, 0.3, 0.4 };
 	wgfx::Uniform uniform(0, sizeof(float), 1.0f);
 	wgfx::Uniform uniform2(1, sizeof(color), color);
+	
+		glm::mat4 proj = glm::perspective(glm::radians(100.0f), float(1920) / 1080, 0.1f, 100.0f);
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
+
+		// Convert each matrix to float array
+		float viewMatrix[16];
+		float projMatrix[16];
+		std::memcpy(viewMatrix, glm::value_ptr(view), 16 * sizeof(float));
+		std::memcpy(projMatrix, glm::value_ptr(proj), 16 * sizeof(float));
+
+	wgfx::Uniform viewUniform(2, sizeof(viewMatrix), viewMatrix);
+	wgfx::Uniform projUniform(3, sizeof(projMatrix), projMatrix);
+
 	program.setUniform(uniform);				// how can we me make it more natural<< i mean, uniform object so that we can update it. but wgfx::setUniform <<  
 	program.setUniform(uniform2);
+	program.setUniform(viewUniform);
+	program.setUniform(projUniform);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
@@ -149,9 +169,15 @@ int main(int _argc, char** _argv)
 			d = 0.4;
 		}
 		float cc[] = { 1.0, d, 1, 0.4 };
+		view = glm::rotate(view, glm::radians(aa), glm::vec3(0.4f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
 		program.updateUniform(uniform, t);
 		program.updateUniform(uniform2, cc);
+
+		float v[16];
+		std::memcpy(v, glm::value_ptr(view), 16 * sizeof(float));
+
+		program.updateUniform(viewUniform, v);
 		//program.updateUniform(uniform2, r);
 
 		wgfx::submit(program);

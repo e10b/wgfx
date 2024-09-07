@@ -2,6 +2,9 @@
 
 @group(0) @binding(1) var<uniform> uColor: vec3f;
 
+@group(0) @binding(2) var<uniform> view: mat4x4f;
+@group(0) @binding(3) var<uniform> proj: mat4x4f;
+
 struct VertexInput {
 	@location(0) position: vec3f,
 	@location(1) color: vec3f,
@@ -24,15 +27,22 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 	let alpha = cos(angle);
 	let beta = sin(angle);
 
+	/*
+
 	var position = vec3f(
 		in.position.x,
-		alpha * in.position.y + beta * in.position.z,
-		alpha * in.position.z - beta * in.position.y
+		in.position.y,
+		in.position.z
+		//alpha * in.position.y + beta * in.position.z,
+		//alpha * in.position.z - beta * in.position.y
 	);
 
+	*/
 
+	let homogeneous_position = vec4f(in.position, 1.0);
+	let position = (proj * view * homogeneous_position).xyz;
 
-	out.position = vec4f(position.x + offset.x, (position.y + offset.y) * ratio, 0.0, 1.0);
+	out.position = vec4f(position.x + offset.x, (position.y + offset.y), 0.0, 1.0);
 	out.color = in.color;
 	return out;
 }
