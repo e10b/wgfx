@@ -34,13 +34,15 @@
 
 #include <webgpu/webgpu.h>
 
-#if defined(SDL_VIDEO_DRIVER_COCOA)
+#if defined(SDL_PLATFORM_MACOS)
 #include <Cocoa/Cocoa.h>
 #include <Foundation/Foundation.h>
 #include <QuartzCore/CAMetalLayer.h>
 #endif
 
-#include <wtypes.h>
+//#import <AppKit/AppKit.h>
+
+//#include <wtypes.h>
 
 //#include <SDL2/SDL.h>
 //#include <SDL2/SDL_syswm.h>
@@ -52,10 +54,12 @@ WGPUSurface SDL_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
     SDL_GetWindowWMInfo(window, &windowWMInfo);
     */
 
-#if defined(SDL_VIDEO_DRIVER_COCOA)
+#if defined(SDL_PLATFORM_MACOS)
     {
         id metal_layer = NULL;
-        NSWindow* ns_window = windowWMInfo.info.cocoa.window;
+        NSWindow *ns_window = (__bridge NSWindow *)SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, NULL);
+
+        //NSWindow* ns_window = windowWMInfo.info.cocoa.window;
         [ns_window.contentView setWantsLayer : YES] ;
         metal_layer = [CAMetalLayer layer];
         [ns_window.contentView setLayer : metal_layer] ;

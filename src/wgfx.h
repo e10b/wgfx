@@ -215,7 +215,7 @@ namespace wgfx
 			pipelineDesc.multisample.alphaToCoverageEnabled = false;
 
 			// Create a bind group layout
-			bindGroupLayoutDesc;
+			//bindGroupLayoutDesc;
 			bindGroupLayoutDesc.entryCount = entries.size(); // uh
 			bindGroupLayoutDesc.entries = entries.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
@@ -268,7 +268,7 @@ namespace wgfx
 		void touch()
 		{
 			// Create a bind group layout
-			bindGroupLayoutDesc;
+			//bindGroupLayoutDesc;
 			bindGroupLayoutDesc.entryCount = entries.size(); // uh
 			bindGroupLayoutDesc.entries = entries.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
@@ -516,7 +516,7 @@ namespace wgfx
 		encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
 
 		// Create the render pass that clears the screen with our color
-		renderPassDesc = {};
+		//renderPassDesc = {};
 
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};

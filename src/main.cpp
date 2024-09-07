@@ -73,7 +73,7 @@ std::vector<uint16_t> indexData = {
 float aa = 1;
 int main(int _argc, char** _argv)
 {
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) { return 1; }
+	if (!SDL_Init(SDL_INIT_VIDEO)) { return 1; }
 
 	//SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_RESIZABLE);
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", 1280, 720, SDL_WINDOW_RESIZABLE);
