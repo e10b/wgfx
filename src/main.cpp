@@ -69,26 +69,19 @@ std::vector<uint16_t> indexData = {
 	3, 0, 4
 };
 
-
 float aa = 1;
 int main(int _argc, char** _argv)
 {
 	if (!SDL_Init(SDL_INIT_VIDEO)) { return 1; }
-
-	//SDL_Window* window = SDL_CreateWindow("Learn WebGPU", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_RESIZABLE);
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", 1280, 720, SDL_WINDOW_RESIZABLE);
-	//SDL_SetWindowAspectRatio(window, 16.f / 9.f, 16.f / 9.f);
 
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
-
-	//wgfx::Program program = wgfx::loadProgram(shaderSource);
+	
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
-
 	wgfx::VertexBuffer vbo(pointData, 6);
 	vbo.setAttribute(0, wgfx::vec3f, 0);
 	vbo.setAttribute(1, wgfx::vec3f, 3); // take in a type
 	wgfx::IndexBuffer ibo(indexData);
-
 
 	float color[] = { 0.1, 0.2, 0.3, 0.4 };
 	wgfx::Uniform uniform(0, sizeof(float), 1.0f);
@@ -98,14 +91,8 @@ int main(int _argc, char** _argv)
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
-	// Convert each matrix to float array
-	float viewMatrix[16];
-	float projMatrix[16];
-	std::memcpy(viewMatrix, glm::value_ptr(view), 16 * sizeof(float));
-	std::memcpy(projMatrix, glm::value_ptr(proj), 16 * sizeof(float));
-
-	wgfx::Uniform viewUniform(2, sizeof(viewMatrix), viewMatrix);
-	wgfx::Uniform projUniform(3, sizeof(projMatrix), projMatrix);
+	wgfx::Uniform viewUniform(2, sizeof(glm::mat4), glm::value_ptr(view));
+	wgfx::Uniform projUniform(3, sizeof(glm::mat4), glm::value_ptr(proj));
 
 	program.setUniform(uniform);				// how can we me make it more natural<< i mean, uniform object so that we can update it. but wgfx::setUniform <<  
 	program.setUniform(uniform2);
@@ -114,12 +101,6 @@ int main(int _argc, char** _argv)
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
-
-	// uniforms are relative to the program << naturally.	// i am thinking a uniform a set and an update uniform makes the most sense to me in the natural way.
-
-	//a single connective call should do.
-
-	//program.linkUniforms();
 
 	bool shouldClose = false;
 	while (!shouldClose)

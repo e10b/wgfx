@@ -51,8 +51,8 @@ namespace wgfx
 			binding.offset = 0;
 			binding.size = size;
 		}
-		template <size_t N>
-		Uniform(int i, size_t size, const float(&array)[N]) // need a wgfx::createUniform
+		
+		Uniform(int i, size_t size, const float* array) // Updated to accept const float* array -- no templates needed
 		{
 			index = i;
 			scale = size;
@@ -62,7 +62,8 @@ namespace wgfx
 			bufferDesc.mappedAtCreation = false;
 			buffer = device.createBuffer(bufferDesc);
 
-			queue.writeBuffer(buffer, 0, &array, size);
+			// Use writeBuffer with the pointer to float data
+			queue.writeBuffer(buffer, 0, array, size);
 
 			binding.binding = i;
 			binding.buffer = buffer;
