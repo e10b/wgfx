@@ -49,10 +49,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 
 std::vector<float> pointData = {
 	// x,   y,     r,   g,   b
-	-0.5, -0.5, -0.3,   1.0, 1.0, 1.0, // Point #0
-	+0.5, -0.5, -0.3,   1.0, 1.0, 1.0, // Point #1
-	+0.5, +0.5, -0.3,   1.0, 1.0, 1.0, // Point #2
-	-0.5, +0.5, -0.3,   1.0, 1.0, 1.0,  // Point #3
+	-0.5, -0.5, -0.3,   0.0, 1.0, 1.0, // Point #0
+	+0.5, -0.5, -0.3,   0.0, 1.0, 0.0, // Point #1
+	+0.5, +0.5, -0.3,   1.0, 0.0, 1.0, // Point #2
+	-0.5, +0.5, -0.3,   1.0, 1.0, 0.0,  // Point #3
 
 	0, 0, 0.5,			0.5, 0.5, 0.5
 };
@@ -93,16 +93,16 @@ int main(int _argc, char** _argv)
 	float color[] = { 0.1, 0.2, 0.3, 0.4 };
 	wgfx::Uniform uniform(0, sizeof(float), 1.0f);
 	wgfx::Uniform uniform2(1, sizeof(color), color);
-	
-		glm::mat4 proj = glm::perspective(glm::radians(100.0f), float(1920) / 1080, 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
-		// Convert each matrix to float array
-		float viewMatrix[16];
-		float projMatrix[16];
-		std::memcpy(viewMatrix, glm::value_ptr(view), 16 * sizeof(float));
-		std::memcpy(projMatrix, glm::value_ptr(proj), 16 * sizeof(float));
+	glm::mat4 proj = glm::perspective(glm::radians(50.0f), float(1920) / 1080, 0.1f, 100.0f);
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
+
+	// Convert each matrix to float array
+	float viewMatrix[16];
+	float projMatrix[16];
+	std::memcpy(viewMatrix, glm::value_ptr(view), 16 * sizeof(float));
+	std::memcpy(projMatrix, glm::value_ptr(proj), 16 * sizeof(float));
 
 	wgfx::Uniform viewUniform(2, sizeof(viewMatrix), viewMatrix);
 	wgfx::Uniform projUniform(3, sizeof(projMatrix), projMatrix);
@@ -133,26 +133,26 @@ int main(int _argc, char** _argv)
 			{
 			case SDL_EVENT_WINDOW_RESIZED:
 			{
-					int newWidth = event.window.data1;
-					int newHeight = event.window.data2;
-					float aspectRatio = (float)newWidth / (float)newHeight;
+				int newWidth = event.window.data1;
+				int newHeight = event.window.data2;
+				float aspectRatio = (float)newWidth / (float)newHeight;
 
-					//wgfx::destroySurface();
-					wgfx::initSurface();
-					program.updateUniform(uniform, t);
+				//wgfx::destroySurface();
+				wgfx::initSurface();
+				program.updateUniform(uniform, t);
 
-					// Update viewport and aspect ratio uniform
-					//wgfx::setViewport(0, 0, newWidth, newHeight);
-					//wgfx::init(wgfx::getSurface(window), newWidth, newHeight);
-					//program.updateUniform(aspectRatioUniform, aspectRatio);
-				}
-				break;
+				// Update viewport and aspect ratio uniform
+				//wgfx::setViewport(0, 0, newWidth, newHeight);
+				//wgfx::init(wgfx::getSurface(window), newWidth, newHeight);
+				//program.updateUniform(aspectRatioUniform, aspectRatio);
+			}
+			break;
 
 			case SDL_EVENT_QUIT:
 				shouldClose = true;
 				break;
 
-				case SDL_EVENT_WINDOW_EXPOSED:
+			case SDL_EVENT_WINDOW_EXPOSED:
 				wgfx::initSurface();
 				program.updateUniform(uniform, t);
 
@@ -161,7 +161,7 @@ int main(int _argc, char** _argv)
 			}
 		}
 
-		
+
 		float d = 0.2;
 		const Uint8* state = SDL_GetKeyboardState(NULL);
 

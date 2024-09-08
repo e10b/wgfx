@@ -20,6 +20,8 @@
 using namespace wgpu;
 namespace wgfx
 {
+	TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
+
 	Device device = nullptr;
 	Queue queue = nullptr;
 	Surface surface = nullptr;
@@ -74,7 +76,7 @@ namespace wgfx
 		std::vector<VertexAttribute> vertexAttribs;
 		Buffer buffer;
 		uint32_t vertexCount = 0;
-
+		TextureView depthTextureView;
 		int fields;
 
 		VertexBuffer() {};
@@ -86,6 +88,31 @@ namespace wgfx
 			this->fields = fields;
 			vertexCount = static_cast<uint32_t>(vertices.size() / fields);
 			//indexCount = static_cast<uint32_t>(indexData.size());
+
+					// Create the depth texture
+					TextureDescriptor depthTextureDesc;
+					depthTextureDesc.dimension = TextureDimension::_2D;
+					depthTextureDesc.format = depthTextureFormat;
+					depthTextureDesc.mipLevelCount = 1;
+					depthTextureDesc.sampleCount = 1;
+					depthTextureDesc.size = { 1280, 720, 1 };
+					depthTextureDesc.usage = TextureUsage::RenderAttachment;
+					depthTextureDesc.viewFormatCount = 1;
+					depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
+					Texture depthTexture = device.createTexture(depthTextureDesc);
+					std::cout << "Depth texture: " << depthTexture << std::endl;
+
+					// Create the view of the depth texture manipulated by the rasterizer
+					TextureViewDescriptor depthTextureViewDesc;
+					depthTextureViewDesc.aspect = TextureAspect::DepthOnly;
+					depthTextureViewDesc.baseArrayLayer = 0;
+					depthTextureViewDesc.arrayLayerCount = 1;
+					depthTextureViewDesc.baseMipLevel = 0;
+					depthTextureViewDesc.mipLevelCount = 1;
+					depthTextureViewDesc.dimension = TextureViewDimension::_2D;
+					depthTextureViewDesc.format = depthTextureFormat;
+					depthTextureView = depthTexture.createView(depthTextureViewDesc);
+					std::cout << "Depth texture view: " << depthTextureView << std::endl;
 
 
 			// Create vertex buffer
@@ -132,7 +159,6 @@ namespace wgfx
 		}
 
 	};
-
 
 	TextureFormat surfaceFormat = TextureFormat::Undefined;
 
@@ -208,7 +234,20 @@ namespace wgfx
 			fragmentState.targetCount = 1;
 			fragmentState.targets = &colorTarget;
 
-			pipelineDesc.depthStencil = nullptr;
+					// We setup a depth buffer state for the render pipeline
+					DepthStencilState depthStencilState = Default;
+					// Keep a fragment only if its depth is lower than the previously blended one
+					depthStencilState.depthCompare = CompareFunction::Less;
+					// Each time a fragment is blended into the target, we update the value of the Z-buffer
+					depthStencilState.depthWriteEnabled = true;
+					// Store the format in a variable as later parts of the code depend on it
+					//TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
+					depthStencilState.format = depthTextureFormat;
+					// Deactivate the stencil alltogether
+					depthStencilState.stencilReadMask = 0;
+					depthStencilState.stencilWriteMask = 0;
+
+			pipelineDesc.depthStencil = &depthStencilState;
 
 			pipelineDesc.multisample.count = 1;
 			pipelineDesc.multisample.mask = ~0u;
@@ -520,6 +559,7 @@ namespace wgfx
 
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
+
 		renderPassColorAttachment.view = targetView;
 		renderPassColorAttachment.resolveTarget = nullptr;
 		renderPassColorAttachment.loadOp = LoadOp::Clear;
@@ -531,9 +571,36 @@ namespace wgfx
 
 		renderPassDesc.colorAttachmentCount = 1;
 		renderPassDesc.colorAttachments = &renderPassColorAttachment;
-		renderPassDesc.depthStencilAttachment = nullptr;
+
+				// We now add a depth/stencil attachment:
+				RenderPassDepthStencilAttachment depthStencilAttachment;
+				// The view of the depth texture
+				depthStencilAttachment.view = program.vertexBuffer.depthTextureView;
+
+				// The initial value of the depth buffer, meaning "far"
+				depthStencilAttachment.depthClearValue = 1.0f;
+				// Operation settings comparable to the color attachment
+				depthStencilAttachment.depthLoadOp = LoadOp::Clear;
+				depthStencilAttachment.depthStoreOp = StoreOp::Store;
+				// we could turn off writing to the depth buffer globally here
+				depthStencilAttachment.depthReadOnly = false;
+
+				// Stencil setup, mandatory but unused
+				depthStencilAttachment.stencilClearValue = 0;
+		#ifdef WEBGPU_BACKEND_WGPU
+				depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
+				depthStencilAttachment.stencilStoreOp = StoreOp::Store;
+		#else
+				depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
+				depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
+		#endif
+				depthStencilAttachment.stencilReadOnly = true;
+
+				renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
+
+
+		//renderPassDesc.depthStencilAttachment = nullptr;
 		renderPassDesc.timestampWrites = nullptr;
-		
 		renderPass = encoder.beginRenderPass(renderPassDesc);
 
 

@@ -40,6 +40,9 @@
 #include <QuartzCore/CAMetalLayer.h>
 #endif
 
+#if defined(SDL_PLATFORM_WIN32)
+#include <wtypes.h>
+#endif
 //#import <AppKit/AppKit.h>
 
 //#include <wtypes.h>
