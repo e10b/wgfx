@@ -120,7 +120,7 @@ int main(int _argc, char** _argv)
 
 				//wgfx::destroySurface();
 				wgfx::initSurface();
-				vbo.initDepth(newWidth, newHeight);
+				wgfx::initDepth(newWidth, newHeight);
 
 				program.updateUniform(uniform, t);
 

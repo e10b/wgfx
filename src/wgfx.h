@@ -20,6 +20,8 @@
 using namespace wgpu;
 namespace wgfx
 {
+	SDL_Window* swindow;
+
 	TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
 
 	Device device = nullptr;
@@ -73,6 +75,40 @@ namespace wgfx
 	};
 
 	TextureView depthTextureView;
+
+	void initDepth(uint32_t w, uint32_t h)
+	{
+		
+		int width, height;
+		SDL_GetWindowSize(swindow, &width, &height);
+
+		// Create the depth texture
+		TextureDescriptor depthTextureDesc;
+		depthTextureDesc.dimension = TextureDimension::_2D;
+		depthTextureDesc.format = depthTextureFormat;
+		depthTextureDesc.mipLevelCount = 1;
+		depthTextureDesc.sampleCount = 1;
+		depthTextureDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
+		depthTextureDesc.usage = TextureUsage::RenderAttachment;
+		depthTextureDesc.viewFormatCount = 1;
+		depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
+		Texture depthTexture = device.createTexture(depthTextureDesc);
+		std::cout << "Depth texture: " << depthTexture << std::endl;
+
+		// Create the view of the depth texture manipulated by the rasterizer
+		TextureViewDescriptor depthTextureViewDesc;
+		depthTextureViewDesc.aspect = TextureAspect::DepthOnly;
+		depthTextureViewDesc.baseArrayLayer = 0;
+		depthTextureViewDesc.arrayLayerCount = 1;
+		depthTextureViewDesc.baseMipLevel = 0;
+		depthTextureViewDesc.mipLevelCount = 1;
+		depthTextureViewDesc.dimension = TextureViewDimension::_2D;
+		depthTextureViewDesc.format = depthTextureFormat;
+		depthTextureView = depthTexture.createView(depthTextureViewDesc);
+		std::cout << "Depth texture view: " << depthTextureView << std::endl;
+
+	}
+
 	struct VertexBuffer
 	{
 		std::vector<VertexAttribute> vertexAttribs;
@@ -82,34 +118,7 @@ namespace wgfx
 
 		VertexBuffer() {};
 
-		void initDepth(uint32_t w, uint32_t h)
-		{
-			// Create the depth texture
-			TextureDescriptor depthTextureDesc;
-			depthTextureDesc.dimension = TextureDimension::_2D;
-			depthTextureDesc.format = depthTextureFormat;
-			depthTextureDesc.mipLevelCount = 1;
-			depthTextureDesc.sampleCount = 1;
-			depthTextureDesc.size = { w, h, 1 };
-			depthTextureDesc.usage = TextureUsage::RenderAttachment;
-			depthTextureDesc.viewFormatCount = 1;
-			depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
-			Texture depthTexture = device.createTexture(depthTextureDesc);
-			std::cout << "Depth texture: " << depthTexture << std::endl;
-
-			// Create the view of the depth texture manipulated by the rasterizer
-			TextureViewDescriptor depthTextureViewDesc;
-			depthTextureViewDesc.aspect = TextureAspect::DepthOnly;
-			depthTextureViewDesc.baseArrayLayer = 0;
-			depthTextureViewDesc.arrayLayerCount = 1;
-			depthTextureViewDesc.baseMipLevel = 0;
-			depthTextureViewDesc.mipLevelCount = 1;
-			depthTextureViewDesc.dimension = TextureViewDimension::_2D;
-			depthTextureViewDesc.format = depthTextureFormat;
-			depthTextureView = depthTexture.createView(depthTextureViewDesc);
-			std::cout << "Depth texture view: " << depthTextureView << std::endl;
-
-		}
+		
 
 		VertexBuffer(std::vector<float> vertices, int fields) // need a wgfx::createVertexBuffer()<<<
 		{
@@ -432,7 +441,6 @@ namespace wgfx
 
 		return targetView;
 	}
-	SDL_Window* swindow;
 	Surface getSurface(SDL_Window* window)
 	{
 		swindow = window;
