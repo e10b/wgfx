@@ -367,11 +367,17 @@ namespace wgfx
 		{
 			queue.writeBuffer(uniform.buffer, 0, &data, uniform.scale);
 		}
-		template <size_t N>
+		/*template <size_t N>
 		void updateUniform(Uniform uniform, const float(&array)[N])
 		{
 			queue.writeBuffer(uniform.buffer, 0, &array, uniform.scale);
+		}*/
+
+		void updateUniform(Uniform uniform, const float* array)
+		{
+			queue.writeBuffer(uniform.buffer, 0, array, uniform.scale);
 		}
+
 
 	};
 

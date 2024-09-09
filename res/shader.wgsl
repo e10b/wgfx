@@ -5,6 +5,8 @@
 @group(0) @binding(2) var<uniform> view: mat4x4f;
 @group(0) @binding(3) var<uniform> proj: mat4x4f;
 
+@group(0) @binding(4) var<uniform> aspect: f32;
+
 struct VertexInput {
 	@location(0) position: vec3f,
 	@location(1) color: vec3f,
@@ -18,7 +20,7 @@ struct VertexOutput {
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
-	let ratio = 1920.0 / 1080.0;
+	let ratio = aspect;
 	var offset = vec2f(-0.6875 * 0, -0.463 * 0);
 	offset += 0.3 * vec2f(cos(uTime), sin(uTime));
 		offset = vec2f(0, 0);

@@ -94,10 +94,13 @@ int main(int _argc, char** _argv)
 	wgfx::Uniform viewUniform(2, sizeof(glm::mat4), glm::value_ptr(view));
 	wgfx::Uniform projUniform(3, sizeof(glm::mat4), glm::value_ptr(proj));
 
+	wgfx::Uniform ratio(4, sizeof(float), 16.0 / 9.0);
+
 	program.setUniform(uniform);				// how can we me make it more natural<< i mean, uniform object so that we can update it. but wgfx::setUniform <<  
 	program.setUniform(uniform2);
 	program.setUniform(viewUniform);
 	program.setUniform(projUniform);
+	program.setUniform(ratio);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
@@ -118,11 +121,17 @@ int main(int _argc, char** _argv)
 				int newHeight = event.window.data2;
 				float aspectRatio = (float)newWidth / (float)newHeight;
 
+				program.updateUniform(ratio, aspectRatio);
+
 				//wgfx::destroySurface();
 				wgfx::initSurface();
 				wgfx::initDepth(newWidth, newHeight);
 
 				program.updateUniform(uniform, t);
+
+				proj = glm::perspective(glm::radians(50.0f), aspectRatio, 0.1f, 100.0f);
+				program.updateUniform(projUniform, glm::value_ptr(proj));
+					//program.updateUniform(projUniform, glm::value_ptr(proj));
 
 				// Update viewport and aspect ratio uniform
 				//wgfx::setViewport(0, 0, newWidth, newHeight);
@@ -157,10 +166,12 @@ int main(int _argc, char** _argv)
 		program.updateUniform(uniform, t);
 		program.updateUniform(uniform2, cc);
 
-		float v[16];
-		std::memcpy(v, glm::value_ptr(view), 16 * sizeof(float));
+		//float v[16];
+		//std::memcpy(v, glm::value_ptr(view), 16 * sizeof(float));
 
-		program.updateUniform(viewUniform, v);
+		program.updateUniform(viewUniform, glm::value_ptr(view));
+
+		//program.updateUniform(viewUniform, v);
 		//program.updateUniform(uniform2, r);
 
 		wgfx::submit(program);
