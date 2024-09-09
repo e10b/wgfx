@@ -76,7 +76,7 @@ int main(int _argc, char** _argv)
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", 1280, 720, SDL_WINDOW_RESIZABLE);
 
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
-	
+
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 	wgfx::VertexBuffer vbo(pointData, 6);
 	vbo.setAttribute(0, wgfx::vec3f, 0);
@@ -120,6 +120,8 @@ int main(int _argc, char** _argv)
 
 				//wgfx::destroySurface();
 				wgfx::initSurface();
+				vbo.initDepth(newWidth, newHeight);
+
 				program.updateUniform(uniform, t);
 
 				// Update viewport and aspect ratio uniform

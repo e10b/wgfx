@@ -51,7 +51,7 @@ namespace wgfx
 			binding.offset = 0;
 			binding.size = size;
 		}
-		
+
 		Uniform(int i, size_t size, const float* array) // Updated to accept const float* array -- no templates needed
 		{
 			index = i;
@@ -72,15 +72,44 @@ namespace wgfx
 		}
 	};
 
+	TextureView depthTextureView;
 	struct VertexBuffer
 	{
 		std::vector<VertexAttribute> vertexAttribs;
 		Buffer buffer;
 		uint32_t vertexCount = 0;
-		TextureView depthTextureView;
 		int fields;
 
 		VertexBuffer() {};
+
+		void initDepth(uint32_t w, uint32_t h)
+		{
+			// Create the depth texture
+			TextureDescriptor depthTextureDesc;
+			depthTextureDesc.dimension = TextureDimension::_2D;
+			depthTextureDesc.format = depthTextureFormat;
+			depthTextureDesc.mipLevelCount = 1;
+			depthTextureDesc.sampleCount = 1;
+			depthTextureDesc.size = { w, h, 1 };
+			depthTextureDesc.usage = TextureUsage::RenderAttachment;
+			depthTextureDesc.viewFormatCount = 1;
+			depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
+			Texture depthTexture = device.createTexture(depthTextureDesc);
+			std::cout << "Depth texture: " << depthTexture << std::endl;
+
+			// Create the view of the depth texture manipulated by the rasterizer
+			TextureViewDescriptor depthTextureViewDesc;
+			depthTextureViewDesc.aspect = TextureAspect::DepthOnly;
+			depthTextureViewDesc.baseArrayLayer = 0;
+			depthTextureViewDesc.arrayLayerCount = 1;
+			depthTextureViewDesc.baseMipLevel = 0;
+			depthTextureViewDesc.mipLevelCount = 1;
+			depthTextureViewDesc.dimension = TextureViewDimension::_2D;
+			depthTextureViewDesc.format = depthTextureFormat;
+			depthTextureView = depthTexture.createView(depthTextureViewDesc);
+			std::cout << "Depth texture view: " << depthTextureView << std::endl;
+
+		}
 
 		VertexBuffer(std::vector<float> vertices, int fields) // need a wgfx::createVertexBuffer()<<<
 		{
@@ -90,31 +119,7 @@ namespace wgfx
 			vertexCount = static_cast<uint32_t>(vertices.size() / fields);
 			//indexCount = static_cast<uint32_t>(indexData.size());
 
-					// Create the depth texture
-					TextureDescriptor depthTextureDesc;
-					depthTextureDesc.dimension = TextureDimension::_2D;
-					depthTextureDesc.format = depthTextureFormat;
-					depthTextureDesc.mipLevelCount = 1;
-					depthTextureDesc.sampleCount = 1;
-					depthTextureDesc.size = { 1280, 720, 1 };
-					depthTextureDesc.usage = TextureUsage::RenderAttachment;
-					depthTextureDesc.viewFormatCount = 1;
-					depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
-					Texture depthTexture = device.createTexture(depthTextureDesc);
-					std::cout << "Depth texture: " << depthTexture << std::endl;
-
-					// Create the view of the depth texture manipulated by the rasterizer
-					TextureViewDescriptor depthTextureViewDesc;
-					depthTextureViewDesc.aspect = TextureAspect::DepthOnly;
-					depthTextureViewDesc.baseArrayLayer = 0;
-					depthTextureViewDesc.arrayLayerCount = 1;
-					depthTextureViewDesc.baseMipLevel = 0;
-					depthTextureViewDesc.mipLevelCount = 1;
-					depthTextureViewDesc.dimension = TextureViewDimension::_2D;
-					depthTextureViewDesc.format = depthTextureFormat;
-					depthTextureView = depthTexture.createView(depthTextureViewDesc);
-					std::cout << "Depth texture view: " << depthTextureView << std::endl;
-
+			initDepth(1280, 720);
 
 			// Create vertex buffer
 			bufferDesc.size = vertices.size() * sizeof(float);
@@ -144,7 +149,7 @@ namespace wgfx
 	{
 		Buffer buffer;
 		uint32_t indexCount;
-		
+
 		IndexBuffer() : buffer(nullptr), indexCount(0) {} // allow for no index buff
 
 		IndexBuffer(std::vector<uint16_t> indices)
@@ -235,18 +240,18 @@ namespace wgfx
 			fragmentState.targetCount = 1;
 			fragmentState.targets = &colorTarget;
 
-					// We setup a depth buffer state for the render pipeline
-					DepthStencilState depthStencilState = Default;
-					// Keep a fragment only if its depth is lower than the previously blended one
-					depthStencilState.depthCompare = CompareFunction::Less;
-					// Each time a fragment is blended into the target, we update the value of the Z-buffer
-					depthStencilState.depthWriteEnabled = true;
-					// Store the format in a variable as later parts of the code depend on it
-					//TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
-					depthStencilState.format = depthTextureFormat;
-					// Deactivate the stencil alltogether
-					depthStencilState.stencilReadMask = 0;
-					depthStencilState.stencilWriteMask = 0;
+			// We setup a depth buffer state for the render pipeline
+			DepthStencilState depthStencilState = Default;
+			// Keep a fragment only if its depth is lower than the previously blended one
+			depthStencilState.depthCompare = CompareFunction::Less;
+			// Each time a fragment is blended into the target, we update the value of the Z-buffer
+			depthStencilState.depthWriteEnabled = true;
+			// Store the format in a variable as later parts of the code depend on it
+			//TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
+			depthStencilState.format = depthTextureFormat;
+			// Deactivate the stencil alltogether
+			depthStencilState.stencilReadMask = 0;
+			depthStencilState.stencilWriteMask = 0;
 
 			pipelineDesc.depthStencil = &depthStencilState;
 
@@ -288,7 +293,7 @@ namespace wgfx
 			bindGroupDesc.entries = bindings.data(); // Pass the array of entries
 			bindGroup = device.createBindGroup(bindGroupDesc);
 		}
-		
+
 
 		void setUniform(Uniform uniform)
 		{
@@ -312,7 +317,7 @@ namespace wgfx
 			bindGroupLayoutDesc.entryCount = entries.size(); // uh
 			bindGroupLayoutDesc.entries = entries.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
-			
+
 			// uniform groups
 
 
@@ -573,31 +578,31 @@ namespace wgfx
 		renderPassDesc.colorAttachmentCount = 1;
 		renderPassDesc.colorAttachments = &renderPassColorAttachment;
 
-				// We now add a depth/stencil attachment:
-				RenderPassDepthStencilAttachment depthStencilAttachment;
-				// The view of the depth texture
-				depthStencilAttachment.view = program.vertexBuffer.depthTextureView;
+		// We now add a depth/stencil attachment:
+		RenderPassDepthStencilAttachment depthStencilAttachment;
+		// The view of the depth texture
+		depthStencilAttachment.view = depthTextureView;
 
-				// The initial value of the depth buffer, meaning "far"
-				depthStencilAttachment.depthClearValue = 1.0f;
-				// Operation settings comparable to the color attachment
-				depthStencilAttachment.depthLoadOp = LoadOp::Clear;
-				depthStencilAttachment.depthStoreOp = StoreOp::Store;
-				// we could turn off writing to the depth buffer globally here
-				depthStencilAttachment.depthReadOnly = false;
+		// The initial value of the depth buffer, meaning "far"
+		depthStencilAttachment.depthClearValue = 1.0f;
+		// Operation settings comparable to the color attachment
+		depthStencilAttachment.depthLoadOp = LoadOp::Clear;
+		depthStencilAttachment.depthStoreOp = StoreOp::Store;
+		// we could turn off writing to the depth buffer globally here
+		depthStencilAttachment.depthReadOnly = false;
 
-				// Stencil setup, mandatory but unused
-				depthStencilAttachment.stencilClearValue = 0;
-		#ifdef WEBGPU_BACKEND_WGPU
-				depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
-				depthStencilAttachment.stencilStoreOp = StoreOp::Store;
-		#else
-				depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
-				depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
-		#endif
-				depthStencilAttachment.stencilReadOnly = true;
+		// Stencil setup, mandatory but unused
+		depthStencilAttachment.stencilClearValue = 0;
+#ifdef WEBGPU_BACKEND_WGPU
+		depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
+		depthStencilAttachment.stencilStoreOp = StoreOp::Store;
+#else
+		depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
+		depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
+#endif
+		depthStencilAttachment.stencilReadOnly = true;
 
-				renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
+		renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 
 
 		//renderPassDesc.depthStencilAttachment = nullptr;
@@ -613,9 +618,10 @@ namespace wgfx
 		renderPass.setBindGroup(0, program.bindGroup, 0, nullptr);
 		//renderPass.draw(vertexCount, 1, 0, 0);
 		if (program.indexBuffer.buffer) {
-		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
-		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
-		} else {
+			renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
+			renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+		}
+		else {
 			renderPass.draw(program.vertexBuffer.vertexCount, 1, 0, 0);
 		}
 
@@ -645,7 +651,7 @@ namespace wgfx
 		//device.ti
 #endif
 	}
-	
+
 	void frame()
 	{
 	}
