@@ -5,44 +5,20 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
-/*
-std::vector<float> pointData = {
-	// x,   y,     r,   g,   b
-	-0.5, -0.5, -0.3,   0.0, 1.0, 1.0, // Point #0
-	+0.5, -0.5, -0.3,   0.0, 1.0, 0.0, // Point #1
-	+0.5, +0.5, -0.3,   1.0, 0.0, 1.0, // Point #2
-	-0.5, +0.5, -0.3,   1.0, 1.0, 0.0,  // Point #3
-
-	0, 0, 0.5,			0.5, 0.5, 0.5
-};
-*/
 
 std::vector<float> pointData = {
-		-1, -1,  1,		0.0, 1.0, 1.0,	 //0
-		 1, -1,  1,		1.0, 1.0, 0.0,	 //1
-		-1,  1,  1,		0.0, 0.0, 1.0,	 //2
-		 1,  1,  1,		1.0, 1.0, 0.0,	 //3
-		-1, -1, -1,		1.0, 0.0, 1.0,	 //4
-		 1, -1, -1,		0.0, 1.0, 0.0,	 //5
-		-1,  1, -1,		1.0, 0.0, 1.0,	 //6
-		 1,  1, -1,		0.0, 1.0, 1.0,	 //7
+		-1, -1,  1,		0, 0, 0,
+		 1, -1,  1,		0, 0, 1,
+		-1,  1,  1,		0, 1, 0,
+		 1,  1,  1,		0, 1, 1,
+		-1, -1, -1,		1, 0, 0,
+		 1, -1, -1,		1, 0, 1,
+		-1,  1, -1,		1, 1, 0,
+		 1,  1, -1,		1, 1, 1,
 };
 
-// Define index data
-// This is a list of indices referencing positions in the pointData
-/*
 std::vector<uint16_t> indexData = {
-	0, 1, 2, // Triangle #0 connects points #0, #1 and #2
-	0, 2, 3,  // Triangle #1 connects points #0, #2 and #3
-
-	0, 1, 4,
-	1, 2, 4,
-	2, 3, 4,
-	3, 0, 4
-};
-*/
-std::vector<uint16_t> indexData = {
-	//Top
+		//Top
 		2, 6, 7,
 		2, 3, 7,
 

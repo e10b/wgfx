@@ -524,25 +524,26 @@ namespace wgfx
 
 
 		// INIT SURFACE(SWAP)
-		std::cout << "Creating swapchain...\n";
-		// Configure the surface
-		SurfaceConfiguration config = {};
+		/*
+			std::cout << "Creating swapchain...\n";
+			// Configure the surface
+			SurfaceConfiguration config = {};
 
-		// Configuration of the textures created for the underlying swap chain
-		config.width = width;
-		config.height = height;
-		config.usage = TextureUsage::RenderAttachment;
-		surfaceFormat = surface.getPreferredFormat(adapter);
-		config.format = surfaceFormat;//TextureFormat::BGRA8Unorm; //surfaceFormat
+			config.width = width;
+			config.height = height;
+			config.usage = TextureUsage::RenderAttachment;
+			surfaceFormat = surface.getPreferredFormat(adapter);
+			config.format = surfaceFormat;//TextureFormat::BGRA8Unorm; //surfaceFormat
 
-		// And we do not need any particular view format:
-		config.viewFormatCount = 0;
-		config.viewFormats = nullptr;
-		config.device = device;
-		config.presentMode = PresentMode::Fifo;
-		config.alphaMode = CompositeAlphaMode::Auto;
+			config.viewFormatCount = 0;
+			config.viewFormats = nullptr;
+			config.device = device;
+			config.presentMode = PresentMode::Fifo;
+			config.alphaMode = CompositeAlphaMode::Auto;
 
-		surface.configure(config);
+			surface.configure(config);
+		*/
+		initSurface();
 
 		// Release the adapter only after it has been fully utilized
 		//adapter.release();
