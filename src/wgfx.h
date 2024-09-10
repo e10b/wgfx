@@ -521,48 +521,10 @@ namespace wgfx
 
 		queue = device.getQueue();
 
-
-
-		// INIT SURFACE(SWAP)
-		/*
-			std::cout << "Creating swapchain...\n";
-			// Configure the surface
-			SurfaceConfiguration config = {};
-
-			config.width = width;
-			config.height = height;
-			config.usage = TextureUsage::RenderAttachment;
-			surfaceFormat = surface.getPreferredFormat(adapter);
-			config.format = surfaceFormat;//TextureFormat::BGRA8Unorm; //surfaceFormat
-
-			config.viewFormatCount = 0;
-			config.viewFormats = nullptr;
-			config.device = device;
-			config.presentMode = PresentMode::Fifo;
-			config.alphaMode = CompositeAlphaMode::Auto;
-
-			surface.configure(config);
-		*/
 		initSurface();
-
-		// Release the adapter only after it has been fully utilized
-		//adapter.release();
-
-
-
-		/*
-		program = wgfx::loadProgram(shaderSource);
-		buffer.setAttribute(0, 0);
-		buffer.setAttribute(1, 2);
-		program.setVertexBuffer(buffer);
-		*/
-
 	}
 
 	RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
-	void touch()
-	{
-	}
 
 	void submit(Program program)
 	{
@@ -663,15 +625,10 @@ namespace wgfx
 #elif defined(WEBGPU_BACKEND_WGPU)
 		//device.tick();
 		//device.poll(false);
-		//device.ti
 #endif
 	}
 
-	void frame()
-	{
-	}
-
-	inline std::string loadFromFile(const std::filesystem::path& path)
+	std::string loadFromFile(const std::filesystem::path& path)
 	{
 		std::ifstream file(path);
 		if (!file.is_open()) {
