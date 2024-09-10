@@ -5,48 +5,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-const char* shaderSource = R"(
-/**
- * A structure with fields labeled with vertex attribute locations can be used
- * as input to the entry point of a shader.
- */
-struct VertexInput {
-	@location(0) position: vec2f,
-	@location(1) color: vec3f,
-};
-
-/**
- * A structure with fields labeled with builtins and locations can also be used
- * as *output* of the vertex shader, which is also the input of the fragment
- * shader.
- */
-struct VertexOutput {
-	@builtin(position) position: vec4f,
-	// The location here does not refer to a vertex attribute, it just means
-	// that this field must be handled by the rasterizer.
-	// (It can also refer to another field of another struct that would be used
-	// as input to the fragment shader.)
-	@location(0) color: vec3f,
-};
-
-@vertex
-fn vs_main(in: VertexInput) -> VertexOutput {
-	//                         ^^^^^^^^^^^^ We return a custom struct
-	var out: VertexOutput; // create the output struct
-	let ratio = 640.0 / 480.0; // The width and height of the target surface
-	out.position = vec4f(in.position.x, in.position.y * ratio, 0.0, 1.0);
-	out.color = in.color; // forward the color attribute to the fragment shader
-	return out;
-}
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-	//     ^^^^^^^^^^^^^^^^ Use for instance the same struct as what the vertex outputs
-	return vec4f(in.color, 1.0); // use the interpolated color coming from the vertex shader
-}
-)";
-
+/*
 std::vector<float> pointData = {
 	// x,   y,     r,   g,   b
 	-0.5, -0.5, -0.3,   0.0, 1.0, 1.0, // Point #0
@@ -56,9 +15,22 @@ std::vector<float> pointData = {
 
 	0, 0, 0.5,			0.5, 0.5, 0.5
 };
+*/
+
+std::vector<float> pointData = {
+		-1, -1,  1,		0.0, 1.0, 1.0,	 //0
+		 1, -1,  1,		1.0, 1.0, 0.0,	 //1
+		-1,  1,  1,		0.0, 0.0, 1.0,	 //2
+		 1,  1,  1,		1.0, 1.0, 0.0,	 //3
+		-1, -1, -1,		1.0, 0.0, 1.0,	 //4
+		 1, -1, -1,		0.0, 1.0, 0.0,	 //5
+		-1,  1, -1,		1.0, 0.0, 1.0,	 //6
+		 1,  1, -1,		0.0, 1.0, 1.0,	 //7
+};
 
 // Define index data
 // This is a list of indices referencing positions in the pointData
+/*
 std::vector<uint16_t> indexData = {
 	0, 1, 2, // Triangle #0 connects points #0, #1 and #2
 	0, 2, 3,  // Triangle #1 connects points #0, #2 and #3
@@ -68,6 +40,33 @@ std::vector<uint16_t> indexData = {
 	2, 3, 4,
 	3, 0, 4
 };
+*/
+std::vector<uint16_t> indexData = {
+	//Top
+		2, 6, 7,
+		2, 3, 7,
+
+		//Bottom
+		0, 4, 5,
+		0, 1, 5,
+
+		//Left
+		0, 2, 6,
+		0, 4, 6,
+
+		//Right
+		1, 3, 7,
+		1, 5, 7,
+
+		//Front
+		0, 2, 3,
+		0, 1, 3,
+
+		//Back
+		4, 6, 7,
+		4, 5, 7
+};
+
 
 float aa = 1;
 int main(int _argc, char** _argv)
@@ -88,7 +87,7 @@ int main(int _argc, char** _argv)
 	wgfx::Uniform uniform2(1, sizeof(color), color);
 
 	glm::mat4 proj = glm::perspective(glm::radians(50.0f), float(1920) / 1080, 0.1f, 100.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
 	wgfx::Uniform viewUniform(2, sizeof(glm::mat4), glm::value_ptr(view));
