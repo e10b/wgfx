@@ -62,11 +62,13 @@ int main(int _argc, char** _argv)
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
-	wgfx::Uniform viewUniform(0, sizeof(glm::mat4), glm::value_ptr(view));
+	wgfx::Uniform viewUniform(0, sizeof(glm::mat4), 1.0f);
 	wgfx::Uniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
+	wgfx::Uniform modelUniform(2, sizeof(glm::mat4), 1.0f);
 
-	program.setUniform(viewUniform);
-	program.setUniform(projUniform);
+	program.setUniform(viewUniform, false);
+	program.setUniform(projUniform, false);
+	program.setUniform(modelUniform, true);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
@@ -111,9 +113,16 @@ int main(int _argc, char** _argv)
 		view = glm::rotate(view, 0.02f, glm::vec3(0.4f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
 		program.updateUniform(viewUniform, glm::value_ptr(view));
-
+		/*
+		glm::mat4 pos = glm::mat4(1.0f);
+		program.updateUniform(modelUniform, glm::value_ptr(pos));
 		wgfx::submit(program);
 
+		pos = glm::translate(pos, glm::vec3(-2.0f, 0.0f, 0.0f)); // Translate left by 1 unit
+		program.updateUniform(modelUniform, glm::value_ptr(pos));
+		wgfx::submit(program);
+		*/
+		wgfx::submit(program, modelUniform);
 	}
 
 }

@@ -17,9 +17,15 @@
 
 #include <array>
 
+//temp glm
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/gtc/type_ptr.hpp>
 using namespace wgpu;
 namespace wgfx
 {
+	Limits deviceLimits;
 	SDL_Window* swindow;
 
 	TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
@@ -27,6 +33,14 @@ namespace wgfx
 	Device device = nullptr;
 	Queue queue = nullptr;
 	Surface surface = nullptr;
+
+	/** Round 'value' up to the next multiplier of 'step' */
+	uint32_t ceilToNextMultiple(uint32_t value, uint32_t step) {
+		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
+		return step * divide_and_ceil;
+	}
+
+	uint32_t stride;
 
 	BufferDescriptor bufferDesc;
 	struct Uniform
@@ -41,7 +55,12 @@ namespace wgfx
 			index = i;
 			scale = size;
 
-			bufferDesc.size = size;
+			uint32_t uniformStride = ceilToNextMultiple(
+				(uint32_t)size,
+				(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
+			);
+			stride = uniformStride;
+			bufferDesc.size = uniformStride + size;
 			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 			bufferDesc.mappedAtCreation = false;
 			buffer = device.createBuffer(bufferDesc);
@@ -304,7 +323,7 @@ namespace wgfx
 		}
 
 
-		void setUniform(Uniform uniform)
+		void setUniform(Uniform uniform, bool dynamic)
 		{
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			// The binding index as used in the @binding attribute in the shader
@@ -313,8 +332,10 @@ namespace wgfx
 			bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
 			bindingLayout.buffer.type = BufferBindingType::Uniform;
 			bindingLayout.buffer.minBindingSize = uniform.scale;
-
-
+			if (dynamic)
+			{
+			bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
+			}
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
@@ -376,6 +397,11 @@ namespace wgfx
 		void updateUniform(Uniform uniform, const float* array)
 		{
 			queue.writeBuffer(uniform.buffer, 0, array, uniform.scale);
+		}
+
+		void updateUniform(Uniform uniform, const float* array, int offset)
+		{
+			queue.writeBuffer(uniform.buffer, offset, array, uniform.scale);
 		}
 
 
@@ -513,6 +539,11 @@ namespace wgfx
 		device = adapter.requestDevice(deviceDesc);
 		std::cout << "Got device: " << device << std::endl;
 
+		// Get device limits
+		SupportedLimits deviceSupportedLimits;
+		device.getLimits(&deviceSupportedLimits);
+		deviceLimits = deviceSupportedLimits.limits;
+
 		uncapturedErrorCallbackHandle = device.setUncapturedErrorCallback([](ErrorType type, char const* message) {
 			std::cout << "Uncaptured device error: type " << type;
 			if (message) std::cout << " (" << message << ")";
@@ -526,7 +557,7 @@ namespace wgfx
 
 	RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
 
-	void submit(Program program)
+	void submit(Program program, Uniform u)
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
@@ -591,16 +622,24 @@ namespace wgfx
 		
 		renderPass.setPipeline(program.pipeline);
 		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
+		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
 
-		renderPass.setBindGroup(0, program.bindGroup, 0, nullptr);
-		//renderPass.draw(vertexCount, 1, 0, 0);
-		if (program.indexBuffer.buffer) {
-			renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
-			renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
-		}
-		else {
-			renderPass.draw(program.vertexBuffer.vertexCount, 1, 0, 0);
-		}
+		uint32_t dynamicOffset = 0;
+
+		glm::mat4 pos = glm::mat4(1.0f);
+
+		program.updateUniform(u, glm::value_ptr(pos), 0);
+
+		dynamicOffset = 0 * stride;
+		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
+		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+
+		pos = glm::translate(pos, glm::vec3(-4.f, 0.0f, 0.0f)); // Translate left by 1 unit
+		program.updateUniform(u, glm::value_ptr(pos), stride);
+
+		dynamicOffset = 1 * stride;
+		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
+		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
 
 		renderPass.end();
 		renderPass.release();
