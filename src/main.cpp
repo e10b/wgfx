@@ -7,14 +7,14 @@
 #include <glm/gtc/type_ptr.hpp>
 
 std::vector<float> pointData = {
-		-1, -1,  1,		0, 0, 0,
-		 1, -1,  1,		0, 0, 1,
-		-1,  1,  1,		0, 1, 0,
-		 1,  1,  1,		0, 1, 1,
-		-1, -1, -1,		1, 0, 0,
-		 1, -1, -1,		1, 0, 1,
-		-1,  1, -1,		1, 1, 0,
-		 1,  1, -1,		1, 1, 1,
+		-1, -1,  1,	
+		 1, -1,  1,	
+		-1,  1,  1,	
+		 1,  1,  1,
+		-1, -1, -1,	
+		 1, -1, -1,	
+		-1,  1, -1,	
+		 1,  1, -1,	
 };
 
 std::vector<uint16_t> indexData = {
@@ -54,20 +54,17 @@ int main(int _argc, char** _argv)
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 	
 	wgfx::IndexBuffer ibo(indexData);
-	wgfx::VertexBuffer vbo(pointData, 6);
+	wgfx::VertexBuffer vbo(pointData, 3);
 		vbo.setAttribute(0, wgfx::vec3f, 0);
-		vbo.setAttribute(1, wgfx::vec3f, 3); // take in a type
 
 
 	glm::mat4 proj = glm::perspective(glm::radians(50.0f), float(1920) / 1080, 0.1f, 100.0f);
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
-	wgfx::Uniform time(0, sizeof(float), 1.0f);
-	wgfx::Uniform viewUniform(1, sizeof(glm::mat4), glm::value_ptr(view));
-	wgfx::Uniform projUniform(2, sizeof(glm::mat4), glm::value_ptr(proj));
+	wgfx::Uniform viewUniform(0, sizeof(glm::mat4), glm::value_ptr(view));
+	wgfx::Uniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
 
-	program.setUniform(time);
 	program.setUniform(viewUniform);
 	program.setUniform(projUniform);
 
@@ -92,7 +89,6 @@ int main(int _argc, char** _argv)
 				wgfx::initSurface();
 				wgfx::initDepth(newWidth, newHeight);
 
-				program.updateUniform(time, t);
 
 				proj = glm::perspective(glm::radians(50.0f), aspectRatio, 0.1f, 100.0f);
 				program.updateUniform(projUniform, glm::value_ptr(proj));
@@ -105,7 +101,6 @@ int main(int _argc, char** _argv)
 
 			case SDL_EVENT_WINDOW_EXPOSED:
 				wgfx::initSurface();
-				program.updateUniform(time, t);
 
 			default:
 				break;
@@ -115,7 +110,6 @@ int main(int _argc, char** _argv)
 
 		view = glm::rotate(view, 0.02f, glm::vec3(0.4f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
-		program.updateUniform(time, t);
 		program.updateUniform(viewUniform, glm::value_ptr(view));
 
 		wgfx::submit(program);
