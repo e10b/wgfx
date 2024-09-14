@@ -59,16 +59,18 @@ int main(int _argc, char** _argv)
 
 
 	glm::mat4 proj = glm::perspective(glm::radians(50.0f), float(1920) / 1080, 0.1f, 100.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
 	wgfx::Uniform viewUniform(0, sizeof(glm::mat4), 1.0f);
 	wgfx::Uniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
-	wgfx::Uniform modelUniform(2, sizeof(glm::mat4), 1.0f);
+	//wgfx::Uniform modelUniform(2, sizeof(glm::mat4), 1.0f);
+	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
 
 	program.setUniform(viewUniform, false);
 	program.setUniform(projUniform, false);
 	program.setUniform(modelUniform, true);
+	//program.setUniform(modelUniform, true);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
@@ -122,7 +124,26 @@ int main(int _argc, char** _argv)
 		program.updateUniform(modelUniform, glm::value_ptr(pos));
 		wgfx::submit(program);
 		*/
+
+
+
+
+
+
+
+
 		wgfx::submit(program, modelUniform);
+
+		glm::mat4 pos = glm::mat4(1.0f);
+		program.updateUniform(modelUniform, glm::value_ptr(pos), 0);
+		wgfx::draw(program);
+
+		pos = glm::translate(pos, glm::vec3(-2.0f, 0.0f, 0.0f)); // Translate left by 1 unit
+		program.updateUniform(modelUniform, glm::value_ptr(pos), 1);
+		wgfx::draw(program);
+
+
+		wgfx::frame();
 	}
 
 }

@@ -27,6 +27,7 @@ namespace wgfx
 {
 	Limits deviceLimits;
 	SDL_Window* swindow;
+	RenderPassEncoder renderPass = nullptr;
 
 	TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
 
@@ -39,10 +40,75 @@ namespace wgfx
 		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
 		return step * divide_and_ceil;
 	}
+	BufferDescriptor bufferDesc;
+
+	struct DynamicUniform
+	{
+		Buffer buffer;
+		BindGroupEntry binding;
+		int index;
+		size_t scale;
+
+		uint32_t stride;
+		int offset;
+		int quantity = 0; // uncrease when hmm, 
+
+		void updateUniform(DynamicUniform uniform, const float* array, int offset)
+		{
+			uint32_t dynamicOffset = offset * stride;
+			queue.writeBuffer(uniform.buffer, dynamicOffset, array, uniform.scale);
+			
+			//quantity++;
+		}
+
+		DynamicUniform(int i, size_t size, float data) // need a wgfx::createUniform
+		{
+			index = i;
+			scale = size;
+			// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
+			uint32_t uniformStride = ceilToNextMultiple(
+				(uint32_t)size,
+				(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
+			);
+			stride = uniformStride;
+			bufferDesc.size = 300 * uniformStride + size;
+			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
+			bufferDesc.mappedAtCreation = false;
+			buffer = device.createBuffer(bufferDesc);
+
+			queue.writeBuffer(buffer, 0, &data, size);
+
+			binding.binding = i;
+			binding.buffer = buffer;
+			binding.offset = 0;
+			binding.size = size;
+		}
+
+		DynamicUniform(int i, size_t size, const float* array) // Updated to accept const float* array -- no templates needed
+		{
+			index = i;
+			scale = size;
+
+			bufferDesc.size = size;
+			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
+			bufferDesc.mappedAtCreation = false;
+			buffer = device.createBuffer(bufferDesc);
+
+			// Use writeBuffer with the pointer to float data
+			queue.writeBuffer(buffer, 0, array, size);
+
+			binding.binding = i;
+			binding.buffer = buffer;
+			binding.offset = 0;
+			binding.size = size;
+		}
+	};
+
+
+
 
 	uint32_t stride;
 
-	BufferDescriptor bufferDesc;
 	struct Uniform
 	{
 		Buffer buffer;
@@ -54,13 +120,13 @@ namespace wgfx
 		{
 			index = i;
 			scale = size;
-
+			// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
 			uint32_t uniformStride = ceilToNextMultiple(
 				(uint32_t)size,
 				(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
 			);
 			stride = uniformStride;
-			bufferDesc.size = uniformStride + size;
+			bufferDesc.size = 300 * uniformStride + size;
 			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 			bufferDesc.mappedAtCreation = false;
 			buffer = device.createBuffer(bufferDesc);
@@ -198,6 +264,8 @@ namespace wgfx
 
 	struct Program
 	{
+		std::vector<DynamicUniform> dynamicUniforms;
+
 		RenderPipeline pipeline;
 
 		RenderPipelineDescriptor pipelineDesc;
@@ -340,6 +408,25 @@ namespace wgfx
 			bindings.push_back(uniform.binding);
 		}
 
+		void setUniform(DynamicUniform uniform, bool dynamic)
+		{
+			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
+			// The binding index as used in the @binding attribute in the shader
+			bindingLayout.binding = uniform.index;
+			// The stage that needs to access this resource
+			bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
+			bindingLayout.buffer.type = BufferBindingType::Uniform;
+			bindingLayout.buffer.minBindingSize = uniform.scale;
+			if (dynamic)
+			{
+				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
+				dynamicUniforms.push_back(uniform);
+			}
+			entries.push_back(bindingLayout);
+			bindings.push_back(uniform.binding);
+		}
+
+
 		void touch()
 		{
 			// Create a bind group layout
@@ -404,7 +491,14 @@ namespace wgfx
 			queue.writeBuffer(uniform.buffer, offset, array, uniform.scale);
 		}
 
-
+		void updateUniform(DynamicUniform uniform, const float* array, int offset)
+		{
+			uint32_t dynamicOffset = offset * stride;
+			queue.writeBuffer(uniform.buffer, dynamicOffset, array, uniform.scale);
+			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
+			
+				//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
+		}
 	};
 
 	Program loadProgram(std::string source)
@@ -431,7 +525,6 @@ namespace wgfx
 		return program;
 	}
 
-	RenderPassEncoder renderPass = nullptr;
 
 	CommandEncoder encoder = nullptr;
 	TextureView targetView = nullptr;
@@ -557,7 +650,7 @@ namespace wgfx
 
 	RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
 
-	void submit(Program program, Uniform u)
+	void submit(Program program, DynamicUniform u)
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
@@ -624,22 +717,85 @@ namespace wgfx
 		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
 		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
 
+				/*	glm::mat4 pos = glm::mat4(1.0f);
+					u.updateUniform(u, glm::value_ptr(pos), 0);		uint32_t dynamicOffset = 0;
+					renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
+					renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);*/
+
+
+		/*
 		uint32_t dynamicOffset = 0;
-
 		glm::mat4 pos = glm::mat4(1.0f);
-
 		program.updateUniform(u, glm::value_ptr(pos), 0);
-
 		dynamicOffset = 0 * stride;
 		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
 		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
 
 		pos = glm::translate(pos, glm::vec3(-4.f, 0.0f, 0.0f)); // Translate left by 1 unit
 		program.updateUniform(u, glm::value_ptr(pos), stride);
-
 		dynamicOffset = 1 * stride;
 		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
 		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+
+		pos = glm::translate(pos, glm::vec3(4.f + 4.f, 0.0f, 0.0f)); // Translate left by 1 unit
+		program.updateUniform(u, glm::value_ptr(pos), stride * 2);
+		dynamicOffset = 2 * stride;
+		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
+		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+
+		pos = glm::translate(pos, glm::vec3(0.0f, 4.0f, 0.0f)); // Translate left by 1 unit
+		program.updateUniform(u, glm::value_ptr(pos), stride * 3);
+		dynamicOffset = 3 * stride;
+		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset); // update uniform and set offset for it.
+		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+		*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		//must throw the dynamicOffset to renderPass.
+		// so, really we should have a collection of 
+		// of objects like dynamicUniform. which can be iterated throw
+		// for(auto uniform : dynamicUniforms) { uniform.dynamicOffset } ;
+		// we can then calll some kind of setDynamicUniform(uniform)
+
+		// when frame is called we should compile a chain
+		// must be able to call setTransform << but I don't want to use this notation I am thinking
+		// p[rehaps more like just a call to update << but a struggle
+		// since update is specific << integrating it naturally would be a benefit.
+		// although all we are calling is updateUniform to be honest..
+
+		// then all wgfx::submit should do is set the bind group and drawindexed *if indexed.
+		// we need to throw the offset to the bind group naturally, would be good if we could just calculate it, 
+
+		// a wgfx::submit takes in a program. 
+	}
+
+	void draw(Program program)
+	{
+		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+	}
+
+	void frame()
+	{
+		// heres what ill do,
+
+
 
 		renderPass.end();
 		renderPass.release();
