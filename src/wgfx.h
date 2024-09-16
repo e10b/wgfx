@@ -53,14 +53,6 @@ namespace wgfx
 		int offset;
 		int quantity = 0; // uncrease when hmm, 
 
-		void updateUniform(DynamicUniform uniform, const float* array, int offset)
-		{
-			uint32_t dynamicOffset = offset * stride;
-			queue.writeBuffer(uniform.buffer, dynamicOffset, array, uniform.scale);
-			
-			//quantity++;
-		}
-
 		DynamicUniform(int i, size_t size, float data) // need a wgfx::createUniform
 		{
 			index = i;
@@ -491,11 +483,12 @@ namespace wgfx
 			queue.writeBuffer(uniform.buffer, offset, array, uniform.scale);
 		}
 
-		void updateUniform(DynamicUniform uniform, const float* array, int offset)
+		void updateUniform(DynamicUniform* uniform, const float* array, int offset)
 		{
-			uint32_t dynamicOffset = offset * stride;
-			queue.writeBuffer(uniform.buffer, dynamicOffset, array, uniform.scale);
+			uint32_t dynamicOffset = uniform->quantity * stride; std::cout << uniform->quantity << "\n";
+			queue.writeBuffer(uniform->buffer, dynamicOffset, array, uniform->scale);
 			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
+			uniform->quantity++;
 			
 				//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
 		}
@@ -650,7 +643,7 @@ namespace wgfx
 
 	RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
 
-	void submit(Program program, DynamicUniform u)
+	void touch(Program program)
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
