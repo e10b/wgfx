@@ -256,7 +256,7 @@ namespace wgfx
 
 	struct Program
 	{
-		std::vector<DynamicUniform> dynamicUniforms;
+		std::vector<DynamicUniform*> dynamicUniforms;
 
 		RenderPipeline pipeline;
 
@@ -412,7 +412,7 @@ namespace wgfx
 			if (dynamic)
 			{
 				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
-				dynamicUniforms.push_back(uniform);
+				dynamicUniforms.push_back(&uniform);
 			}
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
@@ -483,12 +483,16 @@ namespace wgfx
 			queue.writeBuffer(uniform.buffer, offset, array, uniform.scale);
 		}
 
-		void updateUniform(DynamicUniform* uniform, const float* array, int offset)
+		void updateUniform(DynamicUniform uniform, const float* array, int offset)
 		{
-			uint32_t dynamicOffset = uniform->quantity * stride; std::cout << uniform->quantity << "\n";
-			queue.writeBuffer(uniform->buffer, dynamicOffset, array, uniform->scale);
+			//uint32_t dynamicOffset = uniform->quantity * stride; std::cout << uniform->quantity << "\n";
+			
+			uint32_t dynamicOffset = dynamicUniforms.at(0)->quantity * stride;
+
+			queue.writeBuffer(dynamicUniforms.at(0)->buffer, dynamicOffset, array, uniform.scale);
 			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
-			uniform->quantity++;
+			//uniform->quantity++;
+			dynamicUniforms.at(0)->quantity++;
 			
 				//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
 		}

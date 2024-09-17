@@ -64,16 +64,16 @@ int main(int _argc, char** _argv)
 
 	wgfx::Uniform viewUniform(0, sizeof(glm::mat4), 1.0f);
 	wgfx::Uniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
-	//wgfx::Uniform modelUniform(2, sizeof(glm::mat4), 1.0f);
+	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
 	//wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
 
-	wgfx::DynamicUniform* modelUniform = new wgfx::DynamicUniform(2, sizeof(glm::mat4), 1.0f);
+		//wgfx::DynamicUniform* modelUniform = new wgfx::DynamicUniform(2, sizeof(glm::mat4), 1.0f);
 
 
 
 	program.setUniform(viewUniform, false);
 	program.setUniform(projUniform, false);
-	program.setUniform(*modelUniform, true);
+	program.setUniform(modelUniform, true);
 	//program.setUniform(modelUniform, true);
 
 	program.setVertexBuffer(vbo);
@@ -147,7 +147,12 @@ int main(int _argc, char** _argv)
 		program.updateUniform(modelUniform, glm::value_ptr(pos), 1);
 		wgfx::draw(program);
 
-		modelUniform->quantity = 0;
+		//modelUniform->quantity = 0;
+		// 
+		for (auto uniform : program.dynamicUniforms)
+		{
+			uniform->quantity = 0;
+		}
 		//todo < internalize quantity handling of uniforms.
 
 		// I am thinking we send program.setUniform(uniform),
