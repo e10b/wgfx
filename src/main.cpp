@@ -62,8 +62,8 @@ int main(int _argc, char** _argv)
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 
-	wgfx::Uniform viewUniform(0, sizeof(glm::mat4), 1.0f);
-	wgfx::Uniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
+	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);
+	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
 	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
 	//wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
 
@@ -99,7 +99,7 @@ int main(int _argc, char** _argv)
 
 
 				proj = glm::perspective(glm::radians(50.0f), aspectRatio, 0.1f, 100.0f);
-				program.updateUniform(projUniform, glm::value_ptr(proj));
+				//program.updateUniform(projUniform, glm::value_ptr(proj));
 			}
 			break;
 
@@ -117,8 +117,9 @@ int main(int _argc, char** _argv)
 
 
 		view = glm::rotate(view, 0.02f, glm::vec3(0.4f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
+		wgfx::touch(program);
 
-		program.updateUniform(viewUniform, glm::value_ptr(view));
+		program.updateUniform(viewUniform, glm::value_ptr(view), 111);
 		/*
 		glm::mat4 pos = glm::mat4(1.0f);
 		program.updateUniform(modelUniform, glm::value_ptr(pos));
@@ -136,7 +137,6 @@ int main(int _argc, char** _argv)
 
 
 
-		wgfx::touch(program);
 
 
 		glm::mat4 pos = glm::mat4(1.0f);

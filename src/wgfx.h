@@ -99,58 +99,8 @@ namespace wgfx
 
 
 
-	uint32_t stride;
-
-	struct Uniform
-	{
-		Buffer buffer;
-		BindGroupEntry binding;
-		int index;
-		size_t scale;
-
-		Uniform(int i, size_t size, float data) // need a wgfx::createUniform
-		{
-			index = i;
-			scale = size;
-			// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
-			uint32_t uniformStride = ceilToNextMultiple(
-				(uint32_t)size,
-				(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
-			);
-			stride = uniformStride;
-			bufferDesc.size = 300 * uniformStride + size;
-			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
-			bufferDesc.mappedAtCreation = false;
-			buffer = device.createBuffer(bufferDesc);
-
-			queue.writeBuffer(buffer, 0, &data, size);
-
-			binding.binding = i;
-			binding.buffer = buffer;
-			binding.offset = 0;
-			binding.size = size;
-		}
-
-		Uniform(int i, size_t size, const float* array) // Updated to accept const float* array -- no templates needed
-		{
-			index = i;
-			scale = size;
-
-			bufferDesc.size = size;
-			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
-			bufferDesc.mappedAtCreation = false;
-			buffer = device.createBuffer(bufferDesc);
-
-			// Use writeBuffer with the pointer to float data
-			queue.writeBuffer(buffer, 0, array, size);
-
-			binding.binding = i;
-			binding.buffer = buffer;
-			binding.offset = 0;
-			binding.size = size;
-		}
-	};
-
+	//uint32_t stride; //global stride?
+	
 	TextureView depthTextureView;
 
 	void initDepth(uint32_t w, uint32_t h)
@@ -383,23 +333,6 @@ namespace wgfx
 		}
 
 
-		void setUniform(Uniform uniform, bool dynamic)
-		{
-			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
-			// The binding index as used in the @binding attribute in the shader
-			bindingLayout.binding = uniform.index;
-			// The stage that needs to access this resource
-			bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
-			bindingLayout.buffer.type = BufferBindingType::Uniform;
-			bindingLayout.buffer.minBindingSize = uniform.scale;
-			if (dynamic)
-			{
-			bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
-			}
-			entries.push_back(bindingLayout);
-			bindings.push_back(uniform.binding);
-		}
-
 		void setUniform(DynamicUniform uniform, bool dynamic)
 		{
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
@@ -412,8 +345,8 @@ namespace wgfx
 			if (dynamic)
 			{
 				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
-				dynamicUniforms.push_back(&uniform);
 			}
+			dynamicUniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
@@ -462,37 +395,16 @@ namespace wgfx
 			bindGroup = device.createBindGroup(bindGroupDesc);
 		}
 
-
-		void updateUniform(Uniform uniform, float data)
-		{
-			queue.writeBuffer(uniform.buffer, 0, &data, uniform.scale);
-		}
-		/*template <size_t N>
-		void updateUniform(Uniform uniform, const float(&array)[N])
-		{
-			queue.writeBuffer(uniform.buffer, 0, &array, uniform.scale);
-		}*/
-
-		void updateUniform(Uniform uniform, const float* array)
-		{
-			queue.writeBuffer(uniform.buffer, 0, array, uniform.scale);
-		}
-
-		void updateUniform(Uniform uniform, const float* array, int offset)
-		{
-			queue.writeBuffer(uniform.buffer, offset, array, uniform.scale);
-		}
-
 		void updateUniform(DynamicUniform uniform, const float* array, int offset)
 		{
 			//uint32_t dynamicOffset = uniform->quantity * stride; std::cout << uniform->quantity << "\n";
 			
-			uint32_t dynamicOffset = dynamicUniforms.at(0)->quantity * stride;
+			uint32_t dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
 
-			queue.writeBuffer(dynamicUniforms.at(0)->buffer, dynamicOffset, array, uniform.scale);
+			queue.writeBuffer(dynamicUniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
 			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
 			//uniform->quantity++;
-			dynamicUniforms.at(0)->quantity++;
+			dynamicUniforms.at(uniform.index)->quantity++;
 			
 				//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
 		}
