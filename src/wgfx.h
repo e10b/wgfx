@@ -395,7 +395,7 @@ namespace wgfx
 			bindGroup = device.createBindGroup(bindGroupDesc);
 		}
 
-		void updateUniform(DynamicUniform uniform, const float* array, int offset)
+		void updateUniform(DynamicUniform uniform, const float* array)
 		{
 			//uint32_t dynamicOffset = uniform->quantity * stride; std::cout << uniform->quantity << "\n";
 			
@@ -580,7 +580,7 @@ namespace wgfx
 		renderPassColorAttachment.resolveTarget = nullptr;
 		renderPassColorAttachment.loadOp = LoadOp::Clear;
 		renderPassColorAttachment.storeOp = StoreOp::Store;
-		renderPassColorAttachment.clearValue = WGPUColor{ 0.05, 0.05, 0.05, 1.0 };
+		renderPassColorAttachment.clearValue = WGPUColor{ 0.0188, 0.0188, 0.0188, 1.0 };
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU

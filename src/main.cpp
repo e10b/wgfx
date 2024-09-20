@@ -7,42 +7,30 @@
 #include <glm/gtc/type_ptr.hpp>
 
 std::vector<float> pointData = {
-		-1, -1,  1,	
-		 1, -1,  1,	
-		-1,  1,  1,	
-		 1,  1,  1,
-		-1, -1, -1,	
-		 1, -1, -1,	
-		-1,  1, -1,	
-		 1,  1, -1,	
+		-1, -1,  1,		0.0, 0.0, 0.0,
+		 1, -1,  1,		0.0, 0.0, 1.0,
+		-1,  1,  1,		0.0, 1.0, 0.0,
+		 1,  1,  1,		0.0, 1.0, 1.0,
+		-1, -1, -1,		1.0, 0.0, 0.0,
+		 1, -1, -1,		1.0, 0.0, 1.0,
+		-1,  1, -1,		1.0, 1.0, 0.0,
+		 1,  1, -1,		1.0, 1.0, 1.0,
 };
 
 std::vector<uint16_t> indexData = {
-		//Top
 		2, 6, 7,
 		2, 3, 7,
-
-		//Bottom
 		0, 4, 5,
 		0, 1, 5,
-
-		//Left
 		0, 2, 6,
 		0, 4, 6,
-
-		//Right
 		1, 3, 7,
 		1, 5, 7,
-
-		//Front
 		0, 2, 3,
 		0, 1, 3,
-
-		//Back
 		4, 6, 7,
 		4, 5, 7
 };
-
 
 int main(int _argc, char** _argv)
 {
@@ -52,29 +40,22 @@ int main(int _argc, char** _argv)
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
-	
+
 	wgfx::IndexBuffer ibo(indexData);
-	wgfx::VertexBuffer vbo(pointData, 3);
-		vbo.setAttribute(0, wgfx::vec3f, 0);
+	wgfx::VertexBuffer vbo(pointData, 6);
+	vbo.setAttribute(0, wgfx::vec3f, 0); // position
+	vbo.setAttribute(1, wgfx::vec3f, 3); // color
 
-
-	glm::mat4 proj = glm::perspective(glm::radians(50.0f), float(1920) / 1080, 0.1f, 100.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	view = glm::rotate(view, glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
+	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -35.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);
 	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
 	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
-	//wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
-
-		//wgfx::DynamicUniform* modelUniform = new wgfx::DynamicUniform(2, sizeof(glm::mat4), 1.0f);
-
-
 
 	program.setUniform(viewUniform, false);
 	program.setUniform(projUniform, false);
 	program.setUniform(modelUniform, true);
-	//program.setUniform(modelUniform, true);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
@@ -83,7 +64,7 @@ int main(int _argc, char** _argv)
 	while (!shouldClose)
 	{
 		SDL_Event event;
-		float t = SDL_GetTicks() / 1000.0f;
+		float time = SDL_GetTicks() / 1000.0f;
 		while (SDL_PollEvent(&event))
 		{
 			switch (event.type)
@@ -107,6 +88,12 @@ int main(int _argc, char** _argv)
 				shouldClose = true;
 				break;
 
+			case SDL_EVENT_KEY_DOWN:
+				if (event.key.key == SDLK_ESCAPE) {
+					shouldClose = true; // Close the application if Escape is pressed
+				}
+				break;
+
 			case SDL_EVENT_WINDOW_EXPOSED:
 				wgfx::initSurface();
 
@@ -116,51 +103,25 @@ int main(int _argc, char** _argv)
 		}
 
 
-		view = glm::rotate(view, 0.02f, glm::vec3(0.4f, 1.0f, 0.0f)); // Rotate 45 degrees around the Y-axis
 		wgfx::touch(program);
 
-		program.updateUniform(viewUniform, glm::value_ptr(view), 111);
-		/*
-		glm::mat4 pos = glm::mat4(1.0f);
-		program.updateUniform(modelUniform, glm::value_ptr(pos));
-		wgfx::submit(program);
+		program.updateUniform(viewUniform, glm::value_ptr(view));
 
-		pos = glm::translate(pos, glm::vec3(-2.0f, 0.0f, 0.0f)); // Translate left by 1 unit
-		program.updateUniform(modelUniform, glm::value_ptr(pos));
-		wgfx::submit(program);
-		*/
+		for (uint32_t yy = 0; yy < 11; ++yy) {
+			for (uint32_t xx = 0; xx < 11; ++xx) {
+				glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time + xx * 0.21f, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
+				rotationMatrix = glm::rotate(rotationMatrix, time + yy * 0.37f, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
+				rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, 0.0f, 1.0f);
+				float* mtx = glm::value_ptr(rotationMatrix);
+				program.updateUniform(modelUniform, (mtx));
+				wgfx::draw(program);
+			}
+		}
 
-
-
-
-
-
-
-
-
-
-		glm::mat4 pos = glm::mat4(1.0f);
-		program.updateUniform(modelUniform, glm::value_ptr(pos), 0);
-		wgfx::draw(program);
-
-		pos = glm::translate(pos, glm::vec3(-2.0f, 0.0f, 0.0f)); // Translate left by 1 unit
-		program.updateUniform(modelUniform, glm::value_ptr(pos), 1);
-		wgfx::draw(program);
-
-		//modelUniform->quantity = 0;
-		// 
 		for (auto uniform : program.dynamicUniforms)
 		{
 			uniform->quantity = 0;
 		}
-		//todo < internalize quantity handling of uniforms.
-
-		// I am thinking we send program.setUniform(uniform),
-
-		// to which it is stored in a vector,
-		// then we use the object as an identifier,
-		// so we are mainting the data (quantity etc)
-		// that way we don't have to mess with pointers on the high level..
 
 		wgfx::frame();
 	}
