@@ -25,6 +25,8 @@
 using namespace wgpu;
 namespace wgfx
 {
+	bool reset = false;
+
 	Limits deviceLimits;
 	SDL_Window* swindow;
 	RenderPassEncoder renderPass = nullptr;
@@ -220,8 +222,6 @@ namespace wgfx
 		{
 			std::cout << "Creating render pipeline..." << std::endl;
 			pipelineDesc = RenderPipelineDescriptor();
-
-
 		}
 
 		void setIndexBuffer(IndexBuffer buffer)
@@ -409,6 +409,8 @@ namespace wgfx
 				//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
 		}
 	};
+	//std::vector<Program*> programs;
+	std::vector<Program> programs;
 
 	Program loadProgram(std::string source)
 	{
@@ -431,6 +433,9 @@ namespace wgfx
 
 		Program program;
 		program.shaderModule = shaderModule;
+		//programs.push_back(&program);
+		programs.push_back(std::move(program));  // Move to avoid copying
+
 		return program;
 	}
 
@@ -613,98 +618,33 @@ namespace wgfx
 		depthStencilAttachment.stencilReadOnly = true;
 
 		renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
-
-
 		//renderPassDesc.depthStencilAttachment = nullptr;
+
 		renderPassDesc.timestampWrites = nullptr;
 		renderPass = encoder.beginRenderPass(renderPassDesc);
 
-
-		// things pipeline wise\
-		
 		renderPass.setPipeline(program.pipeline);
 		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
 		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
-
-				/*	glm::mat4 pos = glm::mat4(1.0f);
-					u.updateUniform(u, glm::value_ptr(pos), 0);		uint32_t dynamicOffset = 0;
-					renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
-					renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);*/
-
-
-		/*
-		uint32_t dynamicOffset = 0;
-		glm::mat4 pos = glm::mat4(1.0f);
-		program.updateUniform(u, glm::value_ptr(pos), 0);
-		dynamicOffset = 0 * stride;
-		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
-		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
-
-		pos = glm::translate(pos, glm::vec3(-4.f, 0.0f, 0.0f)); // Translate left by 1 unit
-		program.updateUniform(u, glm::value_ptr(pos), stride);
-		dynamicOffset = 1 * stride;
-		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
-		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
-
-		pos = glm::translate(pos, glm::vec3(4.f + 4.f, 0.0f, 0.0f)); // Translate left by 1 unit
-		program.updateUniform(u, glm::value_ptr(pos), stride * 2);
-		dynamicOffset = 2 * stride;
-		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset);
-		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
-
-		pos = glm::translate(pos, glm::vec3(0.0f, 4.0f, 0.0f)); // Translate left by 1 unit
-		program.updateUniform(u, glm::value_ptr(pos), stride * 3);
-		dynamicOffset = 3 * stride;
-		renderPass.setBindGroup(0, program.bindGroup, 1, &dynamicOffset); // update uniform and set offset for it.
-		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
-		*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		//must throw the dynamicOffset to renderPass.
-		// so, really we should have a collection of 
-		// of objects like dynamicUniform. which can be iterated throw
-		// for(auto uniform : dynamicUniforms) { uniform.dynamicOffset } ;
-		// we can then calll some kind of setDynamicUniform(uniform)
-
-		// when frame is called we should compile a chain
-		// must be able to call setTransform << but I don't want to use this notation I am thinking
-		// p[rehaps more like just a call to update << but a struggle
-		// since update is specific << integrating it naturally would be a benefit.
-		// although all we are calling is updateUniform to be honest..
-
-		// then all wgfx::submit should do is set the bind group and drawindexed *if indexed.
-		// we need to throw the offset to the bind group naturally, would be good if we could just calculate it, 
-
-		// a wgfx::submit takes in a program. 
 	}
 
 	void draw(Program program)
 	{
+		if (reset)
+		{
+			for (auto uniform : program.dynamicUniforms)
+			{
+				uniform->quantity = 0;
+			}
+		}
+		reset = false;
+
 		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
 	}
 
 	void frame()
 	{
-		// heres what ill do,
-
-
+		reset = true;
 
 		renderPass.end();
 		renderPass.release();

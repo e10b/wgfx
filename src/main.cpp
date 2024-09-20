@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 std::vector<float> pointData = {
+	//	 x	 y	 z		r	 g	  b
 		-1, -1,  1,		0.0, 0.0, 0.0,
 		 1, -1,  1,		0.0, 0.0, 1.0,
 		-1,  1,  1,		0.0, 1.0, 0.0,
@@ -41,27 +42,23 @@ int main(int _argc, char** _argv)
 
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 
-	wgfx::IndexBuffer ibo(indexData);
 	wgfx::VertexBuffer vbo(pointData, 6);
-	vbo.setAttribute(0, wgfx::vec3f, 0); // position
-	vbo.setAttribute(1, wgfx::vec3f, 3); // color
+		vbo.setAttribute(0, wgfx::vec3f, 0); // position
+		vbo.setAttribute(1, wgfx::vec3f, 3); // color
+	wgfx::IndexBuffer ibo(indexData);
 
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -35.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);
-	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));
-	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);
-
-	program.setUniform(viewUniform, false);
-	program.setUniform(projUniform, false);
-	program.setUniform(modelUniform, true);
+	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);				  program.setUniform(viewUniform, false);
+	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj)); program.setUniform(projUniform, false);
+	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  program.setUniform(modelUniform, true);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);
 
-	bool shouldClose = false;
-	while (!shouldClose)
+	bool close = false;
+	while (!close)
 	{
 		SDL_Event event;
 		float time = SDL_GetTicks() / 1000.0f;
@@ -71,33 +68,29 @@ int main(int _argc, char** _argv)
 			{
 			case SDL_EVENT_WINDOW_RESIZED:
 			{
-				int newWidth = event.window.data1;
-				int newHeight = event.window.data2;
-				float aspectRatio = (float)newWidth / (float)newHeight;
+				int w = event.window.data1;
+				int h = event.window.data2;
+				float aspectRatio = (float) w / (float) h;
 
 				wgfx::initSurface();
-				wgfx::initDepth(newWidth, newHeight);
-
+				wgfx::initDepth(w, h);
 
 				proj = glm::perspective(glm::radians(50.0f), aspectRatio, 0.1f, 100.0f);
-				//program.updateUniform(projUniform, glm::value_ptr(proj));
 			}
 			break;
 
 			case SDL_EVENT_QUIT:
-				shouldClose = true;
+				close = true;
 				break;
 
 			case SDL_EVENT_KEY_DOWN:
 				if (event.key.key == SDLK_ESCAPE) {
-					shouldClose = true; // Close the application if Escape is pressed
+					close = true; // Close the application if Escape is pressed
 				}
 				break;
 
 			case SDL_EVENT_WINDOW_EXPOSED:
 				wgfx::initSurface();
-
-			default:
 				break;
 			}
 		}
@@ -107,6 +100,7 @@ int main(int _argc, char** _argv)
 
 		program.updateUniform(viewUniform, glm::value_ptr(view));
 
+		// draw cubes
 		for (uint32_t yy = 0; yy < 11; ++yy) {
 			for (uint32_t xx = 0; xx < 11; ++xx) {
 				glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time + xx * 0.21f, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
@@ -116,11 +110,6 @@ int main(int _argc, char** _argv)
 				program.updateUniform(modelUniform, (mtx));
 				wgfx::draw(program);
 			}
-		}
-
-		for (auto uniform : program.dynamicUniforms)
-		{
-			uniform->quantity = 0;
 		}
 
 		wgfx::frame();
