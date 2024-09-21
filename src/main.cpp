@@ -6,6 +6,10 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
+//The view in bgfx is analogous to the combination of a RenderPass(which controls the rendering context) and a TextureView(which defines the render target).
+
+
 std::vector<float> pointData = {
 	//	 x	 y	 z		r	 g	  b
 		-1, -1,  1,		0.0, 0.0, 0.0,

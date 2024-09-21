@@ -27,6 +27,8 @@ namespace wgfx
 {
 	bool reset = false;
 
+	bool setup = false;
+
 	Limits deviceLimits;
 	SDL_Window* swindow;
 	RenderPassEncoder renderPass = nullptr;
@@ -320,7 +322,6 @@ namespace wgfx
 
 
 
-
 			// A bind group contains one or multiple bindings
 			BindGroupDescriptor bindGroupDesc;
 			bindGroupDesc.layout = bindGroupLayout;
@@ -330,6 +331,7 @@ namespace wgfx
 			bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
 			bindGroupDesc.entries = bindings.data(); // Pass the array of entries
 			bindGroup = device.createBindGroup(bindGroupDesc);
+			
 		}
 
 
@@ -382,18 +384,18 @@ namespace wgfx
 		//}
 
 		BindGroup bindGroup;
-		void linkUniforms()
-		{
-			// A bind group contains one or multiple bindings
-			BindGroupDescriptor bindGroupDesc;
-			bindGroupDesc.layout = bindGroupLayout;
-			// There must be as many bindings as declared in the layout!
-			//bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
-			//bindGroupDesc.entries = &uniform.binding;
-			bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
-			bindGroupDesc.entries = bindings.data(); // Pass the array of entries
-			bindGroup = device.createBindGroup(bindGroupDesc);
-		}
+		//void linkUniforms()
+		//{
+		//	// A bind group contains one or multiple bindings
+		//	BindGroupDescriptor bindGroupDesc;
+		//	bindGroupDesc.layout = bindGroupLayout;
+		//	// There must be as many bindings as declared in the layout!
+		//	//bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
+		//	//bindGroupDesc.entries = &uniform.binding;
+		//	bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
+		//	bindGroupDesc.entries = bindings.data(); // Pass the array of entries
+		//	bindGroup = device.createBindGroup(bindGroupDesc);
+		//}
 
 		void updateUniform(DynamicUniform uniform, const float* array)
 		{
@@ -523,6 +525,7 @@ namespace wgfx
 
 	void init(Surface surface, int width, int height)
 	{
+		setup = true;
 		// INIT DEVICE
 		RequestAdapterOptions adapterOpts = {};
 		adapterOpts.compatibleSurface = surface;
