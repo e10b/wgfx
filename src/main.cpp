@@ -99,8 +99,16 @@ int main(int _argc, char** _argv)
 			}
 		}
 
+		wgfx::View mainView;
+		// Set clear color to blue, depth to 1.0, and stencil to 0
+		mainView.setViewClear(glm::vec4(0.188f, 0.188f, 0.188f, 1.0f));
 
-		wgfx::touch(program);
+		// Set the view matrix (camera) and projection matrix
+			//glm::mat4 viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			//glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+			//mainView.setViewTransform(viewMatrix, projMatrix);
+
+		wgfx::touch(mainView); //wgfx::touch(0); << the view
 
 		program.updateUniform(viewUniform, glm::value_ptr(view));
 
@@ -112,11 +120,11 @@ int main(int _argc, char** _argv)
 				rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, 0.0f, 1.0f);
 				float* mtx = glm::value_ptr(rotationMatrix);
 				program.updateUniform(modelUniform, (mtx));
-				wgfx::draw(program);
+				wgfx::draw(program); //wgfx::submit(0, m_program); << the view and the program..
 			}
 		}
 
-		wgfx::frame();
+		wgfx::frame(mainView); // good
 	}
 
 }
