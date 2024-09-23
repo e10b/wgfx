@@ -47,22 +47,20 @@ int main(int _argc, char** _argv)
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 
 	wgfx::VertexBuffer vbo(pointData, 6);
-		vbo.setAttribute(0, wgfx::vec3f, 0); // position
-		vbo.setAttribute(1, wgfx::vec3f, 3); // color
+	vbo.setAttribute(0, wgfx::vec3f, 0); // position
+	vbo.setAttribute(1, wgfx::vec3f, 3); // color
 	wgfx::IndexBuffer ibo(indexData);
 
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -35.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	program.setVertexBuffer(vbo);
-	program.setIndexBuffer(ibo);
-	
 	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);				  program.setUniform(viewUniform, false);
 	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj)); program.setUniform(projUniform, false);
 	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  program.setUniform(modelUniform, true);
 
-	program.prepare();
-	
+	program.setVertexBuffer(vbo);
+	program.setIndexBuffer(ibo);
+
 	bool close = false;
 	while (!close)
 	{
@@ -76,7 +74,7 @@ int main(int _argc, char** _argv)
 			{
 				int w = event.window.data1;
 				int h = event.window.data2;
-				float aspectRatio = (float) w / (float) h;
+				float aspectRatio = (float)w / (float)h;
 
 				wgfx::initSurface();
 				wgfx::initDepth(w, h);
@@ -110,13 +108,6 @@ int main(int _argc, char** _argv)
 			//glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 			//mainView.setViewTransform(viewMatrix, projMatrix);
 
-			// Get the next target texture view
-		//targetView = getNextSurfaceTextureView();
-		//if (!targetView) return;
-			//view.renderTarget = getNextSurfaceTextureView();
-		//view.depthStencilView = 
-			//view.depthStencilView = initDepth(1920, 1080);
-
 		wgfx::touch(mainView); //wgfx::touch(0); << the view
 
 		program.updateUniform(viewUniform, glm::value_ptr(view));
@@ -133,7 +124,7 @@ int main(int _argc, char** _argv)
 			}
 		}
 
-		wgfx::frame(); // good
+		wgfx::frame(mainView); // good
 	}
 
 }

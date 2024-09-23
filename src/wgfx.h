@@ -26,17 +26,27 @@ using namespace wgpu;
 namespace wgfx
 {
 	struct View {
-		wgpu::TextureView renderTarget;     // Texture view for the render target (framebuffer)
-		wgpu::TextureView depthStencilView; // Texture view for the depth/stencil buffer
-		glm::vec4 clearColor;               // Color to use when clearing the render target
-		float clearDepth;                   // Value to clear the depth buffer
-		uint32_t clearStencil;              // Value to clear the stencil buffer
+		wgpu::RenderPassDescriptor renderPassDescriptor; // Descriptor for render pass
+		wgpu::CommandEncoder commandEncoder;             // Command encoder
+		wgpu::TextureView renderTarget;                  // Texture view for render target (framebuffer)
+		wgpu::TextureView depthStencilView;              // Texture view for depth/stencil buffer
+		wgpu::LoadOp loadOp = LoadOp::Clear;                             // Load operation (clear/load)
+		wgpu::StoreOp storeOp = StoreOp::Store;                           // Store operation (store/discard)
+		glm::mat4 viewMatrix;                            // View matrix (camera transformation)
+		glm::mat4 projMatrix;                            // Projection matrix
+		glm::vec4 clearColor;                            // Color to use when clearing the render target
+		float clearDepth;                                // Value for clearing depth buffer
+		uint32_t clearStencil;                           // Value for clearing stencil buffer
+		uint32_t x, y, width, height;                    // Viewport rectangle
+		bool enabled;                                    // Whether the view is enabled for rendering
 
 		View()
 			: clearColor(0.0f, 0.0f, 0.0f, 1.0f),        // Default clear color (black)
 			clearDepth(1.0f),                          // Default clear depth
-			clearStencil(0)                           // Default clear stencil
-		{}
+			clearStencil(0),                           // Default clear stencil
+			x(0), y(0), width(1280), height(720),      // Default viewport size
+			enabled(true) {}                           // View is enabled by default
+
 		// Set clear color, depth, and stencil
 		void setViewClear(const glm::vec4& color, float depth = 1.0f, uint32_t stencil = 0) {
 			clearColor = color;
@@ -44,6 +54,19 @@ namespace wgfx
 			clearStencil = stencil;
 		}
 
+		// Set view and projection matrices (for camera transformation)
+		void setViewTransform(const glm::mat4& view, const glm::mat4& proj) {
+			viewMatrix = view;
+			projMatrix = proj;
+		}
+
+		// Set viewport rectangle (defines rendering area)
+		void setViewRect(uint32_t xPos, uint32_t yPos, uint32_t w, uint32_t h) {
+			x = xPos;
+			y = yPos;
+			width = w;
+			height = h;
+		}
 	};
 
 
@@ -127,12 +150,12 @@ namespace wgfx
 
 
 	//uint32_t stride; //global stride?
-	
+
 	TextureView depthTextureView;
 
-	TextureView initDepth(uint32_t w, uint32_t h)
+	void initDepth(uint32_t w, uint32_t h)
 	{
-		
+
 		int width, height;
 		SDL_GetWindowSize(swindow, &width, &height);
 
@@ -161,7 +184,6 @@ namespace wgfx
 		depthTextureView = depthTexture.createView(depthTextureViewDesc);
 		std::cout << "Depth texture view: " << depthTextureView << std::endl;
 
-		return depthTextureView;
 	}
 
 	struct VertexBuffer
@@ -173,7 +195,7 @@ namespace wgfx
 
 		VertexBuffer() {};
 
-		
+
 
 		VertexBuffer(std::vector<float> vertices, int fields) // need a wgfx::createVertexBuffer()<<<
 		{
@@ -261,13 +283,11 @@ namespace wgfx
 		void setVertexBuffer(VertexBuffer buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
 		{
 			vertexBuffer = buffer;
-		}
-		void prepare()
-		{
+
 			VertexBufferLayout vertexBufferLayout;
-			vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer.vertexAttribs.size();
-			vertexBufferLayout.attributes = vertexBuffer.vertexAttribs.data();
-			vertexBufferLayout.arrayStride = (vertexBuffer.fields) * sizeof(float);
+			vertexBufferLayout.attributeCount = (uint32_t)buffer.vertexAttribs.size();
+			vertexBufferLayout.attributes = buffer.vertexAttribs.data();
+			vertexBufferLayout.arrayStride = (buffer.fields) * sizeof(float);
 			vertexBufferLayout.stepMode = VertexStepMode::Vertex;
 
 			pipelineDesc.vertex.bufferCount = 1;
@@ -347,12 +367,17 @@ namespace wgfx
 
 
 
+
+			// A bind group contains one or multiple bindings
 			BindGroupDescriptor bindGroupDesc;
 			bindGroupDesc.layout = bindGroupLayout;
+			// There must be as many bindings as declared in the layout!
+			//bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
+			//bindGroupDesc.entries = &uniform.binding;
 			bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
 			bindGroupDesc.entries = bindings.data(); // Pass the array of entries
 			bindGroup = device.createBindGroup(bindGroupDesc);
-			
+
 		}
 
 
@@ -369,9 +394,9 @@ namespace wgfx
 			{
 				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
 			}
+			dynamicUniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
-			dynamicUniforms.push_back(&uniform);
 		}
 
 
@@ -421,15 +446,15 @@ namespace wgfx
 		void updateUniform(DynamicUniform uniform, const float* array)
 		{
 			//uint32_t dynamicOffset = uniform->quantity * stride; std::cout << uniform->quantity << "\n";
-			
+
 			uint32_t dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
 
 			queue.writeBuffer(dynamicUniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
 			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
 			//uniform->quantity++;
 			dynamicUniforms.at(uniform.index)->quantity++;
-			
-				//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
+
+			//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
 		}
 	};
 	//std::vector<Program*> programs;
@@ -457,7 +482,7 @@ namespace wgfx
 		program.shaderModule = shaderModule;
 		//programs.push_back(&program);
 		programs.push_back(&program);  // Move to avoid copying
-		
+
 		return program;
 	}
 
@@ -585,45 +610,42 @@ namespace wgfx
 		initSurface();
 	}
 
-	RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
+	//RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
 
 	void touch(View& view)
 	{
 		// Get the next target texture view
-		//targetView = getNextSurfaceTextureView();
-		//if (!targetView) return;
-			view.renderTarget = getNextSurfaceTextureView();
-		//view.depthStencilView = 
-			view.depthStencilView = initDepth(1920, 1080);
-
+		targetView = getNextSurfaceTextureView();
+		if (!targetView) return;
 
 		// Create a command encoder for the draw call
 		CommandEncoderDescriptor encoderDesc = {};
 		encoderDesc.label = "My command encoder";
-		encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
-		encoder = device.createCommandEncoder();
+		//encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+		view.commandEncoder = device.createCommandEncoder();
 
 		// Create the render pass that clears the screen with our color
-		renderPassDesc = {};
+		//renderPassDesc = {};
 
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
-		renderPassColorAttachment.view = view.renderTarget;//targetView; // this is the view part
+
+		renderPassColorAttachment.view = targetView;
 		renderPassColorAttachment.resolveTarget = nullptr;
-		renderPassColorAttachment.loadOp = LoadOp::Clear;
-		renderPassColorAttachment.storeOp = StoreOp::Store;
+		renderPassColorAttachment.loadOp = view.loadOp;
+		renderPassColorAttachment.storeOp = view.storeOp;
 		renderPassColorAttachment.clearValue = { view.clearColor.r / 10, view.clearColor.g / 10, view.clearColor.b / 10, view.clearColor.a };
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU
 
-		renderPassDesc.colorAttachmentCount = 1;
-		renderPassDesc.colorAttachments = &renderPassColorAttachment;
+		view.renderPassDescriptor.colorAttachmentCount = 1;
+		view.renderPassDescriptor.colorAttachments = &renderPassColorAttachment;
 
 		// We now add a depth/stencil attachment:
 		RenderPassDepthStencilAttachment depthStencilAttachment;
 		// The view of the depth texture
-		depthStencilAttachment.view = view.depthStencilView;//depthTextureView; 
+		depthStencilAttachment.view = depthTextureView;
 
 		// The initial value of the depth buffer, meaning "far"
 		depthStencilAttachment.depthClearValue = view.clearDepth;
@@ -644,13 +666,13 @@ namespace wgfx
 #endif
 		depthStencilAttachment.stencilReadOnly = true;
 
-		renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
+		view.renderPassDescriptor.depthStencilAttachment = &depthStencilAttachment;
 		//renderPassDesc.depthStencilAttachment = nullptr;
 
-		renderPassDesc.timestampWrites = nullptr;
+		view.renderPassDescriptor.timestampWrites = nullptr;
 		//renderPass = encoder.beginRenderPass(renderPassDesc);
 
-		renderPass = encoder.beginRenderPass(renderPassDesc);
+		renderPass = view.commandEncoder.beginRenderPass(view.renderPassDescriptor);
 
 		/*renderPass.setPipeline(program.pipeline);
 		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
@@ -675,7 +697,7 @@ namespace wgfx
 		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
 	}
 
-	void frame()
+	void frame(View& view)
 	{
 		reset = true;
 
@@ -684,8 +706,8 @@ namespace wgfx
 		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
 		cmdBufferDescriptor.label = "Command buffer";
-		CommandBuffer command = encoder.finish(cmdBufferDescriptor);
-		encoder.release();
+		CommandBuffer command = view.commandEncoder.finish(cmdBufferDescriptor);
+		view.commandEncoder.release();
 
 		//std::cout << "Submitting command..." << std::endl;
 		queue.submit(1, &command);
@@ -693,7 +715,7 @@ namespace wgfx
 		//std::cout << "Command submitted." << std::endl;
 
 		// At the end of the frame
-		//targetView.release();
+		targetView.release();
 #ifndef __EMSCRIPTEN__
 		surface.present();
 #endif
