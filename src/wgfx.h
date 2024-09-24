@@ -86,14 +86,12 @@ namespace wgfx
 	Surface surface = nullptr;
 
 
-	struct wTexture
+	struct Texture
 	{
 		TextureView textureView;
 		
-		wTexture()
+		Texture()
 		{
-		}
-		void dothing(){
 			// Create the color texture
 			TextureDescriptor textureDesc;
 			textureDesc.dimension = TextureDimension::_2D;
@@ -105,7 +103,7 @@ namespace wgfx
 			textureDesc.usage = TextureUsage::TextureBinding | TextureUsage::CopyDst;
 			textureDesc.viewFormatCount = 0;
 			textureDesc.viewFormats = nullptr;
-			Texture texture = device.createTexture(textureDesc);
+			wgpu::Texture texture = device.createTexture(textureDesc);
 			std::cout << "Texture: " << texture << std::endl;
 
 			TextureViewDescriptor textureViewDesc;
@@ -211,7 +209,7 @@ namespace wgfx
 			binding.size = size;
 		}
 
-		DynamicUniform(wTexture texture, int i)
+		DynamicUniform(int i, Texture texture)
 		{
 			index = i;
 
@@ -243,7 +241,7 @@ namespace wgfx
 		depthTextureDesc.usage = TextureUsage::RenderAttachment;
 		depthTextureDesc.viewFormatCount = 1;
 		depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
-		Texture depthTexture = device.createTexture(depthTextureDesc);
+		wgpu::Texture depthTexture = device.createTexture(depthTextureDesc);
 		std::cout << "Depth texture: " << depthTexture << std::endl;
 
 		// Create the view of the depth texture manipulated by the rasterizer
@@ -452,11 +450,8 @@ namespace wgfx
 		}
 
 
-		void setUniform(DynamicUniform uniform, bool dynamic, bool texture)
+		void setUniform(DynamicUniform uniform, bool dynamic)
 		{
-			if (!texture)
-			{
-
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			// The binding index as used in the @binding attribute in the shader
 			bindingLayout.binding = uniform.index;
@@ -464,29 +459,27 @@ namespace wgfx
 			bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
 			bindingLayout.buffer.type = BufferBindingType::Uniform;
 			bindingLayout.buffer.minBindingSize = uniform.scale;
-				if (dynamic)
-				{
-					bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
-				}
-				dynamicUniforms.push_back(&uniform);
-				entries.push_back(bindingLayout);
-				bindings.push_back(uniform.binding);
-			}
-			else
+			if (dynamic)
 			{
-				BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
-				bindingLayout.binding = uniform.index;
-				bindingLayout.visibility = ShaderStage::Fragment;
-				bindingLayout.texture.sampleType = TextureSampleType::Float;
-				bindingLayout.texture.viewDimension = TextureViewDimension::_2D;
-
-
-				dynamicUniforms.push_back(&uniform);
-				entries.push_back(bindingLayout);
-				bindings.push_back(uniform.binding);
+				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
 			}
+			dynamicUniforms.push_back(&uniform);
+			entries.push_back(bindingLayout);
+			bindings.push_back(uniform.binding);
 		}
 
+		void setTexture(DynamicUniform uniform)
+		{
+			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
+			bindingLayout.binding = uniform.index;
+			bindingLayout.visibility = ShaderStage::Fragment;
+			bindingLayout.texture.sampleType = TextureSampleType::Float;
+			bindingLayout.texture.viewDimension = TextureViewDimension::_2D;
+
+			dynamicUniforms.push_back(&uniform);
+			entries.push_back(bindingLayout);
+			bindings.push_back(uniform.binding);
+		}
 
 		void touch()
 		{
@@ -599,7 +592,7 @@ namespace wgfx
 		if (surfaceTexture.status != SurfaceGetCurrentTextureStatus::Success) {
 			return nullptr;
 		}
-		Texture texture = surfaceTexture.texture;
+		wgpu::Texture texture = surfaceTexture.texture;
 
 		// Create a view for this surface texture
 		TextureViewDescriptor viewDescriptor;
