@@ -54,9 +54,13 @@ int main(int _argc, char** _argv)
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -35.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);				  program.setUniform(viewUniform, false);
-	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj)); program.setUniform(projUniform, false);
-	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  program.setUniform(modelUniform, true);
+	wgfx::wTexture tex;
+	tex.dothing();
+	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);				  program.setUniform(viewUniform, false, false);
+	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj)); program.setUniform(projUniform, false, false);
+	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  program.setUniform(modelUniform, true, false);
+
+	wgfx::DynamicUniform sampler(tex, 3); program.setUniform(sampler, false, true);
 
 	program.setVertexBuffer(vbo);
 	program.setIndexBuffer(ibo);

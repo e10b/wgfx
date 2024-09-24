@@ -85,6 +85,72 @@ namespace wgfx
 	Queue queue = nullptr;
 	Surface surface = nullptr;
 
+
+	struct wTexture
+	{
+		TextureView textureView;
+		
+		wTexture()
+		{
+		}
+		void dothing(){
+			// Create the color texture
+			TextureDescriptor textureDesc;
+			textureDesc.dimension = TextureDimension::_2D;
+			textureDesc.size = { 256, 256, 1 };
+			//                             ^ ignored because it is a 2D texture
+			textureDesc.mipLevelCount = 1; // We'll see mipmaps later on
+			textureDesc.sampleCount = 1; // We'll see multisampling later on
+			textureDesc.format = TextureFormat::RGBA8Unorm;
+			textureDesc.usage = TextureUsage::TextureBinding | TextureUsage::CopyDst;
+			textureDesc.viewFormatCount = 0;
+			textureDesc.viewFormats = nullptr;
+			Texture texture = device.createTexture(textureDesc);
+			std::cout << "Texture: " << texture << std::endl;
+
+			TextureViewDescriptor textureViewDesc;
+			textureViewDesc.aspect = TextureAspect::All;
+			textureViewDesc.baseArrayLayer = 0;
+			textureViewDesc.arrayLayerCount = 1;
+			textureViewDesc.baseMipLevel = 0;
+			textureViewDesc.mipLevelCount = 1;
+			textureViewDesc.dimension = TextureViewDimension::_2D;
+			textureViewDesc.format = textureDesc.format;
+			textureView = texture.createView(textureViewDesc);
+			std::cout << "Texture view: " << textureView << std::endl;
+
+			// Create image data
+			std::vector<uint8_t> pixels(4 * textureDesc.size.width * textureDesc.size.height);
+			for (uint32_t i = 0; i < textureDesc.size.width; ++i) {
+				for (uint32_t j = 0; j < textureDesc.size.height; ++j) {
+					uint8_t* p = &pixels[4 * (j * textureDesc.size.width + i)];
+					p[0] = (uint8_t)i; // r
+					p[1] = (uint8_t)j; // g
+					p[2] = 128; // b
+					p[3] = 255; // a
+				}
+			}
+
+			// Upload texture data
+			// Arguments telling which part of the texture we upload to
+			// (together with the last argument of writeTexture)
+			ImageCopyTexture destination;
+			destination.texture = texture;
+			destination.mipLevel = 0;
+			destination.origin = { 0, 0, 0 }; // equivalent of the offset argument of Queue::writeBuffer
+			destination.aspect = TextureAspect::All; // only relevant for depth/Stencil textures
+
+			// Arguments telling how the C++ side pixel memory is laid out
+			TextureDataLayout source;
+			source.offset = 0;
+			source.bytesPerRow = 4 * textureDesc.size.width;
+			source.rowsPerImage = textureDesc.size.height;
+
+			queue.writeTexture(destination, pixels.data(), pixels.size(), source, textureDesc.size);
+		}
+	};
+
+
 	/** Round 'value' up to the next multiplier of 'step' */
 	uint32_t ceilToNextMultiple(uint32_t value, uint32_t step) {
 		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
@@ -143,6 +209,14 @@ namespace wgfx
 			binding.buffer = buffer;
 			binding.offset = 0;
 			binding.size = size;
+		}
+
+		DynamicUniform(wTexture texture, int i)
+		{
+			index = i;
+
+			binding.binding = i;
+			binding.textureView = texture.textureView;
 		}
 	};
 
@@ -371,18 +445,18 @@ namespace wgfx
 			// A bind group contains one or multiple bindings
 			BindGroupDescriptor bindGroupDesc;
 			bindGroupDesc.layout = bindGroupLayout;
-			// There must be as many bindings as declared in the layout!
-			//bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
-			//bindGroupDesc.entries = &uniform.binding;
-			bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
+			bindGroupDesc.entryCount = (uint32_t)bindings.size();
 			bindGroupDesc.entries = bindings.data(); // Pass the array of entries
 			bindGroup = device.createBindGroup(bindGroupDesc);
 
 		}
 
 
-		void setUniform(DynamicUniform uniform, bool dynamic)
+		void setUniform(DynamicUniform uniform, bool dynamic, bool texture)
 		{
+			if (!texture)
+			{
+
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			// The binding index as used in the @binding attribute in the shader
 			bindingLayout.binding = uniform.index;
@@ -390,13 +464,27 @@ namespace wgfx
 			bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
 			bindingLayout.buffer.type = BufferBindingType::Uniform;
 			bindingLayout.buffer.minBindingSize = uniform.scale;
-			if (dynamic)
-			{
-				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
+				if (dynamic)
+				{
+					bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
+				}
+				dynamicUniforms.push_back(&uniform);
+				entries.push_back(bindingLayout);
+				bindings.push_back(uniform.binding);
 			}
-			dynamicUniforms.push_back(&uniform);
-			entries.push_back(bindingLayout);
-			bindings.push_back(uniform.binding);
+			else
+			{
+				BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
+				bindingLayout.binding = uniform.index;
+				bindingLayout.visibility = ShaderStage::Fragment;
+				bindingLayout.texture.sampleType = TextureSampleType::Float;
+				bindingLayout.texture.viewDimension = TextureViewDimension::_2D;
+
+
+				dynamicUniforms.push_back(&uniform);
+				entries.push_back(bindingLayout);
+				bindings.push_back(uniform.binding);
+			}
 		}
 
 
