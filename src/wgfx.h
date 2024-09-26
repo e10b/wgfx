@@ -25,55 +25,8 @@
 using namespace wgpu;
 namespace wgfx
 {
-	struct View {
-		wgpu::RenderPassDescriptor renderPassDescriptor; // Descriptor for render pass
-		wgpu::CommandEncoder commandEncoder;             // Command encoder
-		wgpu::TextureView renderTarget;                  // Texture view for render target (framebuffer)
-		wgpu::TextureView depthStencilView;              // Texture view for depth/stencil buffer
-		wgpu::LoadOp loadOp = LoadOp::Clear;                             // Load operation (clear/load)
-		wgpu::StoreOp storeOp = StoreOp::Store;                           // Store operation (store/discard)
-		glm::mat4 viewMatrix;                            // View matrix (camera transformation)
-		glm::mat4 projMatrix;                            // Projection matrix
-		glm::vec4 clearColor;                            // Color to use when clearing the render target
-		float clearDepth;                                // Value for clearing depth buffer
-		uint32_t clearStencil;                           // Value for clearing stencil buffer
-		uint32_t x, y, width, height;                    // Viewport rectangle
-		bool enabled;                                    // Whether the view is enabled for rendering
-
-		View()
-			: clearColor(0.0f, 0.0f, 0.0f, 1.0f),        // Default clear color (black)
-			clearDepth(1.0f),                          // Default clear depth
-			clearStencil(0),                           // Default clear stencil
-			x(0), y(0), width(1280), height(720),      // Default viewport size
-			enabled(true) {}                           // View is enabled by default
-
-		// Set clear color, depth, and stencil
-		void setViewClear(const glm::vec4& color, float depth = 1.0f, uint32_t stencil = 0) {
-			clearColor = color;
-			clearDepth = depth;
-			clearStencil = stencil;
-		}
-
-		// Set view and projection matrices (for camera transformation)
-		void setViewTransform(const glm::mat4& view, const glm::mat4& proj) {
-			viewMatrix = view;
-			projMatrix = proj;
-		}
-
-		// Set viewport rectangle (defines rendering area)
-		void setViewRect(uint32_t xPos, uint32_t yPos, uint32_t w, uint32_t h) {
-			x = xPos;
-			y = yPos;
-			width = w;
-			height = h;
-		}
-	};
-
-
 
 	bool reset = false;
-
-	bool setup = false;
 
 	Limits deviceLimits;
 	SDL_Window* swindow;
@@ -86,6 +39,15 @@ namespace wgfx
 	Surface surface = nullptr;
 
 
+	struct Framebuffer
+	{
+		RenderPassEncoder renderPass = nullptr;
+		Framebuffer()
+		{
+
+		}
+	};
+
 	struct Texture
 	{
 		TextureView textureView;
@@ -96,9 +58,8 @@ namespace wgfx
 			TextureDescriptor textureDesc;
 			textureDesc.dimension = TextureDimension::_2D;
 			textureDesc.size = { 256, 256, 1 };
-			//                             ^ ignored because it is a 2D texture
-			textureDesc.mipLevelCount = 1; // We'll see mipmaps later on
-			textureDesc.sampleCount = 1; // We'll see multisampling later on
+			textureDesc.mipLevelCount = 1;
+			textureDesc.sampleCount = 1;
 			textureDesc.format = TextureFormat::RGBA8Unorm;
 			textureDesc.usage = TextureUsage::TextureBinding | TextureUsage::CopyDst;
 			textureDesc.viewFormatCount = 0;
@@ -130,21 +91,18 @@ namespace wgfx
 			}
 
 			// Upload texture data
-			// Arguments telling which part of the texture we upload to
-			// (together with the last argument of writeTexture)
 			ImageCopyTexture destination;
 			destination.texture = texture;
 			destination.mipLevel = 0;
-			destination.origin = { 0, 0, 0 }; // equivalent of the offset argument of Queue::writeBuffer
-			destination.aspect = TextureAspect::All; // only relevant for depth/Stencil textures
-
-			// Arguments telling how the C++ side pixel memory is laid out
+			destination.origin = { 0, 0, 0 };
+			destination.aspect = TextureAspect::All;
 			TextureDataLayout source;
 			source.offset = 0;
 			source.bytesPerRow = 4 * textureDesc.size.width;
 			source.rowsPerImage = textureDesc.size.height;
-
 			queue.writeTexture(destination, pixels.data(), pixels.size(), source, textureDesc.size);
+
+
 		}
 	};
 
@@ -337,6 +295,15 @@ namespace wgfx
 
 		VertexBuffer vertexBuffer;
 		IndexBuffer indexBuffer;
+
+		//RenderPassEncoder pass = nullptr;
+
+		std::vector<Framebuffer*> framebuffers;
+
+		void setFramebuffer(Framebuffer* framebuffer)
+		{
+			framebuffers.emplace_back(framebuffer);
+		}
 
 		Program()
 		{
@@ -531,7 +498,7 @@ namespace wgfx
 			uint32_t dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
 
 			queue.writeBuffer(dynamicUniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
-			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
+			framebuffers.at(0)->renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
 			//uniform->quantity++;
 			dynamicUniforms.at(uniform.index)->quantity++;
 
@@ -651,7 +618,6 @@ namespace wgfx
 
 	void init(Surface surface, int width, int height)
 	{
-		setup = true;
 		// INIT DEVICE
 		RequestAdapterOptions adapterOpts = {};
 		adapterOpts.compatibleSurface = surface;
@@ -693,7 +659,7 @@ namespace wgfx
 
 	//RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
 
-	void touch(View& view)
+	void touch(Framebuffer* framebuffer)
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
@@ -703,25 +669,25 @@ namespace wgfx
 		CommandEncoderDescriptor encoderDesc = {};
 		encoderDesc.label = "My command encoder";
 		//encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
-		view.commandEncoder = device.createCommandEncoder();
+		encoder = device.createCommandEncoder();
 
 		// Create the render pass that clears the screen with our color
-		//renderPassDesc = {};
+		RenderPassDescriptor renderPassDesc{};
 
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
 
 		renderPassColorAttachment.view = targetView;
 		renderPassColorAttachment.resolveTarget = nullptr;
-		renderPassColorAttachment.loadOp = view.loadOp;
-		renderPassColorAttachment.storeOp = view.storeOp;
-		renderPassColorAttachment.clearValue = { view.clearColor.r / 10, view.clearColor.g / 10, view.clearColor.b / 10, view.clearColor.a };
+		renderPassColorAttachment.loadOp = LoadOp::Clear;
+		renderPassColorAttachment.storeOp = StoreOp::Store;
+		renderPassColorAttachment.clearValue = { 0.05, 0.05, 0.05, 1.0 };
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU
 
-		view.renderPassDescriptor.colorAttachmentCount = 1;
-		view.renderPassDescriptor.colorAttachments = &renderPassColorAttachment;
+		renderPassDesc.colorAttachmentCount = 1;
+		renderPassDesc.colorAttachments = &renderPassColorAttachment;
 
 		// We now add a depth/stencil attachment:
 		RenderPassDepthStencilAttachment depthStencilAttachment;
@@ -729,7 +695,7 @@ namespace wgfx
 		depthStencilAttachment.view = depthTextureView;
 
 		// The initial value of the depth buffer, meaning "far"
-		depthStencilAttachment.depthClearValue = view.clearDepth;
+		depthStencilAttachment.depthClearValue = 1.0f;
 		// Operation settings comparable to the color attachment
 		depthStencilAttachment.depthLoadOp = LoadOp::Clear;
 		depthStencilAttachment.depthStoreOp = StoreOp::Store;
@@ -737,7 +703,7 @@ namespace wgfx
 		depthStencilAttachment.depthReadOnly = false;
 
 		// Stencil setup, mandatory but unused
-		depthStencilAttachment.stencilClearValue = view.clearStencil;
+		depthStencilAttachment.stencilClearValue = 0;
 #ifdef WEBGPU_BACKEND_WGPU
 		depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
 		depthStencilAttachment.stencilStoreOp = StoreOp::Store;
@@ -747,13 +713,13 @@ namespace wgfx
 #endif
 		depthStencilAttachment.stencilReadOnly = true;
 
-		view.renderPassDescriptor.depthStencilAttachment = &depthStencilAttachment;
+		renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 		//renderPassDesc.depthStencilAttachment = nullptr;
 
-		view.renderPassDescriptor.timestampWrites = nullptr;
+		renderPassDesc.timestampWrites = nullptr;
 		//renderPass = encoder.beginRenderPass(renderPassDesc);
 
-		renderPass = view.commandEncoder.beginRenderPass(view.renderPassDescriptor);
+		framebuffer->renderPass = encoder.beginRenderPass(renderPassDesc);
 
 		/*renderPass.setPipeline(program.pipeline);
 		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
@@ -762,9 +728,9 @@ namespace wgfx
 
 	void draw(Program program)
 	{
-		renderPass.setPipeline(program.pipeline);
-		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
-		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
+		program.framebuffers.at(0)->renderPass.setPipeline(program.pipeline);
+		program.framebuffers.at(0)->renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
+		program.framebuffers.at(0)->renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
 
 		if (reset)
 		{
@@ -775,20 +741,20 @@ namespace wgfx
 		}
 		reset = false;
 
-		renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+		program.framebuffers.at(0)->renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
 	}
 
-	void frame(View& view)
+	void frame(Program program)
 	{
 		reset = true;
 
-		renderPass.end();
-		renderPass.release();
+		program.framebuffers.at(0)->renderPass.end();
+		program.framebuffers.at(0)->renderPass.release();
 		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
 		cmdBufferDescriptor.label = "Command buffer";
-		CommandBuffer command = view.commandEncoder.finish(cmdBufferDescriptor);
-		view.commandEncoder.release();
+		CommandBuffer command = encoder.finish(cmdBufferDescriptor);
+		encoder.release();
 
 		//std::cout << "Submitting command..." << std::endl;
 		queue.submit(1, &command);

@@ -11,15 +11,16 @@
 
 
 std::vector<float> pointData = {
-	//	 x	 y	 z		r	 g	  b
-		-1, -1,  1,		0.0, 0.0, 0.0,
-		 1, -1,  1,		0.0, 0.0, 1.0,
-		-1,  1,  1,		0.0, 1.0, 0.0,
-		 1,  1,  1,		0.0, 1.0, 1.0,
-		-1, -1, -1,		1.0, 0.0, 0.0,
-		 1, -1, -1,		1.0, 0.0, 1.0,
-		-1,  1, -1,		1.0, 1.0, 0.0,
-		 1,  1, -1,		1.0, 1.0, 1.0,
+	//  x    y    z    r     g     b      u     v
+	-1.0, -1.0,  1.0, 0.0,  0.0,  0.0,   0.0,  0.0, // Bottom-left front
+	 1.0, -1.0,  1.0, 0.0,  0.0,  0.9,   0.9,  0.0, // Bottom-right front
+	-1.0,  1.0,  1.0, 0.0,  1.0,  0.0,   0.0,  1.0, // Top-left front
+	 1.0,  1.0,  1.0, 0.0,  1.0,  1.0,   0.9,  1.0, // Top-right front
+
+	-1.0, -1.0, -1.0, 1.0,  0.0,  0.0,   0.0,  0.0, // Bottom-left back
+	 1.0, -1.0, -1.0, 1.0,  0.0,  0.9,   0.9,  0.0, // Bottom-right back
+	-1.0,  1.0, -1.0, 1.0,  1.0,  0.0,   0.0,  1.0, // Top-left back
+	 1.0,  1.0, -1.0, 1.0,  1.0,  1.0,   1.0,  1.0  // Top-right back
 };
 
 std::vector<uint16_t> indexData = {
@@ -46,9 +47,13 @@ int main(int _argc, char** _argv)
 
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 
-	wgfx::VertexBuffer vbo(pointData, 6);
-	vbo.setAttribute(0, wgfx::vec3f, 0); // position
-	vbo.setAttribute(1, wgfx::vec3f, 3); // color
+	wgfx::Framebuffer fbo;
+	program.setFramebuffer(&fbo);
+
+	wgfx::VertexBuffer vbo(pointData, 8);
+		vbo.setAttribute(0, wgfx::vec3f, 0); // position
+		vbo.setAttribute(1, wgfx::vec3f, 3); // color
+		vbo.setAttribute(2, wgfx::vec3f, 6); // color
 	wgfx::IndexBuffer ibo(indexData);
 
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
@@ -103,16 +108,14 @@ int main(int _argc, char** _argv)
 			}
 		}
 
-		wgfx::View mainView;
 		// Set clear color to blue, depth to 1.0, and stencil to 0
-		mainView.setViewClear(glm::vec4(0.188f, 0.188f, 0.188f, 1.0f));
 
 		// Set the view matrix (camera) and projection matrix
 			//glm::mat4 viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			//glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 			//mainView.setViewTransform(viewMatrix, projMatrix);
 
-		wgfx::touch(mainView); //wgfx::touch(0); << the view
+		wgfx::touch(&fbo); //wgfx::touch(0); << the view
 
 		program.updateUniform(viewUniform, glm::value_ptr(view));
 
@@ -128,7 +131,7 @@ int main(int _argc, char** _argv)
 			}
 		}
 
-		wgfx::frame(mainView); // good
+		wgfx::frame(program); // good
 	}
 
 }
