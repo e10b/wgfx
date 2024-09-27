@@ -44,11 +44,9 @@ int main(int _argc, char** _argv)
 
 	wgfx::init(wgfx::getSurface(window), 1280, 720);
 
-	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
+	wgfx::Pipeline pipeline = wgfx::loadPipeline(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 
-				//wgfx::Framebuffer fbo;
-				//program.setFramebuffer(&fbo);
-		wgfx::RenderPass renderPass;
+	wgfx::RenderPass renderPass;
 
 	wgfx::VertexBuffer vbo(pointData);
 		vbo.setAttribute(0, wgfx::vec3f, 0); // position
@@ -61,14 +59,14 @@ int main(int _argc, char** _argv)
 
 	wgfx::Texture tex;
 
-	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);				  program.setUniform(viewUniform, false);
-	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj)); program.setUniform(projUniform, false);
-	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  program.setUniform(modelUniform, true);
+	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);				  pipeline.setUniform(viewUniform, false);
+	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj)); pipeline.setUniform(projUniform, false);
+	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  pipeline.setUniform(modelUniform, true);
 
-	wgfx::DynamicUniform sampler(3, tex); program.setTexture(sampler);
+	wgfx::DynamicUniform sampler(3, tex); pipeline.setTexture(sampler);
 
-	program.setVertexBuffer(vbo);
-	program.setIndexBuffer(ibo);
+	pipeline.setVertexBuffer(vbo);
+	pipeline.setIndexBuffer(ibo);
 
 	bool close = false;
 	while (!close)
@@ -132,7 +130,7 @@ int main(int _argc, char** _argv)
 		//wgfx::touch(&fbo); //wgfx::touch(0); << the view
 		renderPass.touch();
 
-		program.updateUniform(viewUniform, glm::value_ptr(view), renderPass.renderPass);
+		pipeline.updateUniform(viewUniform, glm::value_ptr(view));
 
 		// draw cubes
 		for (uint32_t yy = 0; yy < 11; ++yy) {
@@ -141,15 +139,21 @@ int main(int _argc, char** _argv)
 				rotationMatrix = glm::rotate(rotationMatrix, time + yy * 0.37f, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
 				rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, 0.0f, 1.0f);
 				float* mtx = glm::value_ptr(rotationMatrix);
-				program.updateUniform(modelUniform, (mtx), renderPass.renderPass);
-					renderPass.draw(program);
-				//wgfx::draw(program); //wgfx::submit(0, m_program); << the view and the program..
-				// nay pied piper
+				pipeline.updateUniform(modelUniform, mtx);
+				
+				renderPass.draw(pipeline);
 
 			}
 		}
+		renderPass.end();
+		/*
+		renderPass2.touch();
 
-		wgfx::frame(program, renderPass); // good
+		render athing
+
+		renderPass2.end();
+		*/
+		wgfx::frame(); // good
 	}
 
 }

@@ -315,7 +315,7 @@ namespace wgfx
 	TextureFormat surfaceFormat = TextureFormat::Undefined;
 
 	
-	struct Program
+	struct Pipeline
 	{
 		std::vector<DynamicUniform*> dynamicUniforms;
 
@@ -339,7 +339,7 @@ namespace wgfx
 		}
 		*/
 
-		Program()
+		Pipeline()
 		{
 			std::cout << "Creating render pipeline..." << std::endl;
 			pipelineDesc = RenderPipelineDescriptor();
@@ -524,15 +524,13 @@ namespace wgfx
 		//	bindGroupDesc.entries = bindings.data(); // Pass the array of entries
 		//	bindGroup = device.createBindGroup(bindGroupDesc);
 		//}
-
-		void updateUniform(DynamicUniform uniform, const float* array, RenderPassEncoder renderPass)
+		uint32_t dynamicOffset;
+		void updateUniform(DynamicUniform uniform, const float* array)
 		{
-
-			uint32_t dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
+			dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
 			queue.writeBuffer(dynamicUniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
-			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset); // bollocks
+			//renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset); // bollocks
 			dynamicUniforms.at(uniform.index)->quantity++;
-
 		}
 	};
 	//std::vector<Program*> programs;
@@ -541,22 +539,30 @@ namespace wgfx
 	{
 		RenderPassEncoder renderPass = nullptr;
 
-		void draw(Program program)
+		void end()
 		{
-			renderPass.setPipeline(program.pipeline);
-			renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
-			renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
+			renderPass.end();
+			renderPass.release();
+		}
+
+		void draw(Pipeline pipeline)
+		{
+			renderPass.setBindGroup(0, pipeline.bindGroup, 1, &pipeline.dynamicOffset);
+
+			renderPass.setPipeline(pipeline.pipeline);
+			renderPass.setVertexBuffer(0, pipeline.vertexBuffer.buffer, 0, pipeline.vertexBuffer.buffer.getSize());
+			renderPass.setIndexBuffer(pipeline.indexBuffer.buffer, IndexFormat::Uint16, 0, pipeline.indexBuffer.buffer.getSize());
 
 			if (reset)
 			{
-				for (auto uniform : program.dynamicUniforms)
+				for (auto uniform : pipeline.dynamicUniforms)
 				{
 					uniform->quantity = 0;
 				}
 			}
 			reset = false;
 
-			renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+			renderPass.drawIndexed(pipeline.indexBuffer.indexCount, 1, 0, 0, 0);
 		}
 
 		void touch()
@@ -629,8 +635,8 @@ namespace wgfx
 	};
 
 
-	std::vector<Program*> programs;
-	Program loadProgram(std::string source)
+	std::vector<Pipeline*> pipelines;
+	Pipeline loadPipeline(std::string source)
 	{
 		// Load the shader module
 		ShaderModuleDescriptor shaderDesc;
@@ -649,12 +655,12 @@ namespace wgfx
 		shaderCodeDesc.code = source.c_str();
 		ShaderModule shaderModule = device.createShaderModule(shaderDesc);
 
-		Program program;
-		program.shaderModule = shaderModule;
+		Pipeline pipeline;
+		pipeline.shaderModule = shaderModule;
 		//programs.push_back(&program);
-		programs.push_back(&program);  // Move to avoid copying
+		pipelines.push_back(&pipeline);  // Move to avoid copying
 
-		return program;
+		return pipeline;
 	}
 
 
@@ -843,15 +849,15 @@ namespace wgfx
 		program.framebuffers.at(0)->renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
 	}
 	*/
-	void frame(Program program, RenderPass renderPass)
+	void frame()
 	{
 		reset = true;
 					// nope you need a separate end
 					//program.framebuffers.at(0)->renderPass.end();
 					//program.framebuffers.at(0)->renderPass.release();
 					//renderPass.
-			renderPass.renderPass.end();
-			renderPass.renderPass.release();
+															//renderPass.renderPass.end();
+															//renderPass.renderPass.release();
 		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
 		cmdBufferDescriptor.label = "Command buffer";
