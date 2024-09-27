@@ -28,6 +28,33 @@ namespace wgfx
 	// types
 	wgpu::VertexFormat vec2f = VertexFormat::Float32x2;
 	wgpu::VertexFormat vec3f = VertexFormat::Float32x3;
+	
+	Surface surface = nullptr;
+
+	TextureView getNextSurfaceTextureView()
+	{
+		// Get the surface texture
+		SurfaceTexture surfaceTexture;
+		surface.getCurrentTexture(&surfaceTexture);
+		if (surfaceTexture.status != SurfaceGetCurrentTextureStatus::Success) {
+			return nullptr;
+		}
+		wgpu::Texture texture = surfaceTexture.texture;
+
+		// Create a view for this surface texture
+		TextureViewDescriptor viewDescriptor;
+		viewDescriptor.label = "Surface texture view";
+		viewDescriptor.format = texture.getFormat();
+		viewDescriptor.dimension = TextureViewDimension::_2D;
+		viewDescriptor.baseMipLevel = 0;
+		viewDescriptor.mipLevelCount = 1;
+		viewDescriptor.baseArrayLayer = 0;
+		viewDescriptor.arrayLayerCount = 1;
+		viewDescriptor.aspect = TextureAspect::All;
+		TextureView targetView = texture.createView(viewDescriptor);
+
+		return targetView;
+	}
 
 	bool reset = false;
 
@@ -39,17 +66,10 @@ namespace wgfx
 
 	Device device = nullptr;
 	Queue queue = nullptr;
-	Surface surface = nullptr;
 
 
-	struct Framebuffer
-	{
-		RenderPassEncoder renderPass = nullptr;
-		Framebuffer()
-		{
-
-		}
-	};
+	CommandEncoder encoder = nullptr;
+	TextureView targetView = nullptr;
 
 	struct Texture
 	{
@@ -294,6 +314,7 @@ namespace wgfx
 
 	TextureFormat surfaceFormat = TextureFormat::Undefined;
 
+	
 	struct Program
 	{
 		std::vector<DynamicUniform*> dynamicUniforms;
@@ -308,12 +329,15 @@ namespace wgfx
 
 		//RenderPassEncoder pass = nullptr;
 
-		std::vector<Framebuffer*> framebuffers;
-
-		void setFramebuffer(Framebuffer* framebuffer)
+			//std::vector<Framebuffer*> framebuffers;
+			//Framebuffer* currentFramebuffer;
+		/*
+		void setFramebuffer()//Framebuffer* framebuffer)
 		{
-			framebuffers.emplace_back(framebuffer);
+
+			//framebuffers.emplace_back(framebuffer);
 		}
+		*/
 
 		Program()
 		{
@@ -501,21 +525,110 @@ namespace wgfx
 		//	bindGroup = device.createBindGroup(bindGroupDesc);
 		//}
 
-		void updateUniform(DynamicUniform uniform, const float* array)
+		void updateUniform(DynamicUniform uniform, const float* array, RenderPassEncoder renderPass)
 		{
-			//uint32_t dynamicOffset = uniform->quantity * stride; std::cout << uniform->quantity << "\n";
 
 			uint32_t dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
-
 			queue.writeBuffer(dynamicUniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
-			framebuffers.at(0)->renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
-			//uniform->quantity++;
+			renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset); // bollocks
 			dynamicUniforms.at(uniform.index)->quantity++;
 
-			//renderPass.drawIndexed(indexBuffer.indexCount, 1, 0, 0, 0); allow to be relevent to wgfx::submit();
 		}
 	};
 	//std::vector<Program*> programs;
+	
+	struct RenderPass
+	{
+		RenderPassEncoder renderPass = nullptr;
+
+		void draw(Program program)
+		{
+			renderPass.setPipeline(program.pipeline);
+			renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
+			renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());
+
+			if (reset)
+			{
+				for (auto uniform : program.dynamicUniforms)
+				{
+					uniform->quantity = 0;
+				}
+			}
+			reset = false;
+
+			renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
+		}
+
+		void touch()
+		{
+			// Get the next target texture view
+			targetView = getNextSurfaceTextureView();
+			if (!targetView) return;
+
+			// Create a command encoder for the draw call
+			CommandEncoderDescriptor encoderDesc = {};
+			encoderDesc.label = "My command encoder";
+			//encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+			encoder = device.createCommandEncoder();
+
+			// Create the render pass that clears the screen with our color
+			RenderPassDescriptor renderPassDesc{};
+
+			// The attachment part of the render pass descriptor describes the target texture of the pass
+			RenderPassColorAttachment renderPassColorAttachment = {};
+
+			renderPassColorAttachment.view = targetView;
+			renderPassColorAttachment.resolveTarget = nullptr;
+			renderPassColorAttachment.loadOp = LoadOp::Clear;
+			renderPassColorAttachment.storeOp = StoreOp::Store;
+			renderPassColorAttachment.clearValue = { 0.05, 0.05, 0.05, 1.0 };
+#ifndef WEBGPU_BACKEND_WGPU
+			renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif // NOT WEBGPU_BACKEND_WGPU
+
+			renderPassDesc.colorAttachmentCount = 1;
+			renderPassDesc.colorAttachments = &renderPassColorAttachment;
+
+			// We now add a depth/stencil attachment:
+			RenderPassDepthStencilAttachment depthStencilAttachment;
+			// The view of the depth texture
+			depthStencilAttachment.view = depthTextureView;
+
+			// The initial value of the depth buffer, meaning "far"
+			depthStencilAttachment.depthClearValue = 1.0f;
+			// Operation settings comparable to the color attachment
+			depthStencilAttachment.depthLoadOp = LoadOp::Clear;
+			depthStencilAttachment.depthStoreOp = StoreOp::Store;
+			// we could turn off writing to the depth buffer globally here
+			depthStencilAttachment.depthReadOnly = false;
+
+			// Stencil setup, mandatory but unused
+			depthStencilAttachment.stencilClearValue = 0;
+#ifdef WEBGPU_BACKEND_WGPU
+			depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
+			depthStencilAttachment.stencilStoreOp = StoreOp::Store;
+#else
+			depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
+			depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
+#endif
+			depthStencilAttachment.stencilReadOnly = true;
+
+			renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
+			//renderPassDesc.depthStencilAttachment = nullptr;
+
+			renderPassDesc.timestampWrites = nullptr;
+			//renderPass = encoder.beginRenderPass(renderPassDesc);
+
+			renderPass = encoder.beginRenderPass(renderPassDesc);
+
+			/*renderPass.setPipeline(program.pipeline);
+			renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
+			renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());*/
+		}
+		//Framebuffer()
+	};
+
+
 	std::vector<Program*> programs;
 	Program loadProgram(std::string source)
 	{
@@ -545,8 +658,7 @@ namespace wgfx
 	}
 
 
-	CommandEncoder encoder = nullptr;
-	TextureView targetView = nullptr;
+	
 
 	//SDL_Window* window = nullptr;
 	std::unique_ptr<ErrorCallback> uncapturedErrorCallbackHandle;
@@ -561,30 +673,7 @@ namespace wgfx
 	Buffer indexBuffer;
 	uint32_t indexCount;*/
 
-	TextureView getNextSurfaceTextureView()
-	{
-		// Get the surface texture
-		SurfaceTexture surfaceTexture;
-		surface.getCurrentTexture(&surfaceTexture);
-		if (surfaceTexture.status != SurfaceGetCurrentTextureStatus::Success) {
-			return nullptr;
-		}
-		wgpu::Texture texture = surfaceTexture.texture;
-
-		// Create a view for this surface texture
-		TextureViewDescriptor viewDescriptor;
-		viewDescriptor.label = "Surface texture view";
-		viewDescriptor.format = texture.getFormat();
-		viewDescriptor.dimension = TextureViewDimension::_2D;
-		viewDescriptor.baseMipLevel = 0;
-		viewDescriptor.mipLevelCount = 1;
-		viewDescriptor.baseArrayLayer = 0;
-		viewDescriptor.arrayLayerCount = 1;
-		viewDescriptor.aspect = TextureAspect::All;
-		TextureView targetView = texture.createView(viewDescriptor);
-
-		return targetView;
-	}
+	
 	Surface getSurface(SDL_Window* window)
 	{
 		swindow = window;
@@ -668,8 +757,8 @@ namespace wgfx
 	}
 
 	//RenderPassDescriptor renderPassDesc = {}; // ought be in a view < struct
-
-	void touch(Framebuffer* framebuffer)
+	//DESTROY ME VV
+	void touch()
 	{
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
@@ -729,13 +818,13 @@ namespace wgfx
 		renderPassDesc.timestampWrites = nullptr;
 		//renderPass = encoder.beginRenderPass(renderPassDesc);
 
-		framebuffer->renderPass = encoder.beginRenderPass(renderPassDesc);
+							//framebuffer->renderPass = encoder.beginRenderPass(renderPassDesc);
 
 		/*renderPass.setPipeline(program.pipeline);
 		renderPass.setVertexBuffer(0, program.vertexBuffer.buffer, 0, program.vertexBuffer.buffer.getSize());
 		renderPass.setIndexBuffer(program.indexBuffer.buffer, IndexFormat::Uint16, 0, program.indexBuffer.buffer.getSize());*/
 	}
-
+	/*
 	void draw(Program program)
 	{
 		program.framebuffers.at(0)->renderPass.setPipeline(program.pipeline);
@@ -753,13 +842,16 @@ namespace wgfx
 
 		program.framebuffers.at(0)->renderPass.drawIndexed(program.indexBuffer.indexCount, 1, 0, 0, 0);
 	}
-
-	void frame(Program program)
+	*/
+	void frame(Program program, RenderPass renderPass)
 	{
 		reset = true;
-
-		program.framebuffers.at(0)->renderPass.end();
-		program.framebuffers.at(0)->renderPass.release();
+					// nope you need a separate end
+					//program.framebuffers.at(0)->renderPass.end();
+					//program.framebuffers.at(0)->renderPass.release();
+					//renderPass.
+			renderPass.renderPass.end();
+			renderPass.renderPass.release();
 		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
 		cmdBufferDescriptor.label = "Command buffer";

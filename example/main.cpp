@@ -46,8 +46,9 @@ int main(int _argc, char** _argv)
 
 	wgfx::Program program = wgfx::loadProgram(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 
-	wgfx::Framebuffer fbo;
-	program.setFramebuffer(&fbo);
+				//wgfx::Framebuffer fbo;
+				//program.setFramebuffer(&fbo);
+		wgfx::RenderPass renderPass;
 
 	wgfx::VertexBuffer vbo(pointData);
 		vbo.setAttribute(0, wgfx::vec3f, 0); // position
@@ -107,16 +108,31 @@ int main(int _argc, char** _argv)
 			}
 		}
 
-		// Set clear color to blue, depth to 1.0, and stencil to 0
 
-		// Set the view matrix (camera) and projection matrix
-			//glm::mat4 viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-			//glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
-			//mainView.setViewTransform(viewMatrix, projMatrix);
+		// I think we will throw the program to the fbo(renderPass)...
+		// 
+		// one way to do it is to make
+		// 
+		// RenderPass renderPass
+		// 
+		// renderPass.setProgram(program);
+		// renderPass.setVertexBuffer(vbo);
+		// renderPass.draw();
+		// 
+		// renderPass.end();
+		// 
+		// 
+		// 
+		// /// further i think i want to rename program to pipeline just to stick with the wgpu naming convention..
+		// 
+		// wgfx::frame();
+		// 
+							//SOMETHING LIKE THIS//fbo.setProgram(program); 
 
-		wgfx::touch(&fbo); //wgfx::touch(0); << the view
+		//wgfx::touch(&fbo); //wgfx::touch(0); << the view
+		renderPass.touch();
 
-		program.updateUniform(viewUniform, glm::value_ptr(view));
+		program.updateUniform(viewUniform, glm::value_ptr(view), renderPass.renderPass);
 
 		// draw cubes
 		for (uint32_t yy = 0; yy < 11; ++yy) {
@@ -125,12 +141,15 @@ int main(int _argc, char** _argv)
 				rotationMatrix = glm::rotate(rotationMatrix, time + yy * 0.37f, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
 				rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, 0.0f, 1.0f);
 				float* mtx = glm::value_ptr(rotationMatrix);
-				program.updateUniform(modelUniform, (mtx));
-				wgfx::draw(program); //wgfx::submit(0, m_program); << the view and the program..
+				program.updateUniform(modelUniform, (mtx), renderPass.renderPass);
+					renderPass.draw(program);
+				//wgfx::draw(program); //wgfx::submit(0, m_program); << the view and the program..
+				// nay pied piper
+
 			}
 		}
 
-		wgfx::frame(program); // good
+		wgfx::frame(program, renderPass); // good
 	}
 
 }
