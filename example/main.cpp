@@ -11,16 +11,15 @@
 
 
 std::vector<float> pointData = {
-	//  x    y    z    r     g     b      u     v
-	-1.0, -1.0,  1.0, 0.0,  0.0,  0.0,   0.0,  0.0, // Bottom-left front
-	 1.0, -1.0,  1.0, 0.0,  0.0,  0.9,   0.9,  0.0, // Bottom-right front
-	-1.0,  1.0,  1.0, 0.0,  1.0,  0.0,   0.0,  1.0, // Top-left front
-	 1.0,  1.0,  1.0, 0.0,  1.0,  1.0,   0.9,  1.0, // Top-right front
-
-	-1.0, -1.0, -1.0, 1.0,  0.0,  0.0,   0.0,  0.0, // Bottom-left back
-	 1.0, -1.0, -1.0, 1.0,  0.0,  0.9,   0.9,  0.0, // Bottom-right back
-	-1.0,  1.0, -1.0, 1.0,  1.0,  0.0,   0.0,  1.0, // Top-left back
-	 1.0,  1.0, -1.0, 1.0,  1.0,  1.0,   1.0,  1.0  // Top-right back
+	// x     y     z      r    g    b     u    v
+	-1.0, -1.0,  1.0,	0.0, 0.0, 0.0,	0.0, 0.0, // Bottom-left front
+	 1.0, -1.0,  1.0,	0.0, 0.0, 0.9,	0.9, 0.0, // Bottom-right front
+	-1.0,  1.0,  1.0,	0.0, 1.0, 0.0,	0.0, 1.0, // Top-left front
+	 1.0,  1.0,  1.0,	0.0, 1.0, 1.0,	0.9, 1.0, // Top-right front
+	-1.0, -1.0, -1.0,   1.0, 0.0, 0.0,  0.0, 0.0, // Bottom-left back
+	 1.0, -1.0, -1.0,   1.0, 0.0, 0.9,  0.9, 0.0, // Bottom-right back
+	-1.0,  1.0, -1.0,   1.0, 1.0, 0.0,  0.0, 1.0, // Top-left back
+	 1.0,  1.0, -1.0,   1.0, 1.0, 1.0,  1.0, 1.0  // Top-right back
 };
 
 std::vector<uint16_t> indexData = {
@@ -50,10 +49,10 @@ int main(int _argc, char** _argv)
 	wgfx::Framebuffer fbo;
 	program.setFramebuffer(&fbo);
 
-	wgfx::VertexBuffer vbo(pointData, 8);
+	wgfx::VertexBuffer vbo(pointData);
 		vbo.setAttribute(0, wgfx::vec3f, 0); // position
 		vbo.setAttribute(1, wgfx::vec3f, 3); // color
-		vbo.setAttribute(2, wgfx::vec3f, 6); // color
+		vbo.setAttribute(2, wgfx::vec2f, 6); // uv
 	wgfx::IndexBuffer ibo(indexData);
 
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);

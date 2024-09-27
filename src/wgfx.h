@@ -25,6 +25,9 @@
 using namespace wgpu;
 namespace wgfx
 {
+	// types
+	wgpu::VertexFormat vec2f = VertexFormat::Float32x2;
+	wgpu::VertexFormat vec3f = VertexFormat::Float32x3;
 
 	bool reset = false;
 
@@ -220,19 +223,17 @@ namespace wgfx
 	{
 		std::vector<VertexAttribute> vertexAttribs;
 		Buffer buffer;
-		uint32_t vertexCount = 0;
-		int fields;
+		//uint32_t vertexCount = 0;
+		int fields = 0;
 
 		VertexBuffer() {};
 
-
-
-		VertexBuffer(std::vector<float> vertices, int fields) // need a wgfx::createVertexBuffer()<<<
+		VertexBuffer(std::vector<float> vertices) // need a wgfx::createVertexBuffer()<<<
 		{
 			// We now divide the vector size by 5 fields.
 			//vertexCount = static_cast<uint32_t>(vertices.size() / 5);
-			this->fields = fields;
-			vertexCount = static_cast<uint32_t>(vertices.size() / fields);
+				//this->fields = fields;
+			//vertexCount = static_cast<uint32_t>(vertices.size() / fields);
 			//indexCount = static_cast<uint32_t>(indexData.size());
 
 			initDepth(1280, 720);
@@ -250,14 +251,23 @@ namespace wgfx
 
 		void setAttribute(int location, VertexFormat type, int offset)
 		{
+			int typeOffset = 0;
+			if (type == wgfx::vec2f)
+			{
+				typeOffset = 2;
+			}
+			else if (type == wgfx::vec3f)
+			{
+				typeOffset = 3;
+			}
+
 			VertexAttribute attrib;
 			attrib.shaderLocation = location;
 			attrib.format = type;
 			attrib.offset = offset * sizeof(float);
 
 			vertexAttribs.emplace_back(attrib);
-
-			//all the calculations needed for attributes << 
+			this->fields += typeOffset;
 		}
 	};
 
@@ -543,7 +553,7 @@ namespace wgfx
 
 	Instance instance = nullptr;
 
-	uint32_t vertexCount;
+	//uint32_t vertexCount;
 
 	//Program program;
 	//VertexBuffer buffer;
@@ -789,7 +799,5 @@ namespace wgfx
 		return shaderSource;
 	}
 
-	// types
-	wgpu::VertexFormat vec2f = VertexFormat::Float32x2;
-	wgpu::VertexFormat vec3f = VertexFormat::Float32x3;
+	
 }
