@@ -1,3 +1,4 @@
+#define WGPU_IMPLEMENTATION
 #include "wgfx.h"
 
 #include <array>
@@ -41,8 +42,7 @@ int main(int _argc, char** _argv)
 {
 	if (!SDL_Init(SDL_INIT_VIDEO)) { return 1; }
 	SDL_Window* window = SDL_CreateWindow("Learn WebGPU", 1280, 720, SDL_WINDOW_RESIZABLE);
-
-	wgfx::init(wgfx::getSurface(window), 1280, 720);
+	wgfx::init(wgfx::getSurface(window));
 
 	wgfx::Pipeline pipeline = wgfx::loadPipeline(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
 
@@ -146,13 +146,7 @@ int main(int _argc, char** _argv)
 			}
 		}
 		renderPass.end();
-		/*
-		renderPass2.touch();
-
-		render athing
-
-		renderPass2.end();
-		*/
+		
 		wgfx::frame(); // good
 	}
 

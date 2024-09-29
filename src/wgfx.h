@@ -1,13 +1,13 @@
 #pragma once
 
-#define WEBGPU_CPP_IMPLEMENTATION
-#include <webgpu/webgpu.hpp>
+#ifdef WGPU_IMPLEMENTATION
+	#define WEBGPU_CPP_IMPLEMENTATION
+	#include <webgpu/webgpu.hpp>
 
-#define SDL_MAIN_HANDLED
-#include <sdl2webgpu.h>
-//#include <SDL.h>
-
-#include <SDL3/SDL.h>
+	#define SDL_MAIN_HANDLED
+	#include <sdl2webgpu.h>
+	#include <SDL3/SDL.h>
+#endif
 
 #include <iostream>
 #include <cassert>
@@ -721,7 +721,7 @@ namespace wgfx
 		surface.release();
 	}
 
-	void init(Surface surface, int width, int height)
+	void init(Surface surface)
 	{
 		// INIT DEVICE
 		RequestAdapterOptions adapterOpts = {};
