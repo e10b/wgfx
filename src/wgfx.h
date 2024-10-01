@@ -74,14 +74,16 @@ namespace wgfx
 	struct Texture
 	{
 		TextureView textureView;
-		
+		Sampler sampler;
+
 		Texture()
 		{
 			// Create the color texture
 			TextureDescriptor textureDesc;
 			textureDesc.dimension = TextureDimension::_2D;
 			textureDesc.size = { 256, 256, 1 };
-			textureDesc.mipLevelCount = 1;
+			textureDesc.mipLevelCount = 8;
+			//                          ^ This was a 1
 			textureDesc.sampleCount = 1;
 			textureDesc.format = TextureFormat::RGBA8Unorm;
 			textureDesc.usage = TextureUsage::TextureBinding | TextureUsage::CopyDst;
@@ -95,37 +97,79 @@ namespace wgfx
 			textureViewDesc.baseArrayLayer = 0;
 			textureViewDesc.arrayLayerCount = 1;
 			textureViewDesc.baseMipLevel = 0;
-			textureViewDesc.mipLevelCount = 1;
+			textureViewDesc.mipLevelCount = 8;
+			//                              ^ This was a 1
 			textureViewDesc.dimension = TextureViewDimension::_2D;
 			textureViewDesc.format = textureDesc.format;
 			textureView = texture.createView(textureViewDesc);
 			std::cout << "Texture view: " << textureView << std::endl;
 
-			// Create image data
-			std::vector<uint8_t> pixels(4 * textureDesc.size.width * textureDesc.size.height);
-			for (uint32_t i = 0; i < textureDesc.size.width; ++i) {
-				for (uint32_t j = 0; j < textureDesc.size.height; ++j) {
-					uint8_t* p = &pixels[4 * (j * textureDesc.size.width + i)];
-					p[0] = (uint8_t)i; // r
-					p[1] = (uint8_t)j; // g
-					p[2] = 128; // b
-					p[3] = 255; // a
-				}
-			}
+			// Create a sampler
+			SamplerDescriptor samplerDesc;
+			samplerDesc.addressModeU = AddressMode::Repeat;
+			samplerDesc.addressModeV = AddressMode::Repeat;
+			samplerDesc.addressModeW = AddressMode::Repeat;
+			samplerDesc.magFilter = FilterMode::Linear;
+			samplerDesc.minFilter = FilterMode::Linear;
+			samplerDesc.mipmapFilter = MipmapFilterMode::Linear;
+			samplerDesc.lodMinClamp = 0.0f;
+			samplerDesc.lodMaxClamp = 8.0f;
+			samplerDesc.compare = CompareFunction::Undefined;
+			samplerDesc.maxAnisotropy = 1;
+			sampler = device.createSampler(samplerDesc);
 
-			// Upload texture data
+			// Create and upload texture data, one mip level at a time
 			ImageCopyTexture destination;
 			destination.texture = texture;
-			destination.mipLevel = 0;
 			destination.origin = { 0, 0, 0 };
 			destination.aspect = TextureAspect::All;
+
 			TextureDataLayout source;
 			source.offset = 0;
-			source.bytesPerRow = 4 * textureDesc.size.width;
-			source.rowsPerImage = textureDesc.size.height;
-			queue.writeTexture(destination, pixels.data(), pixels.size(), source, textureDesc.size);
 
+			Extent3D mipLevelSize = textureDesc.size;
+			std::vector<uint8_t> previousLevelPixels;
+			for (uint32_t level = 0; level < textureDesc.mipLevelCount; ++level) {
+				// Create image data
+				std::vector<uint8_t> pixels(4 * mipLevelSize.width * mipLevelSize.height);
+				for (uint32_t i = 0; i < mipLevelSize.width; ++i) {
+					for (uint32_t j = 0; j < mipLevelSize.height; ++j) {
+						uint8_t* p = &pixels[4 * (j * mipLevelSize.width + i)];
+						if (level == 0) {
+							p[0] = (i / 16) % 2 == (j / 16) % 2 ? 255 : 0; // r
+							p[1] = ((i - j) / 16) % 2 == 0 ? 255 : 0; // g
+							p[2] = ((i + j) / 16) % 2 == 0 ? 255 : 0; // b
+						}
+						else {
+							// Get the corresponding 4 pixels from the previous level
+							uint8_t* p00 = &previousLevelPixels[4 * ((2 * j + 0) * (2 * mipLevelSize.width) + (2 * i + 0))];
+							uint8_t* p01 = &previousLevelPixels[4 * ((2 * j + 0) * (2 * mipLevelSize.width) + (2 * i + 1))];
+							uint8_t* p10 = &previousLevelPixels[4 * ((2 * j + 1) * (2 * mipLevelSize.width) + (2 * i + 0))];
+							uint8_t* p11 = &previousLevelPixels[4 * ((2 * j + 1) * (2 * mipLevelSize.width) + (2 * i + 1))];
+							// Average
+							p[0] = (p00[0] + p01[0] + p10[0] + p11[0]) / 4;
+							p[1] = (p00[1] + p01[1] + p10[1] + p11[1]) / 4;
+							p[2] = (p00[2] + p01[2] + p10[2] + p11[2]) / 4;
+						}
+						p[3] = 255; // a
+					}
+				}
 
+				// Change this to the current level
+				destination.mipLevel = level;
+
+				// Compute from the mip level size
+				source.bytesPerRow = 4 * mipLevelSize.width;
+				source.rowsPerImage = mipLevelSize.height;
+
+				queue.writeTexture(destination, pixels.data(), pixels.size(), source, mipLevelSize);
+
+				// The size of the next mip level:
+				// (see https://www.w3.org/TR/webgpu/#logical-miplevel-specific-texture-extent)
+				mipLevelSize.width /= 2;
+				mipLevelSize.height /= 2;
+				previousLevelPixels = std::move(pixels);
+			}
 		}
 	};
 
@@ -196,6 +240,14 @@ namespace wgfx
 
 			binding.binding = i;
 			binding.textureView = texture.textureView;
+		}
+
+		DynamicUniform(Texture texture, int i)
+		{
+			index = i;
+
+			binding.binding = i;
+			binding.sampler = texture.sampler;
 		}
 	};
 
@@ -479,6 +531,19 @@ namespace wgfx
 
 			dynamicUniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
+			bindings.push_back(uniform.binding);
+		}
+
+		void setSampler(DynamicUniform uniform)
+		{
+			// The texture sampler binding
+			BindGroupLayoutEntry samplerBindingLayout = Default;
+			samplerBindingLayout.binding = uniform.index;
+			samplerBindingLayout.visibility = ShaderStage::Fragment;
+			samplerBindingLayout.sampler.type = SamplerBindingType::Filtering;
+
+			dynamicUniforms.push_back(&uniform);
+			entries.push_back(samplerBindingLayout);
 			bindings.push_back(uniform.binding);
 		}
 

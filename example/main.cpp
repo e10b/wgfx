@@ -64,7 +64,9 @@ int main(int _argc, char** _argv)
 	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  pipeline.setUniform(modelUniform, true);
 
 	wgfx::DynamicUniform sampler(3, tex); pipeline.setTexture(sampler);
+	wgfx::DynamicUniform actualsampler(tex, 4); pipeline.setSampler(actualsampler);
 
+	
 	pipeline.setVertexBuffer(vbo);
 	pipeline.setIndexBuffer(ibo);
 
