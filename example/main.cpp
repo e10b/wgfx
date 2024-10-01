@@ -12,30 +12,69 @@
 
 
 std::vector<float> pointData = {
-	// x     y     z      r    g    b     u    v
-	-1.0, -1.0,  1.0,	0.0, 0.0, 0.0,	0.0, 0.0, // Bottom-left front
-	 1.0, -1.0,  1.0,	0.0, 0.0, 0.9,	0.9, 0.0, // Bottom-right front
-	-1.0,  1.0,  1.0,	0.0, 1.0, 0.0,	0.0, 1.0, // Top-left front
-	 1.0,  1.0,  1.0,	0.0, 1.0, 1.0,	0.9, 1.0, // Top-right front
-	-1.0, -1.0, -1.0,   1.0, 0.0, 0.0,  0.0, 0.0, // Bottom-left back
-	 1.0, -1.0, -1.0,   1.0, 0.0, 0.9,  0.9, 0.0, // Bottom-right back
-	-1.0,  1.0, -1.0,   1.0, 1.0, 0.0,  0.0, 1.0, // Top-left back
-	 1.0,  1.0, -1.0,   1.0, 1.0, 1.0,  1.0, 1.0  // Top-right back
+	// x     y     z     r    g    b    u    v
+
+	// Front face
+	-1.0f, -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, // Bottom-left
+	 1.0f, -1.0f,  1.0f, 0.0f, 0.0f, 0.9f,  1.0f, 0.0f, // Bottom-right
+	-1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 0.0f,  0.0f, 1.0f, // Top-left
+	 1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f, // Top-right
+
+	 // Back face
+	 -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f,  0.0f, 0.0f, // Bottom-left
+	  1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.9f,  1.0f, 0.0f, // Bottom-right
+	 -1.0f,  1.0f, -1.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, // Top-left
+	  1.0f,  1.0f, -1.0f, 1.0f, 1.0f, 1.0f,  1.0f, 1.0f, // Top-right
+
+	  // Left face
+	  -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f,  0.0f, 0.0f, // Bottom-left
+	  -1.0f, -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,  1.0f, 0.0f, // Bottom-right
+	  -1.0f,  1.0f, -1.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, // Top-left
+	  -1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 0.0f,  1.0f, 1.0f, // Top-right
+
+	  // Right face
+	   1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.9f,  0.0f, 0.0f, // Bottom-left
+	   1.0f, -1.0f,  1.0f, 0.0f, 0.0f, 0.9f,  1.0f, 0.0f, // Bottom-right
+	   1.0f,  1.0f, -1.0f, 1.0f, 1.0f, 1.0f,  0.0f, 1.0f, // Top-left
+	   1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f, // Top-right
+
+	   // Top face
+	   -1.0f,  1.0f, -1.0f, 1.0f, 1.0f, 0.0f,  0.0f, 0.0f, // Bottom-left
+		1.0f,  1.0f, -1.0f, 1.0f, 1.0f, 1.0f,  1.0f, 0.0f, // Bottom-right
+	   -1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 0.0f,  0.0f, 1.0f, // Top-left
+		1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f, // Top-right
+
+		// Bottom face
+		-1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f,  0.0f, 0.0f, // Bottom-left
+		 1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.9f,  1.0f, 0.0f, // Bottom-right
+		-1.0f, -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, // Top-left
+		 1.0f, -1.0f,  1.0f, 0.0f, 0.0f, 0.9f,  1.0f, 1.0f  // Top-right
 };
 
 std::vector<uint16_t> indexData = {
-		2, 6, 7,
-		2, 3, 7,
-		0, 4, 5,
-		0, 1, 5,
-		0, 2, 6,
-		0, 4, 6,
-		1, 3, 7,
-		1, 5, 7,
-		0, 2, 3,
-		0, 1, 3,
-		4, 6, 7,
-		4, 5, 7
+	// Front face
+	0, 1, 2,
+	1, 3, 2,
+
+	// Back face
+	4, 5, 6,
+	5, 7, 6,
+
+	// Left face
+	8, 9, 10,
+	9, 11, 10,
+
+	// Right face
+	12, 13, 14,
+	13, 15, 14,
+
+	// Top face
+	16, 17, 18,
+	17, 19, 18,
+
+	// Bottom face
+	20, 21, 22,
+	21, 23, 22
 };
 
 int main(int _argc, char** _argv)
@@ -55,7 +94,7 @@ int main(int _argc, char** _argv)
 	wgfx::IndexBuffer ibo(indexData);
 
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -35.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	wgfx::Texture tex;
 
