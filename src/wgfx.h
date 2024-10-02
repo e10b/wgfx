@@ -135,7 +135,7 @@ namespace wgfx
 		if (m == 0) return 0;
 		else { uint32_t w = 0; while (m >>= 1) ++w; return w; }
 	}
-	wgpu::Texture createTexture(const std::filesystem::path& path, Device device, TextureView* pTextureView) {
+	wgpu::Texture makeTexture(const std::filesystem::path& path, Device device, TextureView* pTextureView) {
 		int width, height, channels;
 		unsigned char* pixelData = stbi_load(path.string().c_str(), &width, &height, &channels, 4 /* force 4 channels */);
 		// If data is null, loading failed.
@@ -182,34 +182,38 @@ namespace wgfx
 		TextureView textureView;
 		Sampler sampler;
 
-		Texture()
-		{
-			// Create a sampler
-			SamplerDescriptor samplerDesc;
-			samplerDesc.addressModeU = AddressMode::Repeat;
-			samplerDesc.addressModeV = AddressMode::Repeat;
-			samplerDesc.addressModeW = AddressMode::Repeat;
-			samplerDesc.magFilter = FilterMode::Linear;
-			samplerDesc.minFilter = FilterMode::Linear;
-			samplerDesc.mipmapFilter = MipmapFilterMode::Linear;
-			samplerDesc.lodMinClamp = 0.0f;
-			samplerDesc.lodMaxClamp = 8.0f;
-			samplerDesc.compare = CompareFunction::Undefined;
-			samplerDesc.maxAnisotropy = 1;
-			sampler = device.createSampler(samplerDesc);
-			
-			// create a texture
-			textureView = nullptr;
-			wgpu::Texture texture = createTexture(RESOURCE_DIR "/crate.png", device, &textureView);
-			if(!textureView)
-			{
-				std::cerr << "Could not laod texture!\n";
-			}
-			std::cout << "Texture: " << texture << std::endl;
-			std::cout << "Texture view: " << textureView << std::endl;
-		}
+		Texture() = default;
 	};
 
+	Texture loadTexture(const std::filesystem::path& path)
+	{
+		Texture texture;
+
+		// Create a sampler
+		SamplerDescriptor samplerDesc;
+		samplerDesc.addressModeU = AddressMode::Repeat;
+		samplerDesc.addressModeV = AddressMode::Repeat;
+		samplerDesc.addressModeW = AddressMode::Repeat;
+		samplerDesc.magFilter = FilterMode::Linear;
+		samplerDesc.minFilter = FilterMode::Linear;
+		samplerDesc.mipmapFilter = MipmapFilterMode::Linear;
+		samplerDesc.lodMinClamp = 0.0f;
+		samplerDesc.lodMaxClamp = 8.0f;
+		samplerDesc.compare = CompareFunction::Undefined;
+		samplerDesc.maxAnisotropy = 1;
+		texture.sampler = device.createSampler(samplerDesc);
+
+		// create a texture
+		texture.textureView = nullptr;
+		wgpu::Texture tex = makeTexture(path, device, &texture.textureView);
+		if (!texture.textureView)
+		{
+			std::cerr << "Could not laod texture!\n";
+		}
+		std::cout << "Texture: " << tex << std::endl;
+		std::cout << "Texture view: " << texture.textureView << std::endl;
+		return texture;
+	}
 	uint32_t ceilToNextMultiple(uint32_t value, uint32_t step) {
 		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
 		return step * divide_and_ceil;
@@ -232,7 +236,7 @@ namespace wgfx
 		
 	};
 
-	Uniform loadUniform(int i, size_t size, float data)
+	Uniform createUniform(int i, size_t size, float data)
 	{
 		Uniform uniform;
 		uniform.index = i;
@@ -257,7 +261,7 @@ namespace wgfx
 
 		return uniform;
 	}
-	Uniform loadUniform(int i, size_t size, const float* array)
+	Uniform createUniform(int i, size_t size, const float* array)
 	{
 		Uniform uniform;
 		uniform.index = i;
@@ -282,7 +286,7 @@ namespace wgfx
 		uniform.binding.size = size;
 		return uniform;
 	}
-	Uniform loadTexture(int i, Texture texture)
+	Uniform createTexture(int i, Texture texture)
 	{
 		Uniform uniform;
 		uniform.index = i;
@@ -292,7 +296,7 @@ namespace wgfx
 
 		return uniform;
 	}
-	Uniform loadSampler(int i, Texture texture)
+	Uniform createSampler(int i, Texture texture)
 	{
 		Uniform uniform;
 		uniform.index = i;

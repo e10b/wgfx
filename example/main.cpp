@@ -96,14 +96,14 @@ int main(int _argc, char** _argv)
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	wgfx::Texture texture;
+	wgfx::Texture texture = wgfx::loadTexture(RESOURCE_DIR "/crate2.jpg");
 
-	wgfx::Uniform viewUniform = wgfx::loadUniform(0, sizeof(glm::mat4), 1.0f);					 pipeline.setUniform(viewUniform, true);
-	wgfx::Uniform modelUniform = wgfx::loadUniform(1, sizeof(glm::mat4), 1.0f);				     pipeline.setUniform(modelUniform, true);
-	wgfx::Uniform projUniform = wgfx::loadUniform(2, sizeof(glm::mat4), glm::value_ptr(proj));	 pipeline.setUniform(projUniform, true);
+	wgfx::Uniform viewUniform = wgfx::createUniform(0, sizeof(glm::mat4), 1.0f);					 pipeline.setUniform(viewUniform, true);
+	wgfx::Uniform modelUniform = wgfx::createUniform(1, sizeof(glm::mat4), 1.0f);				     pipeline.setUniform(modelUniform, true);
+	wgfx::Uniform projUniform = wgfx::createUniform(2, sizeof(glm::mat4), glm::value_ptr(proj));	 pipeline.setUniform(projUniform, true);
 
-	wgfx::Uniform sampler = wgfx::loadTexture(3, texture);										 pipeline.setTexture(sampler);
-	wgfx::Uniform actualsampler = wgfx::loadSampler(4, texture);									 pipeline.setSampler(actualsampler);
+	wgfx::Uniform sampler = wgfx::createTexture(3, texture);										 pipeline.setTexture(sampler);
+	wgfx::Uniform actualsampler = wgfx::createSampler(4, texture);									 pipeline.setSampler(actualsampler);
 
 	
 	pipeline.setVertexBuffer(vbo);
