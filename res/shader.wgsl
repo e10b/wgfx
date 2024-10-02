@@ -23,7 +23,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 	
 	out.position = proj * view * model * vec4f(in.position, 1.0);
 	out.color = in.color;
-	out.uv = in.uv * .999; //slight offset for graphical glitch -- because of the pixel data I think
+	out.uv = in.uv;			//slight offset for graphical glitch -- * .99 might be necessary -- maybe not
 	return out;
 }
 

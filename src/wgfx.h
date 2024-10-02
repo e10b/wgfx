@@ -410,6 +410,7 @@ namespace wgfx
 	};
 
 	TextureFormat surfaceFormat = TextureFormat::Undefined;
+	//TextureFormat surfaceFormat = TextureFormat::BGRA8Unorm;
 
 	
 	struct Pipeline
@@ -628,10 +629,17 @@ namespace wgfx
 	{
 		RenderPassEncoder renderPass = nullptr;
 
+		WGPUColor clearValue;
+
 		void end()
 		{
 			renderPass.end();
 			renderPass.release();
+		}
+
+		void setClear(WGPUColor color)
+		{
+			clearValue = color;
 		}
 
 		void draw(Pipeline pipeline)
@@ -676,7 +684,7 @@ namespace wgfx
 			renderPassColorAttachment.resolveTarget = nullptr;
 			renderPassColorAttachment.loadOp = LoadOp::Clear;
 			renderPassColorAttachment.storeOp = StoreOp::Store;
-			renderPassColorAttachment.clearValue = { 0.05, 0.05, 0.05, 1.0 };
+			renderPassColorAttachment.clearValue = clearValue;
 #ifndef WEBGPU_BACKEND_WGPU
 			renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif // NOT WEBGPU_BACKEND_WGPU
