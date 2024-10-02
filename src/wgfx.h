@@ -242,9 +242,9 @@ namespace wgfx
 		uint32_t uniformStride = ceilToNextMultiple(
 			(uint32_t)size,
 			(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
-		);
+		);// intervalic sizing - scaled to the offset alignment val
 		uniform.stride = uniformStride;
-		bufferDesc.size = 300 * uniformStride + size;
+		bufferDesc.size = 256 * uniformStride + size; // max size
 		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 		bufferDesc.mappedAtCreation = false;
 		uniform.buffer = device.createBuffer(bufferDesc);
@@ -252,7 +252,7 @@ namespace wgfx
 		queue.writeBuffer(uniform.buffer, 0, &data, size);
 
 		uniform.binding.binding = i;
-		uniform.binding.buffer = uniform.buffer;
+		uniform.binding.buffer = uniform.buffer;	
 		uniform.binding.offset = 0;
 		uniform.binding.size = size;
 
@@ -264,7 +264,12 @@ namespace wgfx
 		uniform.index = i;
 		uniform.scale = size;
 
-		bufferDesc.size = size;
+		uint32_t uniformStride = ceilToNextMultiple(
+			(uint32_t)size,
+			(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
+		);
+		uniform.stride = uniformStride;
+		bufferDesc.size = 256 * uniformStride + size;
 		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 		bufferDesc.mappedAtCreation = false;
 		uniform.buffer = device.createBuffer(bufferDesc);
@@ -407,6 +412,7 @@ namespace wgfx
 	struct Pipeline
 	{
 		std::vector<DynamicUniform*> dynamicUniforms;
+		int dynamicUniformCount = 0;
 
 		RenderPipeline pipeline;
 
@@ -552,32 +558,43 @@ namespace wgfx
 			if (dynamic)
 			{
 				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
+				dynamicUniformCount++;
 			}
 			dynamicUniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
 
-		void setTexture(DynamicUniform uniform)
+		void setTexture(DynamicUniform uniform, bool dynamic)
 		{
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			bindingLayout.binding = uniform.index;
 			bindingLayout.visibility = ShaderStage::Fragment;
 			bindingLayout.texture.sampleType = TextureSampleType::Float;
 			bindingLayout.texture.viewDimension = TextureViewDimension::_2D;
-
+			if (dynamic)
+			{
+				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
+				dynamicUniformCount++;
+			}
 			dynamicUniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
 
-		void setSampler(DynamicUniform uniform)
+		void setSampler(DynamicUniform uniform, bool dynamic)
 		{
 			// The texture sampler binding
 			BindGroupLayoutEntry samplerBindingLayout = Default;
 			samplerBindingLayout.binding = uniform.index;
 			samplerBindingLayout.visibility = ShaderStage::Fragment;
 			samplerBindingLayout.sampler.type = SamplerBindingType::Filtering;
+
+			if (dynamic)
+			{
+				samplerBindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
+				dynamicUniformCount++;
+			}
 
 			dynamicUniforms.push_back(&uniform);
 			entries.push_back(samplerBindingLayout);
@@ -607,35 +624,21 @@ namespace wgfx
 			shaderModule.release();
 		}
 
-		//std::vector<BindGroupEntry> bindings;
-		//void setUniform(Uniform uniform)
-		//{
-		//	bindings.push_back(uniform.binding);
-		//}
-
 		BindGroup bindGroup;
-		//void linkUniforms()
-		//{
-		//	// A bind group contains one or multiple bindings
-		//	BindGroupDescriptor bindGroupDesc;
-		//	bindGroupDesc.layout = bindGroupLayout;
-		//	// There must be as many bindings as declared in the layout!
-		//	//bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
-		//	//bindGroupDesc.entries = &uniform.binding;
-		//	bindGroupDesc.entryCount = static_cast<uint32_t>(bindings.size());
-		//	bindGroupDesc.entries = bindings.data(); // Pass the array of entries
-		//	bindGroup = device.createBindGroup(bindGroupDesc);
-		//}
-		uint32_t dynamicOffset;
+		
+		std::vector<uint32_t> dynamicOffsets;
 		void updateUniform(DynamicUniform uniform, const float* array)
 		{
-			dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
+			uint32_t dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
+		
+			if (dynamicOffsets.size() <= uniform.index) { dynamicOffsets.resize(uniform.index + 1); } // resize
+			dynamicOffsets.at(uniform.index) = (dynamicOffset); // propogate current offsets
+
 			queue.writeBuffer(dynamicUniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
-			//renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset); // bollocks
 			dynamicUniforms.at(uniform.index)->quantity++;
-		}
+
+		} // problem area has to be << 
 	};
-	//std::vector<Program*> programs;
 	
 	struct RenderPass
 	{
@@ -649,8 +652,8 @@ namespace wgfx
 
 		void draw(Pipeline pipeline)
 		{
-			renderPass.setBindGroup(0, pipeline.bindGroup, 1, &pipeline.dynamicOffset);
-
+			renderPass.setBindGroup(0, pipeline.bindGroup, pipeline.dynamicUniformCount, pipeline.dynamicOffsets.data()); // or here
+			// this "dynamic offset" value must be the issue, we need a dynamicOffset* instead. with a list of dynamic offsets
 			renderPass.setPipeline(pipeline.pipeline);
 			renderPass.setVertexBuffer(0, pipeline.vertexBuffer.buffer, 0, pipeline.vertexBuffer.buffer.getSize());
 			renderPass.setIndexBuffer(pipeline.indexBuffer.buffer, IndexFormat::Uint16, 0, pipeline.indexBuffer.buffer.getSize());

@@ -19,7 +19,7 @@ std::vector<float> pointData = {
 	 1.0f, -1.0f,  1.0f, 0.0f, 0.0f, 0.9f,  1.0f, 0.0f, // Bottom-right
 	-1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 0.0f,  0.0f, 1.0f, // Top-left
 	 1.0f,  1.0f,  1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f, // Top-right
-
+	 
 	 // Back face
 	 -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f,  0.0f, 0.0f, // Bottom-left
 	  1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.9f,  1.0f, 0.0f, // Bottom-right
@@ -98,18 +98,18 @@ int main(int _argc, char** _argv)
 
 	wgfx::Texture texture;
 
-	wgfx::DynamicUniform viewUniform = wgfx::loadUniform(0, sizeof(glm::mat4), 1.0f);					 pipeline.setUniform(viewUniform, false);
-	wgfx::DynamicUniform projUniform = wgfx::loadUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));	 pipeline.setUniform(projUniform, false);
-	wgfx::DynamicUniform modelUniform = wgfx::loadUniform(2, sizeof(glm::mat4), 1.0f);				     pipeline.setUniform(modelUniform, true);
+	wgfx::DynamicUniform viewUniform = wgfx::loadUniform(0, sizeof(glm::mat4), 1.0f);					 pipeline.setUniform(viewUniform, true);
+	wgfx::DynamicUniform modelUniform = wgfx::loadUniform(1, sizeof(glm::mat4), 1.0f);				     pipeline.setUniform(modelUniform, true);
+	wgfx::DynamicUniform projUniform = wgfx::loadUniform(2, sizeof(glm::mat4), glm::value_ptr(proj));	 pipeline.setUniform(projUniform, false);
 
-	wgfx::DynamicUniform sampler = wgfx::loadTexture(3, texture);										 pipeline.setTexture(sampler);
-	wgfx::DynamicUniform actualsampler = wgfx::loadSampler(4, texture);									 pipeline.setSampler(actualsampler);
+	wgfx::DynamicUniform sampler = wgfx::loadTexture(3, texture);										 pipeline.setTexture(sampler, false);
+	wgfx::DynamicUniform actualsampler = wgfx::loadSampler(4, texture);									 pipeline.setSampler(actualsampler, false);
 
 	
 	pipeline.setVertexBuffer(vbo);
 	pipeline.setIndexBuffer(ibo);
 
-	bool close = false;
+	bool close = false;// SDL_GL_SetSwapInterval(0); // Enable V-Sync
 	while (!close)
 	{
 		SDL_Event event;
@@ -165,7 +165,6 @@ int main(int _argc, char** _argv)
 		}
 
 		renderPass.end();
-		
 		wgfx::frame();
 	}
 
