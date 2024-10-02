@@ -96,14 +96,14 @@ int main(int _argc, char** _argv)
 	glm::mat4 proj = glm::perspective(glm::radians(60.0f)/*fov*/, float(1920) / 1080, 0.1f, 100.0f);
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	wgfx::Texture tex;
+	wgfx::Texture texture;
 
-	wgfx::DynamicUniform viewUniform(0, sizeof(glm::mat4), 1.0f);				  pipeline.setUniform(viewUniform, false);
-	wgfx::DynamicUniform projUniform(1, sizeof(glm::mat4), glm::value_ptr(proj)); pipeline.setUniform(projUniform, false);
-	wgfx::DynamicUniform modelUniform(2, sizeof(glm::mat4), 1.0f);				  pipeline.setUniform(modelUniform, true);
+	wgfx::DynamicUniform viewUniform = wgfx::loadUniform(0, sizeof(glm::mat4), 1.0f);					 pipeline.setUniform(viewUniform, false);
+	wgfx::DynamicUniform projUniform = wgfx::loadUniform(1, sizeof(glm::mat4), glm::value_ptr(proj));	 pipeline.setUniform(projUniform, false);
+	wgfx::DynamicUniform modelUniform = wgfx::loadUniform(2, sizeof(glm::mat4), 1.0f);				     pipeline.setUniform(modelUniform, true);
 
-	wgfx::DynamicUniform sampler(3, tex); pipeline.setTexture(sampler);
-	wgfx::DynamicUniform actualsampler(tex, 4); pipeline.setSampler(actualsampler);
+	wgfx::DynamicUniform sampler = wgfx::loadTexture(3, texture);										 pipeline.setTexture(sampler);
+	wgfx::DynamicUniform actualsampler = wgfx::loadSampler(4, texture);									 pipeline.setSampler(actualsampler);
 
 	
 	pipeline.setVertexBuffer(vbo);
@@ -146,29 +146,7 @@ int main(int _argc, char** _argv)
 				break;
 			}
 		}
-
-
-		// I think we will throw the program to the fbo(renderPass)...
-		// 
-		// one way to do it is to make
-		// 
-		// RenderPass renderPass
-		// 
-		// renderPass.setProgram(program);
-		// renderPass.setVertexBuffer(vbo);
-		// renderPass.draw();
-		// 
-		// renderPass.end();
-		// 
-		// 
-		// 
-		// /// further i think i want to rename program to pipeline just to stick with the wgpu naming convention..
-		// 
-		// wgfx::frame();
-		// 
-							//SOMETHING LIKE THIS//fbo.setProgram(program); 
-
-		//wgfx::touch(&fbo); //wgfx::touch(0); << the view
+		
 		renderPass.touch();
 
 		pipeline.updateUniform(viewUniform, glm::value_ptr(view));
@@ -183,12 +161,12 @@ int main(int _argc, char** _argv)
 				pipeline.updateUniform(modelUniform, mtx);
 				
 				renderPass.draw(pipeline);
-
 			}
 		}
+
 		renderPass.end();
 		
-		wgfx::frame(); // good
+		wgfx::frame();
 	}
 
 }

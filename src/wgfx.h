@@ -71,7 +71,7 @@ namespace wgfx
 	Queue queue = nullptr;
 
 	// Auxiliary function for loadTexture
-	static void writeMipMaps( Device device, wgpu::Texture texture, Extent3D textureSize, uint32_t mipLevelCount, const unsigned char* pixelData)
+	static void writeMipMaps(Device device, wgpu::Texture texture, Extent3D textureSize, uint32_t mipLevelCount, const unsigned char* pixelData)
 	{
 		Queue queue = device.getQueue();
 
@@ -135,7 +135,7 @@ namespace wgfx
 		if (m == 0) return 0;
 		else { uint32_t w = 0; while (m >>= 1) ++w; return w; }
 	}
-	wgpu::Texture loadTexture(const std::filesystem::path& path, Device device, TextureView* pTextureView) {
+	wgpu::Texture createTexture(const std::filesystem::path& path, Device device, TextureView* pTextureView) {
 		int width, height, channels;
 		unsigned char* pixelData = stbi_load(path.string().c_str(), &width, &height, &channels, 4 /* force 4 channels */);
 		// If data is null, loading failed.
@@ -201,7 +201,7 @@ namespace wgfx
 			
 			// create a texture
 			textureView = nullptr;
-			wgpu::Texture texture = loadTexture(RESOURCE_DIR "/crate.png", device, &textureView);
+			wgpu::Texture texture = createTexture(RESOURCE_DIR "/crate.png", device, &textureView);
 			if(!textureView)
 			{
 				std::cerr << "Could not laod texture!\n";
@@ -211,12 +211,11 @@ namespace wgfx
 		}
 	};
 
-
-	/** Round 'value' up to the next multiplier of 'step' */
 	uint32_t ceilToNextMultiple(uint32_t value, uint32_t step) {
 		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
 		return step * divide_and_ceil;
 	}
+	
 	BufferDescriptor bufferDesc;
 
 	struct DynamicUniform
@@ -230,67 +229,75 @@ namespace wgfx
 		int offset;
 		int quantity = 0; // uncrease when hmm, 
 
-		DynamicUniform(int i, size_t size, float data) // need a wgfx::createUniform
-		{
-			index = i;
-			scale = size;
-			// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
-			uint32_t uniformStride = ceilToNextMultiple(
-				(uint32_t)size,
-				(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
-			);
-			stride = uniformStride;
-			bufferDesc.size = 300 * uniformStride + size;
-			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
-			bufferDesc.mappedAtCreation = false;
-			buffer = device.createBuffer(bufferDesc);
-
-			queue.writeBuffer(buffer, 0, &data, size);
-
-			binding.binding = i;
-			binding.buffer = buffer;
-			binding.offset = 0;
-			binding.size = size;
-		}
-
-		DynamicUniform(int i, size_t size, const float* array) // Updated to accept const float* array -- no templates needed
-		{
-			index = i;
-			scale = size;
-
-			bufferDesc.size = size;
-			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
-			bufferDesc.mappedAtCreation = false;
-			buffer = device.createBuffer(bufferDesc);
-
-			// Use writeBuffer with the pointer to float data
-			queue.writeBuffer(buffer, 0, array, size);
-
-			binding.binding = i;
-			binding.buffer = buffer;
-			binding.offset = 0;
-			binding.size = size;
-		}
-
-		DynamicUniform(int i, Texture texture)
-		{
-			index = i;
-
-			binding.binding = i;
-			binding.textureView = texture.textureView;
-		}
-
-		DynamicUniform(Texture texture, int i)
-		{
-			index = i;
-
-			binding.binding = i;
-			binding.sampler = texture.sampler;
-		}
+		DynamicUniform() = default;
+		
 	};
 
+	DynamicUniform loadUniform(int i, size_t size, float data)
+	{
+		DynamicUniform uniform;
+		uniform.index = i;
+		uniform.scale = size;
+		// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
+		uint32_t uniformStride = ceilToNextMultiple(
+			(uint32_t)size,
+			(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
+		);
+		uniform.stride = uniformStride;
+		bufferDesc.size = 300 * uniformStride + size;
+		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
+		bufferDesc.mappedAtCreation = false;
+		uniform.buffer = device.createBuffer(bufferDesc);
 
+		queue.writeBuffer(uniform.buffer, 0, &data, size);
 
+		uniform.binding.binding = i;
+		uniform.binding.buffer = uniform.buffer;
+		uniform.binding.offset = 0;
+		uniform.binding.size = size;
+
+		return uniform;
+	}
+	DynamicUniform loadUniform(int i, size_t size, const float* array)
+	{
+		DynamicUniform uniform;
+		uniform.index = i;
+		uniform.scale = size;
+
+		bufferDesc.size = size;
+		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
+		bufferDesc.mappedAtCreation = false;
+		uniform.buffer = device.createBuffer(bufferDesc);
+
+		// Use writeBuffer with the pointer to float data
+		queue.writeBuffer(uniform.buffer, 0, array, size);
+
+		uniform.binding.binding = i;
+		uniform.binding.buffer = uniform.buffer;
+		uniform.binding.offset = 0;
+		uniform.binding.size = size;
+		return uniform;
+	}
+	DynamicUniform loadTexture(int i, Texture texture)
+	{
+		DynamicUniform uniform;
+		uniform.index = i;
+
+		uniform.binding.binding = i;
+		uniform.binding.textureView = texture.textureView;
+
+		return uniform;
+	}
+	DynamicUniform loadSampler(int i, Texture texture)
+	{
+		DynamicUniform uniform;
+		uniform.index = i;
+
+		uniform.binding.binding = i;
+		uniform.binding.sampler = texture.sampler;
+
+		return uniform;
+	}
 
 	//uint32_t stride; //global stride?
 
