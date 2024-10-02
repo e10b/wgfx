@@ -421,17 +421,7 @@ namespace wgfx
 		VertexBuffer vertexBuffer;
 		IndexBuffer indexBuffer;
 
-		//RenderPassEncoder pass = nullptr;
-
-			//std::vector<Framebuffer*> framebuffers;
-			//Framebuffer* currentFramebuffer;
-		/*
-		void setFramebuffer()//Framebuffer* framebuffer)
-		{
-
-			//framebuffers.emplace_back(framebuffer);
-		}
-		*/
+		std::vector<uint32_t> dynamicOffsets;
 
 		Pipeline()
 		{
@@ -558,30 +548,27 @@ namespace wgfx
 			{
 				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
 				dynamicUniformCount++;
+				dynamicOffsets.push_back(0); // the 
 			}
 			uniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
 
-		void setTexture(Uniform uniform, bool dynamic)
+		void setTexture(Uniform uniform)
 		{
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			bindingLayout.binding = uniform.index;
 			bindingLayout.visibility = ShaderStage::Fragment;
 			bindingLayout.texture.sampleType = TextureSampleType::Float;
 			bindingLayout.texture.viewDimension = TextureViewDimension::_2D;
-			if (dynamic)
-			{
-				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
-				dynamicUniformCount++;
-			}
+			
 			uniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
 
-		void setSampler(Uniform uniform, bool dynamic)
+		void setSampler(Uniform uniform)
 		{
 			// The texture sampler binding
 			BindGroupLayoutEntry samplerBindingLayout = Default;
@@ -589,11 +576,6 @@ namespace wgfx
 			samplerBindingLayout.visibility = ShaderStage::Fragment;
 			samplerBindingLayout.sampler.type = SamplerBindingType::Filtering;
 
-			if (dynamic)
-			{
-				samplerBindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
-				dynamicUniformCount++;
-			}
 
 			uniforms.push_back(&uniform);
 			entries.push_back(samplerBindingLayout);
@@ -625,7 +607,6 @@ namespace wgfx
 
 		BindGroup bindGroup;
 		
-		std::vector<uint32_t> dynamicOffsets;
 		void updateUniform(Uniform uniform, const float* array)
 		{
 			uint32_t dynamicOffset = uniforms.at(uniform.index)->quantity * uniforms.at(uniform.index)->stride;

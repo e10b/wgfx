@@ -100,10 +100,10 @@ int main(int _argc, char** _argv)
 
 	wgfx::Uniform viewUniform = wgfx::loadUniform(0, sizeof(glm::mat4), 1.0f);					 pipeline.setUniform(viewUniform, true);
 	wgfx::Uniform modelUniform = wgfx::loadUniform(1, sizeof(glm::mat4), 1.0f);				     pipeline.setUniform(modelUniform, true);
-	wgfx::Uniform projUniform = wgfx::loadUniform(2, sizeof(glm::mat4), glm::value_ptr(proj));	 pipeline.setUniform(projUniform, false);
+	wgfx::Uniform projUniform = wgfx::loadUniform(2, sizeof(glm::mat4), glm::value_ptr(proj));	 pipeline.setUniform(projUniform, true);
 
-	wgfx::Uniform sampler = wgfx::loadTexture(3, texture);										 pipeline.setTexture(sampler, false);
-	wgfx::Uniform actualsampler = wgfx::loadSampler(4, texture);									 pipeline.setSampler(actualsampler, false);
+	wgfx::Uniform sampler = wgfx::loadTexture(3, texture);										 pipeline.setTexture(sampler);
+	wgfx::Uniform actualsampler = wgfx::loadSampler(4, texture);									 pipeline.setSampler(actualsampler);
 
 	
 	pipeline.setVertexBuffer(vbo);
