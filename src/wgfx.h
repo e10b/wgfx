@@ -174,7 +174,6 @@ namespace wgfx
 		return texture;
 	}
 
-
 	CommandEncoder encoder = nullptr;
 	TextureView targetView = nullptr;
 
@@ -218,7 +217,7 @@ namespace wgfx
 	
 	BufferDescriptor bufferDesc;
 
-	struct DynamicUniform
+	struct Uniform
 	{
 		Buffer buffer;
 		BindGroupEntry binding;
@@ -229,13 +228,13 @@ namespace wgfx
 		int offset;
 		int quantity = 0; // uncrease when hmm, 
 
-		DynamicUniform() = default;
+		Uniform() = default;
 		
 	};
 
-	DynamicUniform loadUniform(int i, size_t size, float data)
+	Uniform loadUniform(int i, size_t size, float data)
 	{
-		DynamicUniform uniform;
+		Uniform uniform;
 		uniform.index = i;
 		uniform.scale = size;
 		// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
@@ -258,9 +257,9 @@ namespace wgfx
 
 		return uniform;
 	}
-	DynamicUniform loadUniform(int i, size_t size, const float* array)
+	Uniform loadUniform(int i, size_t size, const float* array)
 	{
-		DynamicUniform uniform;
+		Uniform uniform;
 		uniform.index = i;
 		uniform.scale = size;
 
@@ -283,9 +282,9 @@ namespace wgfx
 		uniform.binding.size = size;
 		return uniform;
 	}
-	DynamicUniform loadTexture(int i, Texture texture)
+	Uniform loadTexture(int i, Texture texture)
 	{
-		DynamicUniform uniform;
+		Uniform uniform;
 		uniform.index = i;
 
 		uniform.binding.binding = i;
@@ -293,9 +292,9 @@ namespace wgfx
 
 		return uniform;
 	}
-	DynamicUniform loadSampler(int i, Texture texture)
+	Uniform loadSampler(int i, Texture texture)
 	{
-		DynamicUniform uniform;
+		Uniform uniform;
 		uniform.index = i;
 
 		uniform.binding.binding = i;
@@ -411,7 +410,7 @@ namespace wgfx
 	
 	struct Pipeline
 	{
-		std::vector<DynamicUniform*> dynamicUniforms;
+		std::vector<Uniform*> uniforms;
 		int dynamicUniformCount = 0;
 
 		RenderPipeline pipeline;
@@ -546,7 +545,7 @@ namespace wgfx
 		}
 
 
-		void setUniform(DynamicUniform uniform, bool dynamic)
+		void setUniform(Uniform uniform, bool dynamic)
 		{
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			// The binding index as used in the @binding attribute in the shader
@@ -560,12 +559,12 @@ namespace wgfx
 				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
 				dynamicUniformCount++;
 			}
-			dynamicUniforms.push_back(&uniform);
+			uniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
 
-		void setTexture(DynamicUniform uniform, bool dynamic)
+		void setTexture(Uniform uniform, bool dynamic)
 		{
 			BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 			bindingLayout.binding = uniform.index;
@@ -577,12 +576,12 @@ namespace wgfx
 				bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
 				dynamicUniformCount++;
 			}
-			dynamicUniforms.push_back(&uniform);
+			uniforms.push_back(&uniform);
 			entries.push_back(bindingLayout);
 			bindings.push_back(uniform.binding);
 		}
 
-		void setSampler(DynamicUniform uniform, bool dynamic)
+		void setSampler(Uniform uniform, bool dynamic)
 		{
 			// The texture sampler binding
 			BindGroupLayoutEntry samplerBindingLayout = Default;
@@ -596,7 +595,7 @@ namespace wgfx
 				dynamicUniformCount++;
 			}
 
-			dynamicUniforms.push_back(&uniform);
+			uniforms.push_back(&uniform);
 			entries.push_back(samplerBindingLayout);
 			bindings.push_back(uniform.binding);
 		}
@@ -627,15 +626,15 @@ namespace wgfx
 		BindGroup bindGroup;
 		
 		std::vector<uint32_t> dynamicOffsets;
-		void updateUniform(DynamicUniform uniform, const float* array)
+		void updateUniform(Uniform uniform, const float* array)
 		{
-			uint32_t dynamicOffset = dynamicUniforms.at(uniform.index)->quantity * dynamicUniforms.at(uniform.index)->stride;
+			uint32_t dynamicOffset = uniforms.at(uniform.index)->quantity * uniforms.at(uniform.index)->stride;
 		
 			if (dynamicOffsets.size() <= uniform.index) { dynamicOffsets.resize(uniform.index + 1); } // resize
 			dynamicOffsets.at(uniform.index) = (dynamicOffset); // propogate current offsets
 
-			queue.writeBuffer(dynamicUniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
-			dynamicUniforms.at(uniform.index)->quantity++;
+			queue.writeBuffer(uniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
+			uniforms.at(uniform.index)->quantity++;
 
 		} // problem area has to be << 
 	};
@@ -660,7 +659,7 @@ namespace wgfx
 
 			if (reset)
 			{
-				for (auto uniform : pipeline.dynamicUniforms)
+				for (auto uniform : pipeline.uniforms)
 				{
 					uniform->quantity = 0;
 				}
