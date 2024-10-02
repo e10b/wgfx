@@ -120,14 +120,10 @@ int main(int _argc, char** _argv)
 			{
 			case SDL_EVENT_WINDOW_RESIZED:
 			{
-				int w = event.window.data1;
-				int h = event.window.data2;
-				float aspectRatio = (float)w / (float)h;
-
 				wgfx::initSurface();
-				wgfx::initDepth(w, h);
+				wgfx::initDepth();
 
-				proj = glm::perspective(glm::radians(50.0f), aspectRatio, 0.1f, 100.0f);
+				proj = glm::perspective(glm::radians(50.0f), float(1920 / 1080), 0.1f, 100.0f);
 			}
 			break;
 

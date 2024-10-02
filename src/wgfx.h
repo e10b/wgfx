@@ -303,9 +303,8 @@ namespace wgfx
 
 	TextureView depthTextureView;
 
-	void initDepth(uint32_t w, uint32_t h)
+	void initDepth()
 	{
-
 		int width, height;
 		SDL_GetWindowSize(swindow, &width, &height);
 
@@ -340,20 +339,13 @@ namespace wgfx
 	{
 		std::vector<VertexAttribute> vertexAttribs;
 		Buffer buffer;
-		//uint32_t vertexCount = 0;
 		int fields = 0;
 
 		VertexBuffer() {};
 
-		VertexBuffer(std::vector<float> vertices) // need a wgfx::createVertexBuffer()<<<
+		VertexBuffer(std::vector<float> vertices)
 		{
-			// We now divide the vector size by 5 fields.
-			//vertexCount = static_cast<uint32_t>(vertices.size() / 5);
-				//this->fields = fields;
-			//vertexCount = static_cast<uint32_t>(vertices.size() / fields);
-			//indexCount = static_cast<uint32_t>(indexData.size());
-
-			initDepth(1280, 720);
+			initDepth();
 
 			// Create vertex buffer
 			bufferDesc.size = vertices.size() * sizeof(float);
