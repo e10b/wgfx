@@ -123,7 +123,11 @@ int main(int _argc, char** _argv)
 				wgfx::initSurface();
 				wgfx::initDepth();
 
-				proj = glm::perspective(glm::radians(50.0f), float(1920 / 1080), 0.1f, 100.0f);
+				int width, height;
+				SDL_GetWindowSize(window, &width, &height);
+
+				proj = glm::perspective(glm::radians(50.0f), float(width) / float(height), 0.1f, 100.0f);
+				pipeline.updateUniform(projUniform, glm::value_ptr(proj));
 			}
 			break;
 
