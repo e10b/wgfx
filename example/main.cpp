@@ -11,33 +11,38 @@
 //The view in bgfx is analogous to the combination of a RenderPass(which controls the rendering context) and a TextureView(which defines the render target).
 
 
-std::vector<float> pointData = 
+std::vector<float> pointData =
 {
-	// x    y      z		r     g     b		u     v
-	-1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 0.0f,	0.0f, 0.0f,
+	// x    y      z		nx    ny    nz     u     v
+	-1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,  // Front face
 	 1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
+	-1.0f,  1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	0.0f, 1.0f,
+	 1.0f,  1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	1.0f, 1.0f,
+
+	-1.0f, -1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	0.0f, 0.0f,  // Back face
+	 1.0f, -1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	1.0f, 0.0f,
+	-1.0f,  1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	0.0f, 1.0f,
+	 1.0f,  1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	1.0f, 1.0f,
+
+	-1.0f, -1.0f, -1.0f,	-1.0f, 0.0f, 0.0f,	0.0f, 0.0f,  // Left face
+	-1.0f, -1.0f,  1.0f,	-1.0f, 0.0f, 0.0f,	1.0f, 0.0f,
+	-1.0f,  1.0f, -1.0f,	-1.0f, 0.0f, 0.0f,	0.0f, 1.0f,
+	-1.0f,  1.0f,  1.0f,	-1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
+
+	 1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 0.0f,  // Right face
+	 1.0f, -1.0f,  1.0f,	1.0f, 0.0f, 0.0f,	1.0f, 0.0f,
+	 1.0f,  1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 1.0f,
+	 1.0f,  1.0f,  1.0f,	1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
+
+	-1.0f,  1.0f, -1.0f,	0.0f, 1.0f, 0.0f,	0.0f, 0.0f,  // Top face
+	 1.0f,  1.0f, -1.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
 	-1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 1.0f,	1.0f, 1.0f,
-	-1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 0.0f,
-	 1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 1.0f,	1.0f, 0.0f,
-	-1.0f,  1.0f, -1.0f,	1.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f, -1.0f,	1.0f, 1.0f, 1.0f,	1.0f, 1.0f,
-	-1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 0.0f,
-	-1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 0.0f,	1.0f, 0.0f,
-	-1.0f,  1.0f, -1.0f,	1.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-	-1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
-	 1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 1.0f,	0.0f, 0.0f,
-	 1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
-	 1.0f,  1.0f, -1.0f,	1.0f, 1.0f, 1.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 1.0f,	1.0f, 1.0f,
-	-1.0f,  1.0f, -1.0f,	1.0f, 1.0f, 0.0f,	0.0f, 0.0f,
-	 1.0f,  1.0f, -1.0f,	1.0f, 1.0f, 1.0f,	1.0f, 0.0f,
-	-1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 1.0f,	1.0f, 1.0f,
-	-1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 0.0f,
-	 1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 1.0f,	1.0f, 0.0f,
-	-1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 0.0f,	0.0f, 1.0f,
-	 1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	1.0f, 1.0f
+	 1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
+
+	-1.0f, -1.0f, -1.0f,	0.0f, -1.0f, 0.0f,	0.0f, 0.0f,  // Bottom face
+	 1.0f, -1.0f, -1.0f,	0.0f, -1.0f, 0.0f,	1.0f, 0.0f,
+	-1.0f, -1.0f,  1.0f,	0.0f, -1.0f, 0.0f,	0.0f, 1.0f,
+	 1.0f, -1.0f,  1.0f,	0.0f, -1.0f, 0.0f,	1.0f, 1.0f
 };
 
 std::vector<uint16_t> indexData = 
@@ -74,7 +79,7 @@ int main(int _argc, char** _argv)
 	wgfx::IndexBuffer ibo(indexData);
 
 	glm::mat4 proj = glm::perspective(glm::radians(50.0f)/*fov*/, float(1920) / 1080, 0.1f, 1000.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -15.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	wgfx::Texture texture = wgfx::loadTexture(RESOURCE_DIR "/crate2.jpg");
 
