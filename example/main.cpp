@@ -57,17 +57,20 @@ std::vector<uint16_t> indexData =
 	21, 23, 22
 };
 
+#include "shader.h"
+
 int main()
 {
 	Context& context = Context::Instance();
 	Input& input = Input::Instance();
 
 	Player player;
-
+	/*
 	wgfx::Pipeline pipeline = wgfx::loadPipeline(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
-
 	wgfx::RenderPass renderPass;
 	renderPass.setClear({ 0.0375, 0.0375, 0.0375, 1 });
+	*/
+	Shader shader("balls");
 
 	wgfx::VertexBuffer vbo = wgfx::createVertexBuffer(pointData);
 	vbo.setAttribute(0, wgfx::vec3f, 0); // position
@@ -75,12 +78,12 @@ int main()
 	vbo.setAttribute(2, wgfx::vec2f, 6); // uv
 	wgfx::IndexBuffer ibo = wgfx::createIndexBuffer(indexData);
 
-	wgfx::Uniform viewUniform = wgfx::createUniform(0, sizeof(glm::mat4), 1.0f);     pipeline.setUniform(viewUniform, true);
-	wgfx::Uniform modelUniform = wgfx::createUniform(1, sizeof(glm::mat4), 1.0f);	 pipeline.setUniform(modelUniform, true);
-	wgfx::Uniform projUniform = wgfx::createUniform(2, sizeof(glm::mat4), 1.0f);	 pipeline.setUniform(projUniform, true);
+	wgfx::Uniform viewUniform = wgfx::createUniform(0, sizeof(glm::mat4), 1.0f);     shader.pipeline.setUniform(viewUniform, true);
+	wgfx::Uniform modelUniform = wgfx::createUniform(1, sizeof(glm::mat4), 1.0f);	 shader.pipeline.setUniform(modelUniform, true);
+	wgfx::Uniform projUniform = wgfx::createUniform(2, sizeof(glm::mat4), 1.0f);	 shader.pipeline.setUniform(projUniform, true);
 
-	pipeline.setVertexBuffer(vbo);
-	pipeline.setIndexBuffer(ibo);
+	shader.pipeline.setVertexBuffer(vbo);
+	shader.pipeline.setIndexBuffer(ibo);
 
 	while (!context.close)
 	{
@@ -96,22 +99,21 @@ int main()
 		//draw
 		const Camera& cam = player.getCamera();
 
-		renderPass.touch();
-		pipeline.updateUniform(viewUniform, glm::value_ptr(cam.getViewMatrix()));
-		pipeline.updateUniform(projUniform, glm::value_ptr(cam.getProjectionMatrix()));
+		shader.renderPass.touch();
+		shader.pipeline.updateUniform(viewUniform, glm::value_ptr(cam.getViewMatrix()));
+		shader.pipeline.updateUniform(projUniform, glm::value_ptr(cam.getProjectionMatrix()));
 		// draw cubes
 		for (uint32_t yy = 0; yy < 11; ++yy) {
 			for (uint32_t xx = 0; xx < 11; ++xx) {
 				glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time + xx * 0.21f, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
 				rotationMatrix = glm::rotate(rotationMatrix, time + yy * 0.37f, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
 				rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, 0.0f, 1.0f);
-				float* mtx = glm::value_ptr(rotationMatrix);
-				pipeline.updateUniform(modelUniform, mtx);
+				shader.pipeline.updateUniform(modelUniform, glm::value_ptr(rotationMatrix));
 
-				renderPass.draw(pipeline);
+				shader.use();//shader.renderPass.draw(shader.pipeline);
 			}
 		}
-		renderPass.end();
+		shader.renderPass.end();
 		context.draw();
 	}
 
