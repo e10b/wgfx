@@ -11,10 +11,11 @@ option(DEV_MODE "Set up development helper settings" ON)
 add_subdirectory(deps)
 
 
-file(GLOB_RECURSE src "src/*.cpp")
-	#list(FILTER src EXCLUDE REGEX "src/main.cpp")
+file(GLOB_RECURSE src "example/*.cpp")
+	list(FILTER src EXCLUDE REGEX "example/main.cpp")
+file(GLOB_RECURSE srcc "src/*.cpp") #intriguing..
 
-add_executable( App ${src} example/main.cpp )
+add_executable( App ${src} ${srcc} example/main.cpp )
  #"sdl2webgpu/sdl2webgpu.c" "sdl2webgpu/sdl2webgpu.h")
 
  if(DEV_MODE)
