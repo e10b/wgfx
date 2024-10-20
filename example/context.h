@@ -15,6 +15,8 @@ public:
 
 	void update();
 
+	void draw();
+
 	bool close = false;
 	SDL_Window* window;
 };

@@ -45,3 +45,8 @@ void Context::update()
 	}
 }
 
+void Context::draw()
+{
+	wgfx::frame();
+}
+

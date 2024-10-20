@@ -9,9 +9,11 @@ Shader::Shader(const char* shader)
 void Shader::use()
 {
 	pass.draw(pipeline);
+	pass.end();
 }
 
 void Shader::setVar(wgfx::Uniform uniform)
 {
 	pipeline.setUniform(uniform, true);
 }
+

@@ -11,7 +11,12 @@ public:
 
 	void setVar(wgfx::Uniform uniform);
 
-private:
+	void touch()
+	{
+		pass.touch();
+	}
+
 	wgfx::Pipeline pipeline;
+private:
 	wgfx::RenderPass pass;
 };

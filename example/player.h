@@ -13,7 +13,7 @@ class Player : public Entity
 public:
 	Player();
 
-	void update(float dt, entry::MouseState state);
+	void update(float dt);
 
 	const Camera& getCamera() const;
 
