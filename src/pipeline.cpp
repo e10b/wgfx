@@ -12,15 +12,17 @@ namespace wgfx
 	{
 		indexBuffer = buffer;
 	}
-
+	VertexBufferLayout vertexBufferLayout;
 	void Pipeline::setVertexBuffer(VertexBuffer buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
 	{
+		initDepth();
 		vertexBuffer = buffer;
-
-		VertexBufferLayout vertexBufferLayout;
-		vertexBufferLayout.attributeCount = (uint32_t)buffer.vertexAttribs.size();
-		vertexBufferLayout.attributes = buffer.vertexAttribs.data();
-		vertexBufferLayout.arrayStride = (buffer.fields) * sizeof(float);
+	}
+	void Pipeline::init()
+	{
+		vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer.vertexAttribs.size();
+		vertexBufferLayout.attributes = vertexBuffer.vertexAttribs.data();
+		vertexBufferLayout.arrayStride = (vertexBuffer.fields) * sizeof(float);
 		vertexBufferLayout.stepMode = VertexStepMode::Vertex;
 
 		pipelineDesc.vertex.bufferCount = 1;

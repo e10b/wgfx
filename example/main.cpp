@@ -41,6 +41,23 @@ std::vector<float> pointData =
 	 1.0f, -1.0f,  1.0f,	0.0f, -1.0f, 0.0f,	1.0f, 1.0f
 };
 
+std::vector<float> random2 =
+{
+	0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0,
+1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0,
+1.0, 1.0, 0.0, 0.0, -1.0, -1.0, 1.0, 1.0, 1.0, 0.0, -1.0, 0.0, -1.0, 1.0, 1.0, -1.0,
+1.0, 0.0, 1.0, 0.0, -1.0, -1.0, -1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0,
+0.0, 0.0, 1.0, -1.0, -1.0, 1.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0, -1.0, 1.0, -1.0, 0.0,
+-1.0, 1.0, 1.0, 1.0, 0.0, -1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, -1.0,
+0.0, 0.0, 1.0, -1.0, 1.0, 0.0, -1.0, 1.0, 1.0, 1.0, 0.0, -1.0, 1.0, -1.0, -1.0, 0.0,
+-1.0, 0.0, -1.0, -1.0, 1.0, 0.0, -1.0, -1.0, 1.0, 0.0, -1.0, 1.0, 1.0, -1.0, 0.0, 1.0,
+1.0, 1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, -1.0, 1.0, 0.0, 1.0,
+-1.0, 1.0, -1.0, 1.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+-1.0, 0.0, 0.0, -1.0, 1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+-1.0, -1.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 1.0, 0.0, -1.0
+
+};
+
 std::vector<uint16_t> indexData =
 {
 	0, 1, 2,
@@ -55,6 +72,22 @@ std::vector<uint16_t> indexData =
 	17, 19, 18,
 	20, 21, 22,
 	21, 23, 22
+};
+
+std::vector<uint16_t> random =
+{
+	8, 14, 10,
+	22, 2, 10,
+	4, 7, 17,
+	18, 9, 0,
+	13, 5, 13,
+	6, 22, 12,
+	18, 21, 5,
+	11, 9, 14,
+	15, 6, 20,
+	17, 1, 1,
+	2, 21, 23,
+	3, 16, 19
 };
 
 #include "shader.h"
@@ -76,14 +109,16 @@ int main()
 	vbo.setAttribute(0, wgfx::vec3f, 0); // position
 	vbo.setAttribute(1, wgfx::vec3f, 3); // color
 	vbo.setAttribute(2, wgfx::vec2f, 6); // uv
+	shader.pipeline.setVertexBuffer(vbo);
+
 	wgfx::IndexBuffer ibo = wgfx::createIndexBuffer(indexData);
+	shader.pipeline.setIndexBuffer(ibo);
 
 	wgfx::Uniform viewUniform = wgfx::createUniform(0, sizeof(glm::mat4), 1.0f);     shader.pipeline.setUniform(viewUniform, true);
 	wgfx::Uniform modelUniform = wgfx::createUniform(1, sizeof(glm::mat4), 1.0f);	 shader.pipeline.setUniform(modelUniform, true);
 	wgfx::Uniform projUniform = wgfx::createUniform(2, sizeof(glm::mat4), 1.0f);	 shader.pipeline.setUniform(projUniform, true);
 
-	shader.pipeline.setVertexBuffer(vbo);
-	shader.pipeline.setIndexBuffer(ibo);
+	shader.pipeline.init(); // auto init?? well, 
 
 	while (!context.close)
 	{
@@ -98,6 +133,17 @@ int main()
 
 		//draw
 		const Camera& cam = player.getCamera();
+
+		const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
+		if (keyboardState[SDL_SCANCODE_C] )
+		{
+			shader.pipeline.updateVertexBuffer(pointData);
+			//shader.pipeline.set(indexData);
+		}
+		else
+		{
+			//shader.pipeline.updateVertexBuffer(random2);
+		}
 
 		shader.renderPass.touch();
 		shader.pipeline.updateUniform(viewUniform, glm::value_ptr(cam.getViewMatrix()));

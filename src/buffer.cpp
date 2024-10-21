@@ -11,7 +11,7 @@ namespace wgfx
 	{
 		VertexBuffer buffer;
 
-		initDepth();
+		//initDepth();
 
 		// Create vertex buffer
 		bufferDesc.size = vertices.size() * sizeof(float);

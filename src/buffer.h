@@ -13,8 +13,8 @@ namespace wgfx
 		VertexBuffer() {};
 
 		//VertexBuffer(std::vector<float> vertices);
-
 		void setAttribute(int location, VertexFormat type, int offset);
+		
 		
 	};
 
@@ -27,8 +27,8 @@ namespace wgfx
 
 		IndexBuffer() : buffer(nullptr), indexCount(0) {} // allow for no index buff
 
+		
 		//IndexBuffer(std::vector<uint16_t> indices);
-
 	};
 
 	IndexBuffer createIndexBuffer(std::vector<uint16_t> indices);

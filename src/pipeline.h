@@ -26,6 +26,17 @@ namespace wgfx
 		Pipeline();
 			BindGroup bindGroup;
 		void setIndexBuffer(IndexBuffer buffer);
+		void updateIndexBuffer(std::vector<uint16_t> indices)
+		{
+			IndexBuffer buffer = wgfx::createIndexBuffer(indices);
+			indexBuffer = buffer;
+		}
+		void updateVertexBuffer(std::vector<float> vertices)
+		{
+			VertexBuffer buffer = wgfx::createVertexBuffer(vertices);
+			vertexBuffer = buffer;
+		}
+		void init();
 			BindGroupLayout bindGroupLayout;
 			BindGroupLayoutDescriptor bindGroupLayoutDesc;
 			std::vector<BindGroupLayoutEntry> entries;
