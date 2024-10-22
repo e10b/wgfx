@@ -7,28 +7,28 @@ namespace wgfx
 		return step * divide_and_ceil;
 	}
 
-	Uniform createUniform(int i, size_t size, float data)
+	Uniform* createUniform(int i, size_t size, float data)
 	{
-		Uniform uniform;
-		uniform.index = i;
-		uniform.scale = size;
+		Uniform* uniform = new Uniform();
+		uniform->index = i;
+		uniform->scale = size;
 		// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
 		uint32_t uniformStride = ceilToNextMultiple(
 			(uint32_t)size,
 			(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
 		);// intervalic sizing - scaled to the offset alignment val
-		uniform.stride = uniformStride;
+		uniform->stride = uniformStride;
 		bufferDesc.size = 256 * uniformStride + size; // max size
 		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 		bufferDesc.mappedAtCreation = false;
-		uniform.buffer = device.createBuffer(bufferDesc);
+		uniform->buffer = device.createBuffer(bufferDesc);
 
-		queue.writeBuffer(uniform.buffer, 0, &data, size);
+		queue.writeBuffer(uniform->buffer, 0, &data, size);
 
-		uniform.binding.binding = i;
-		uniform.binding.buffer = uniform.buffer;
-		uniform.binding.offset = 0;
-		uniform.binding.size = size;
+		uniform->binding.binding = i;
+		uniform->binding.buffer = uniform->buffer;
+		uniform->binding.offset = 0;
+		uniform->binding.size = size;
 
 		return uniform;
 	}

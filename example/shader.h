@@ -5,6 +5,8 @@
 class Shader
 {
 public:
+	Shader() = default;
+
 	Shader(const char* shader)
 	{
 		pipeline = wgfx::loadPipeline(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));

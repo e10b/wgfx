@@ -111,24 +111,24 @@ namespace wgfx
 		bindGroup = device.createBindGroup(bindGroupDesc);
 
 	}
-	void Pipeline::setUniform(Uniform uniform, bool dynamic)
+	void Pipeline::setUniform(Uniform* uniform, bool dynamic)
 	{
 		BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
 		// The binding index as used in the @binding attribute in the shader
-		bindingLayout.binding = uniform.index;
+		bindingLayout.binding = uniform->index;
 		// The stage that needs to access this resource
 		bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
 		bindingLayout.buffer.type = BufferBindingType::Uniform;
-		bindingLayout.buffer.minBindingSize = uniform.scale;
+		bindingLayout.buffer.minBindingSize = uniform->scale;
 		if (dynamic)
 		{
 			bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
 			dynamicUniformCount++;
 			dynamicOffsets.push_back(0); // the 
 		}
-		uniforms.push_back(&uniform);
+		uniforms.push_back(uniform);
 		entries.push_back(bindingLayout);
-		bindings.push_back(uniform.binding);
+		bindings.push_back(uniform->binding);
 	}
 	void Pipeline::setTexture(Uniform uniform)
 	{
@@ -181,15 +181,15 @@ namespace wgfx
 
 
 
-	void Pipeline::updateUniform(Uniform uniform, const float* array)
+	void Pipeline::updateUniform(Uniform* uniform, const float* array)
 	{
-		uint32_t dynamicOffset = uniforms.at(uniform.index)->quantity * uniforms.at(uniform.index)->stride;
+		uint32_t dynamicOffset = uniforms.at(uniform->index)->quantity * uniforms.at(uniform->index)->stride;
 
-		if (dynamicOffsets.size() <= uniform.index) { dynamicOffsets.resize(uniform.index + 1); } // resize
-		dynamicOffsets.at(uniform.index) = (dynamicOffset); // propogate current offsets
+		if (dynamicOffsets.size() <= uniform->index) { dynamicOffsets.resize(uniform->index + 1); } // resize
+		dynamicOffsets.at(uniform->index) = (dynamicOffset); // propogate current offsets
 
-		queue.writeBuffer(uniforms.at(uniform.index)->buffer, dynamicOffset, array, uniform.scale);
-		uniforms.at(uniform.index)->quantity++;
+		queue.writeBuffer(uniforms.at(uniform->index)->buffer, dynamicOffset, array, uniform->scale);
+		uniforms.at(uniform->index)->quantity++;
 
 	} // problem area has to be << 
 

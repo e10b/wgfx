@@ -27,7 +27,7 @@ public:
 
 	void bind(wgfx::Pipeline* pipeline)
 	{
-		pipeline->setIndexBuffer(vbo_);
+		pipeline->setVertexBuffer(vbo_);
 		pipeline->setIndexBuffer(ibo_); //hmm hmm hm
 	}
 
