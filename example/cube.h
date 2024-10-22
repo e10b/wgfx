@@ -61,9 +61,9 @@ class Cube
 	Shader shader;
 	Model mesh;
 
-	wgfx::Uniform* view;
-	wgfx::Uniform* model;
-	wgfx::Uniform* proj;
+	//wgfx::Uniform* view;
+	//wgfx::Uniform* model;
+	//wgfx::Uniform* proj;
 
 public:
 
@@ -80,9 +80,15 @@ public:
 		wgfx::IndexBuffer ibo = wgfx::createIndexBuffer(indexData);
 		shader.pipeline.setIndexBuffer(ibo);
 
+		/*
 		view = wgfx::createUniform(0, sizeof(glm::mat4), 1.0f);	shader.pipeline.setUniform(view, true);	//shader.pipeline.setUniform(*view, true);
 		model = wgfx::createUniform(1, sizeof(glm::mat4), 1.0f); shader.pipeline.setUniform(model, true);			//shader.pipeline.setUniform(*model, true);
 		proj = wgfx::createUniform(2, sizeof(glm::mat4), 1.0f);	shader.pipeline.setUniform(proj, true);	//shader.pipeline.setUniform(*proj, true);
+		*/
+		shader.setUniform(0); // view
+		shader.setUniform(1); // model
+		shader.setUniform(2); // proj
+
 		// maybe p[rehaps storing these objects as pointers is more logical, Struggle i find, struggle indeed. a most matron struggle, I feel like a dodojd diujh dij dij dij dij dij dd ijdd ijd 
 
 		shader.pipeline.init(); // auto init?? well, 
@@ -94,15 +100,18 @@ public:
 		float time = SDL_GetTicks() / 1000.0f; // ought not
 
 		shader.renderPass.touch();
-		shader.pipeline.updateUniform(view, glm::value_ptr(camera.getViewMatrix()));
-		shader.pipeline.updateUniform(proj, glm::value_ptr(camera.getProjectionMatrix()));
+		shader.updateUniform(0, camera.getViewMatrix());
+		shader.updateUniform(2, camera.getProjectionMatrix());
+		//shader.pipeline.updateUniform(view, glm::value_ptr(camera.getViewMatrix()));
+		//shader.pipeline.updateUniform(proj, glm::value_ptr(camera.getProjectionMatrix()));
 		// draw cubes
 		for (uint32_t yy = 0; yy < 11; ++yy) {
 			for (uint32_t xx = 0; xx < 11; ++xx) {
 				glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time + xx * 0.21f, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
 				rotationMatrix = glm::rotate(rotationMatrix, time + yy * 0.37f, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
 				rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, 0.0f, 1.0f);
-				shader.pipeline.updateUniform(model, glm::value_ptr(rotationMatrix));
+				shader.updateUniform(1, rotationMatrix);
+				//shader.pipeline.updateUniform(model, glm::value_ptr(rotationMatrix));
 
 				shader.use();//shader.renderPass.draw(shader.pipeline);
 			}
