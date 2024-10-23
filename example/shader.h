@@ -25,6 +25,13 @@ public:
 		uniforms.push_back(uniform);
 	}
 
+	void setUniform(int index, glm::mat4& value)
+	{
+		wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(glm::mat4), glm::value_ptr(value));
+		pipeline.setUniform(uniform, true);
+		uniforms.push_back(uniform);
+	}
+
 	void setTexture(int index, wgfx::Texture texture)
 	{
 		wgfx::Uniform* uniform = wgfx::createTexture(index, texture);

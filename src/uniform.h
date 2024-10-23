@@ -21,7 +21,7 @@ namespace wgfx
 	};
 
 	Uniform* createUniform(int i, size_t size, float data);
-		Uniform createUniform(int i, size_t size, const float* array);
+	Uniform* createUniform(int i, size_t size, const float* array);
 	Uniform* createTexture(int i, Texture texture);
 	Uniform* createSampler(int i, Texture texture);
 }
