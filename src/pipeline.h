@@ -43,8 +43,8 @@ namespace wgfx
 			std::vector<BindGroupEntry> bindings;
 			void setVertexBuffer(VertexBuffer);
 			void setUniform(Uniform* uniform, bool dynamic);
-		void setTexture(Uniform uniform);
-		void setSampler(Uniform uniform);
+		void setTexture(Uniform* uniform);
+		void setSampler(Uniform* uniform);
 		void touch();
 		void updateUniform(Uniform* uniform, const float* array);
 

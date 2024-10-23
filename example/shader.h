@@ -25,10 +25,26 @@ public:
 		uniforms.push_back(uniform);
 	}
 
+	void setTexture(int index, wgfx::Texture texture)
+	{
+		wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
+		pipeline.setTexture(uniform);
+		uniforms.push_back(uniform);
+	}
+
+	void setSampler(int index, wgfx::Texture texture)
+	{
+		wgfx::Uniform* uniform = wgfx::createSampler(index, texture);
+		pipeline.setSampler(uniform);
+		uniforms.push_back(uniform);
+	}
+
 	void updateUniform(int index, glm::mat4& value)
 	{
 		pipeline.updateUniform(uniforms.at(index), glm::value_ptr(value));
 	}
+
+
 
 	std::vector<wgfx::Uniform*> uniforms;
 

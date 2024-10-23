@@ -130,31 +130,31 @@ namespace wgfx
 		entries.push_back(bindingLayout);
 		bindings.push_back(uniform->binding);
 	}
-	void Pipeline::setTexture(Uniform uniform)
+	void Pipeline::setTexture(Uniform* uniform)
 	{
 		BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
-		bindingLayout.binding = uniform.index;
+		bindingLayout.binding = uniform->index;
 		bindingLayout.visibility = ShaderStage::Fragment;
 		bindingLayout.texture.sampleType = TextureSampleType::Float;
 		bindingLayout.texture.viewDimension = TextureViewDimension::_2D;
 
-		uniforms.push_back(&uniform);
+		uniforms.push_back(uniform);
 		entries.push_back(bindingLayout);
-		bindings.push_back(uniform.binding);
+		bindings.push_back(uniform->binding);
 	}
 
-	void Pipeline::setSampler(Uniform uniform)
+	void Pipeline::setSampler(Uniform* uniform)
 	{
 		// The texture sampler binding
 		BindGroupLayoutEntry samplerBindingLayout = Default;
-		samplerBindingLayout.binding = uniform.index;
+		samplerBindingLayout.binding = uniform->index;
 		samplerBindingLayout.visibility = ShaderStage::Fragment;
 		samplerBindingLayout.sampler.type = SamplerBindingType::Filtering;
 
 
-		uniforms.push_back(&uniform);
+		uniforms.push_back(uniform);
 		entries.push_back(samplerBindingLayout);
-		bindings.push_back(uniform.binding);
+		bindings.push_back(uniform->binding);
 	}
 	void Pipeline::touch()
 	{

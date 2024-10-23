@@ -57,23 +57,23 @@ namespace wgfx
 		uniform.binding.size = size;
 		return uniform;
 	}
-	Uniform createTexture(int i, Texture texture)
+	Uniform* createTexture(int i, Texture texture)
 	{
-		Uniform uniform;
-		uniform.index = i;
+		Uniform* uniform = new Uniform();
+		uniform->index = i;
 
-		uniform.binding.binding = i;
-		uniform.binding.textureView = texture.textureView;
+		uniform->binding.binding = i;
+		uniform->binding.textureView = texture.textureView;
 
 		return uniform;
 	}
-	Uniform createSampler(int i, Texture texture)
+	Uniform* createSampler(int i, Texture texture)
 	{
-		Uniform uniform;
-		uniform.index = i;
+		Uniform* uniform = new Uniform();
+		uniform->index = i;
 
-		uniform.binding.binding = i;
-		uniform.binding.sampler = texture.sampler;
+		uniform->binding.binding = i;
+		uniform->binding.sampler = texture.sampler;
 
 		return uniform;
 	}
