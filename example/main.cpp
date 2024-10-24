@@ -8,6 +8,8 @@
 
 #include "cube.h"
 
+#include "test.h"
+
 int main()
 {
 	Context& context = Context::Instance();
@@ -15,7 +17,8 @@ int main()
 
 	Player player;
 	
-	Cube cube;
+	//Cube cube;
+	Test test;
 
 	while (!context.close)
 	{
@@ -27,10 +30,10 @@ int main()
 		input.update();
 		player.update(dt);
 
-		//draw
 		const Camera& cam = player.getCamera();
-		cube.draw(cam);
-		
+		//cube.draw(cam);
+		test.render(cam);
+
 		context.draw();
 	}
 
