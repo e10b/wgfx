@@ -130,7 +130,8 @@ void Player::update(float dt)
         */
 
         if (dir != glm::vec3(0.0f))
-            teleport(getPosition() + glm::normalize(dir) * (input.getKey(Key::Run) ? 100.f : 10.f) * dt);
+            teleport(getPosition() + glm::normalize(dir) * (keyboardState[SDL_SCANCODE_LCTRL] ? 100.f : 10.f) * dt);
+        //teleport(getPosition() + glm::normalize(dir) * (input.getKey(Key::Run) ? 100.f : 10.f) * dt);
     }
 
     // update camera
