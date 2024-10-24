@@ -79,8 +79,8 @@ namespace wgfx
 		samplerDesc.addressModeU = AddressMode::Repeat;
 		samplerDesc.addressModeV = AddressMode::Repeat;
 		samplerDesc.addressModeW = AddressMode::Repeat;
-		samplerDesc.magFilter = FilterMode::Linear;
-		samplerDesc.minFilter = FilterMode::Linear;
+		samplerDesc.magFilter = FilterMode::Nearest;//FilterMode::Linear;
+		samplerDesc.minFilter = FilterMode::Nearest;//FilterMode::Linear;
 		samplerDesc.mipmapFilter = MipmapFilterMode::Linear;
 		samplerDesc.lodMinClamp = 0.0f;
 		samplerDesc.lodMaxClamp = 8.0f;

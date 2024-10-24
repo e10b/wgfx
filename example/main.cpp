@@ -17,8 +17,8 @@ int main()
 
 	Player player;
 	
-	Cube cube;
-	//Test test;
+	//Cube cube;
+	Test test;
 
 	while (!context.close)
 	{
@@ -31,8 +31,8 @@ int main()
 		player.update(dt);
 
 		const Camera& cam = player.getCamera();
-		cube.draw(cam);
-		//test.render(cam);
+		//cube.draw(cam);
+		test.render(cam);
 
 		context.draw();
 	}

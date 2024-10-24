@@ -13,10 +13,10 @@ class Test
 {
 public:
 	Test()
-		: shader_("shader"),
+		: shader_("shader.wgsl"),
 		chunk_({0,0})
 	{
-		texture = wgfx::loadTexture(RESOURCE_DIR "/crate2.jpg");
+		texture = wgfx::loadTexture(RESOURCE_DIR "/stone.png");
 		chunk_.generate(terrain_);
 		chunk_.buildMesh();
 		chunk_.draw(&shader_.pipeline);
