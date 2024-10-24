@@ -9,7 +9,7 @@ public:
 
 	Shader(const char* shader)
 	{
-		pipeline = wgfx::loadPipeline(wgfx::loadFromFile(RESOURCE_DIR "/shader.wgsl"));
+		pipeline = wgfx::loadPipeline(wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/" + shader).c_str()));
 		renderPass.setClear({ 0.0375, 0.0375, 0.0375, 1 });
 	}
 

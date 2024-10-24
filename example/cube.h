@@ -5,51 +5,67 @@
 
 std::vector<float> pointData =
 {
-	// x    y      z		nx    ny    nz     u     v
-	-1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,  // Front face
-	 1.0f, -1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
-	-1.0f,  1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f,  1.0f,	0.0f, 0.0f, 1.0f,	1.0f, 1.0f,
+// x        y       z       nx       ny       nz      u       v
+// Back face
+1.0f, -1.0f, -1.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,  // top right
+-1.0f, -1.0f, -1.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,  // top left
+-1.0f, 1.0f, -1.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,  // bottom left
+1.0f, 1.0f, -1.0f,   0.0f, 0.0f, 1.0f,  1.0f, 1.0f,  // bottom right
 
-	-1.0f, -1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	0.0f, 0.0f,  // Back face
-	 1.0f, -1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	1.0f, 0.0f,
-	-1.0f,  1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f, -1.0f,	0.0f, 0.0f, -1.0f,	1.0f, 1.0f,
+// Right face
+1.0f, -1.0f, 1.0f,   1.0f, 0.0f, 0.0f,  1.0f, 0.0f,  // top right
+1.0f, -1.0f, -1.0f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,  // top left
+1.0f, 1.0f, -1.0f,   1.0f, 0.0f, 0.0f,  0.0f, 1.0f,  // bottom left
+1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 0.0f,  1.0f, 1.0f,  // bottom right
 
-	-1.0f, -1.0f, -1.0f,	-1.0f, 0.0f, 0.0f,	0.0f, 0.0f,  // Left face
-	-1.0f, -1.0f,  1.0f,	-1.0f, 0.0f, 0.0f,	1.0f, 0.0f,
-	-1.0f,  1.0f, -1.0f,	-1.0f, 0.0f, 0.0f,	0.0f, 1.0f,
-	-1.0f,  1.0f,  1.0f,	-1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
+// Front face
+-1.0f, -1.0f, 1.0f,   0.0f, 0.0f, -1.0f,  1.0f, 0.0f, // top right
+1.0f, -1.0f, 1.0f,    0.0f, 0.0f, -1.0f,  0.0f, 0.0f, // top left
+1.0f, 1.0f, 1.0f,     0.0f, 0.0f, -1.0f,  0.0f, 1.0f, // bottom left
+-1.0f, 1.0f, 1.0f,    0.0f, 0.0f, -1.0f,  1.0f, 1.0f, // bottom right
 
-	 1.0f, -1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 0.0f,  // Right face
-	 1.0f, -1.0f,  1.0f,	1.0f, 0.0f, 0.0f,	1.0f, 0.0f,
-	 1.0f,  1.0f, -1.0f,	1.0f, 0.0f, 0.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f,  1.0f,	1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
+// Left face
+-1.0f, -1.0f, -1.0f,  -1.0f, 0.0f, 0.0f,  1.0f, 0.0f, // top right
+-1.0f, -1.0f, 1.0f,   -1.0f, 0.0f, 0.0f,  0.0f, 0.0f, // top left
+-1.0f, 1.0f, 1.0f,    -1.0f, 0.0f, 0.0f,  0.0f, 1.0f, // bottom left
+-1.0f, 1.0f, -1.0f,   -1.0f, 0.0f, 0.0f,  1.0f, 1.0f, // bottom right
 
-	-1.0f,  1.0f, -1.0f,	0.0f, 1.0f, 0.0f,	0.0f, 0.0f,  // Top face
-	 1.0f,  1.0f, -1.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
-	-1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-	 1.0f,  1.0f,  1.0f,	0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
+// Top face
+-1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,  1.0f, 0.0f,  // top right
+1.0f, 1.0f, 1.0f,     0.0f, 1.0f, 0.0f,  0.0f, 0.0f,  // top left
+1.0f, 1.0f, -1.0f,    0.0f, 1.0f, 0.0f,  0.0f, 1.0f,  // bottom left
+-1.0f, 1.0f, -1.0f,   0.0f, 1.0f, 0.0f,  1.0f, 1.0f,  // bottom right
 
-	-1.0f, -1.0f, -1.0f,	0.0f, -1.0f, 0.0f,	0.0f, 0.0f,  // Bottom face
-	 1.0f, -1.0f, -1.0f,	0.0f, -1.0f, 0.0f,	1.0f, 0.0f,
-	-1.0f, -1.0f,  1.0f,	0.0f, -1.0f, 0.0f,	0.0f, 1.0f,
-	 1.0f, -1.0f,  1.0f,	0.0f, -1.0f, 0.0f,	1.0f, 1.0f
+// Bottom face
+-1.0f, -1.0f, -1.0f,  0.0f, -1.0f, 0.0f,  1.0f, 0.0f, // top right
+1.0f, -1.0f, -1.0f,   0.0f, -1.0f, 0.0f,  0.0f, 0.0f, // top left
+1.0f, -1.0f, 1.0f,    0.0f, -1.0f, 0.0f,  0.0f, 1.0f, // bottom left
+-1.0f, -1.0f, 1.0f,   0.0f, -1.0f, 0.0f,  1.0f, 1.0f  // bottom right
 };
 std::vector<uint16_t> indexData =
 {
-	0, 1, 2,
-	1, 3, 2,
-	4, 5, 6,
-	5, 7, 6,
-	8, 9, 10,
-	9, 11, 10,
-	12, 13, 14,
-	13, 15, 14,
-	16, 17, 18,
-	17, 19, 18,
-	20, 21, 22,
-	21, 23, 22
+		0, 1, 2,
+		2, 3, 0,
+
+		// Right face
+		4, 5, 6,
+		6, 7, 4,
+
+		// Front face
+		8, 9, 10,
+		10, 11, 8,
+
+		// Left face
+		12, 13, 14,
+		14, 15, 12,
+
+		// Top face
+		16, 17, 18,
+		18, 19, 16,
+
+		// Bottom face
+		20, 21, 22,
+		22, 23, 20
 };
 
 #include <glm/gtc/type_ptr.hpp>
@@ -67,7 +83,7 @@ public:
 	Cube()
 	{
 
-		shader = Shader("ballsagain");
+		shader = Shader("cube.wgsl");
 		mesh = Model(pointData, indexData);
 		texture = wgfx::loadTexture(RESOURCE_DIR "/crate2.jpg");
 

@@ -36,7 +36,7 @@ namespace wgfx
 		pipelineDesc.primitive.topology = PrimitiveTopology::TriangleList;
 		pipelineDesc.primitive.stripIndexFormat = IndexFormat::Undefined;
 		pipelineDesc.primitive.frontFace = FrontFace::CCW;
-		pipelineDesc.primitive.cullMode = CullMode::None;
+		pipelineDesc.primitive.cullMode = CullMode::Back; // backface culling option, currently thinking about ways to expose this to the mid level wgfx::setState(wgfx::CullBack);
 
 		FragmentState fragmentState;
 		pipelineDesc.fragment = &fragmentState;
