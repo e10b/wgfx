@@ -13,10 +13,23 @@ public:
 		renderPass.setClear({ 0.0375, 0.0375, 0.0375, 1 });
 	}
 
+	void setVertexBuffer(std::vector<float> data)
+	{
+		pipeline->setVertexBuffer(data);
+	}
+
+	void setIndexBuffer(std::vector<uint16_t> data)
+	{
+		pipeline->setIndexBuffer(data);
+	}
+
 	void use()
 	{
 		renderPass.draw(pipeline);
 	}
+
+	void touch() { renderPass.touch(); }
+	void end() { renderPass.end(); }
 
 	void setUniform(int index)
 	{

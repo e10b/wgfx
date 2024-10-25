@@ -1,1 +1,0 @@
-so player.h .cpp, math.h, .cpp, and camera and yes delete those for working

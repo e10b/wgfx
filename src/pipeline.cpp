@@ -8,21 +8,35 @@ namespace wgfx
 		pipelineDesc = RenderPipelineDescriptor();
 	}
 
-	/*void Pipeline::setIndexBuffer(IndexBuffer* buffer)
+	void Pipeline::setVertexBuffer(const std::vector<float>& value)
 	{
-		indexBuffer = buffer;
-	}*/
+		if (index < vertexBuffers.size())
+		{
+			vertexBuffer = vertexBuffers.at(index);
+		}
+		else
+		{
+			vertexBuffer = createVertexBuffer(value);
+			vertexBuffers.push_back(vertexBuffer);
+		}
+	}
 	VertexBufferLayout vertexBufferLayout;
-	//void Pipeline::setVertexBuffer(VertexBuffer* buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
-	//{
-	//	//initDepth();
-	//	vertexBuffer = buffer;
-	//}
-
-	
+	void Pipeline::setIndexBuffer(const std::vector<uint16_t>& value)
+	{
+		if (index < indexBuffers.size())
+		{
+			indexBuffer = indexBuffers.at(index);
+		}
+		else
+		{
+			indexBuffer = createIndexBuffer(value);
+			indexBuffers.push_back(indexBuffer);
+		}
+	}
 
 	void Pipeline::init(VertexBuffer* vertexBuffer)
 	{
+		initDepth();
 		vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer->vertexAttribs.size();
 		vertexBufferLayout.attributes = vertexBuffer->vertexAttribs.data();
 		vertexBufferLayout.arrayStride = (vertexBuffer->fields) * sizeof(float);

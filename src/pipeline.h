@@ -30,35 +30,10 @@ namespace wgfx
 		Pipeline();
 			BindGroup bindGroup;
 		
-			inline void setVertexBuffer(const std::vector<float>& value)
-			{
-				if (index < vertexBuffers.size())
-				{
-					std::cout << "v" << " " << index << "\n";
-					vertexBuffer = vertexBuffers.at(index);
-				}
-				else
-				{
-					std::cout << "ve" << " " << index << "\n";
+			void setVertexBuffer(const std::vector<float>& value);
 
-					vertexBuffer = createVertexBuffer(value);
-					vertexBuffers.push_back(vertexBuffer);
-				}
-			}
-
-			inline void setIndexBuffer(const std::vector<uint16_t>& value)
-			{
-				if (index < indexBuffers.size())
-				{
-					indexBuffer = indexBuffers.at(index);
-				}
-				else
-				{
-					indexBuffer = createIndexBuffer(value);
-					indexBuffers.push_back(indexBuffer);
-				}
-				//index++;
-			}
+			void setIndexBuffer(const std::vector<uint16_t>& value);
+			
 
 		void init(VertexBuffer* vertexBuffer);
 			BindGroupLayout bindGroupLayout;
