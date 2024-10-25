@@ -40,8 +40,28 @@ std::vector<float> pointData =
 -1.0f, -1.0f, -1.0f,  0.0f, -1.0f, 0.0f,  1.0f, 0.0f, // top right
 1.0f, -1.0f, -1.0f,   0.0f, -1.0f, 0.0f,  0.0f, 0.0f, // top left
 1.0f, -1.0f, 1.0f,    0.0f, -1.0f, 0.0f,  0.0f, 1.0f, // bottom left
--1.0f, -1.0f, 1.0f,   0.0f, -1.0f, 0.0f,  1.0f, 1.0f  // bottom right
+-1.0f, -1.0f, 1.0f,   0.0f, -1.0f, 0.0f,  1.0f, 1.0f,  // bottom right
+
+
+
+
+
+//triangle?
+// x       y      z       nx      ny      nz      u      v
+	// Triangle (taken from the Back face)
+	2.0f, -2.0f, -2.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,  // top right
+   -2.0f, -2.0f, -2.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,  // top left
+   -2.0f,  2.0f, -2.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f   // bottom left
 };
+std::vector<float> pointData2 =
+{
+	// x       y      z       nx      ny      nz      u      v
+	// Triangle (taken from the Back face)
+	2.0f, -2.0f, -2.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,  // top right
+   -2.0f, -2.0f, -2.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,  // top left
+   -2.0f,  2.0f, -2.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f   // bottom left
+};
+
 std::vector<uint16_t> indexData =
 {
 		0, 1, 2,
@@ -87,7 +107,7 @@ public:
 		mesh = Model(pointData, indexData);
 		texture = wgfx::loadTexture(RESOURCE_DIR "/crate2.jpg");
 
-		wgfx::VertexBuffer vbo = wgfx::createVertexBuffer(pointData);
+		wgfx::VertexBuffer vbo = wgfx::createVertexBuffer();
 		vbo.setAttribute(0, wgfx::vec3f, 0); // position
 		vbo.setAttribute(1, wgfx::vec3f, 3); // color
 		vbo.setAttribute(2, wgfx::vec2f, 6); // uv
@@ -120,18 +140,23 @@ public:
 		
 		for (uint32_t zz = 0; zz < 11; ++zz) {
 			for (uint32_t yy = 0; yy < 11; ++yy) {
-				for (uint32_t xx = 0; xx < 11; ++xx) {
+				for (uint32_t xx = 0; xx < 1; ++xx) {
 					glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), time + xx * 0.21f, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
 					rotationMatrix = glm::rotate(rotationMatrix, time + yy * 0.37f, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
 					rotationMatrix = glm::rotate(rotationMatrix, time + zz * 0.45f, glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around Y-axis (new rotation for zz)
 
 					rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, -15.0f + float(zz) * 3.0f, 1.0f); // Adjust position for zz
-
+					shader.pipeline.updateVertexBuffer(pointData);
 					shader.updateUniform(1, rotationMatrix);
 					shader.use();
 				}
 			}
 		}
+		glm::mat4 translation(1.0f);
+		translation = glm::translate(translation, glm::vec3(1.0f, 0.0f, 0.0f));
+		shader.updateUniform(1, translation);
+		shader.pipeline.updateVertexBuffer(pointData2);
+		shader.use();
 
 		shader.renderPass.end();
 	}

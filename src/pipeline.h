@@ -31,9 +31,17 @@ namespace wgfx
 			IndexBuffer buffer = wgfx::createIndexBuffer(indices);
 			indexBuffer = buffer;
 		}
+		void updateIndexBuffer(IndexBuffer buffer)
+		{
+			indexBuffer = buffer;
+		}
 		void updateVertexBuffer(std::vector<float> vertices)
 		{
 			VertexBuffer buffer = wgfx::createVertexBuffer(vertices);
+			vertexBuffer = buffer;
+		}
+		void updateVertexBuffer(VertexBuffer buffer)
+		{
 			vertexBuffer = buffer;
 		}
 		void init();

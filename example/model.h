@@ -79,8 +79,8 @@ public:
 
 	void bind(wgfx::Pipeline* pipeline)
 	{
-		pipeline->setVertexBuffer(vbo_);
-		pipeline->setIndexBuffer(ibo_); //hmm hmm hm
+		pipeline->updateVertexBuffer(vertices_);
+		pipeline->updateIndexBuffer(indices_); //hmm hmm hm
 	}
 
 	void addData(std::vector<float> vertices, std::vector<uint16_t> indices)
@@ -154,12 +154,12 @@ public:
 		model->addData(vertices_, indices_);
 	}
 
+	std::vector<float> vertices_;
+	std::vector<uint16_t> indices_;
 private:
 	wgfx::VertexBuffer vbo_;
 	wgfx::IndexBuffer ibo_;
 
-	std::vector<float> vertices_;
-	std::vector<uint16_t> indices_;
 
 	int indexCount_ = 0;
 

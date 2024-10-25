@@ -1,7 +1,8 @@
 @group(0) @binding(0) var<uniform> camera: mat4x4f;
+@group(0) @binding(1) var<uniform> model: mat4x4f;
 
-@group(0) @binding(1) var gradientTexture: texture_2d<f32>;
-@group(0) @binding(2) var textureSampler: sampler;
+@group(0) @binding(2) var gradientTexture: texture_2d<f32>;
+@group(0) @binding(3) var textureSampler: sampler;
 
 struct VertexInput {
 	@location(0) position: vec3f,
@@ -19,7 +20,7 @@ struct VertexOutput {
 fn vs_main(in: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
 	
-	out.position = camera * vec4f(in.position, 1.0);
+	out.position = camera * model * vec4f(in.position, 1.0);
 	//out.color = in.color;
 
 	out.normal = in.normal;

@@ -18,7 +18,7 @@ namespace wgfx
 		
 	};
 
-	VertexBuffer createVertexBuffer(std::vector<float> vertices);
+	VertexBuffer createVertexBuffer(std::vector<float> vertices = { 0.0 });
 
 	struct IndexBuffer
 	{
@@ -31,6 +31,7 @@ namespace wgfx
 		//IndexBuffer(std::vector<uint16_t> indices);
 	};
 
-	IndexBuffer createIndexBuffer(std::vector<uint16_t> indices);
+	IndexBuffer createIndexBuffer(std::vector<uint16_t> indices = {0});
 
+	
 }

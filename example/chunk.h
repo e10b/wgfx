@@ -38,10 +38,10 @@ public:
 
 	bool destroy = false;
 
+	Model model_;
 private:
 
 	glm::ivec2 pos_;
-	Model model_;
 
 	glm::vec3 worldPos_;
 
