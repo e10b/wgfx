@@ -8,21 +8,24 @@ namespace wgfx
 		pipelineDesc = RenderPipelineDescriptor();
 	}
 
-	void Pipeline::setIndexBuffer(IndexBuffer buffer)
+	/*void Pipeline::setIndexBuffer(IndexBuffer* buffer)
 	{
 		indexBuffer = buffer;
-	}
+	}*/
 	VertexBufferLayout vertexBufferLayout;
-	void Pipeline::setVertexBuffer(VertexBuffer buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
+	//void Pipeline::setVertexBuffer(VertexBuffer* buffer) // take in a vbo? yuh, yuh? well what exactly is a vbo? vertexbufferhandle, it is an object which allows attribs
+	//{
+	//	//initDepth();
+	//	vertexBuffer = buffer;
+	//}
+
+	
+
+	void Pipeline::init(VertexBuffer* vertexBuffer)
 	{
-		initDepth();
-		vertexBuffer = buffer;
-	}
-	void Pipeline::init()
-	{
-		vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer.vertexAttribs.size();
-		vertexBufferLayout.attributes = vertexBuffer.vertexAttribs.data();
-		vertexBufferLayout.arrayStride = (vertexBuffer.fields) * sizeof(float);
+		vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer->vertexAttribs.size();
+		vertexBufferLayout.attributes = vertexBuffer->vertexAttribs.data();
+		vertexBufferLayout.arrayStride = (vertexBuffer->fields) * sizeof(float);
 		vertexBufferLayout.stepMode = VertexStepMode::Vertex;
 
 		pipelineDesc.vertex.bufferCount = 1;
@@ -193,7 +196,7 @@ namespace wgfx
 
 	} // problem area has to be << 
 
-	Pipeline loadPipeline(std::string source)
+	Pipeline* loadPipeline(std::string source)
 	{
 		// Load the shader module
 		ShaderModuleDescriptor shaderDesc;
@@ -212,10 +215,10 @@ namespace wgfx
 		shaderCodeDesc.code = source.c_str();
 		ShaderModule shaderModule = device.createShaderModule(shaderDesc);
 
-		Pipeline pipeline;
-		pipeline.shaderModule = shaderModule;
+		Pipeline* pipeline = new Pipeline();
+		pipeline->shaderModule = shaderModule;
 		//programs.push_back(&program);
-		pipelines.push_back(&pipeline);  // Move to avoid copying
+		pipelines.push_back(pipeline);  // Move to avoid copying
 
 		return pipeline;
 	}

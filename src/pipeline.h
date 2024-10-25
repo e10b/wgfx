@@ -12,54 +12,70 @@ namespace wgfx
 	{
 		std::vector<Uniform*> uniforms;
 		int dynamicUniformCount = 0;
-
 		RenderPipeline pipeline;
+
+		int index = 0;
 
 		RenderPipelineDescriptor pipelineDesc;
 		ShaderModule shaderModule;
 
-		VertexBuffer vertexBuffer;
-		IndexBuffer indexBuffer;
+		VertexBuffer* vertexBuffer;
+		IndexBuffer* indexBuffer;
+		
+		std::vector<VertexBuffer*> vertexBuffers;
+		std::vector<IndexBuffer*> indexBuffers;
 
 		std::vector<uint32_t> dynamicOffsets;
 
 		Pipeline();
 			BindGroup bindGroup;
-		void setIndexBuffer(IndexBuffer buffer);
-		void updateIndexBuffer(std::vector<uint16_t> indices)
-		{
-			IndexBuffer buffer = wgfx::createIndexBuffer(indices);
-			indexBuffer = buffer;
-		}
-		void updateIndexBuffer(IndexBuffer buffer)
-		{
-			indexBuffer = buffer;
-		}
-		void updateVertexBuffer(std::vector<float> vertices)
-		{
-			VertexBuffer buffer = wgfx::createVertexBuffer(vertices);
-			vertexBuffer = buffer;
-		}
-		void updateVertexBuffer(VertexBuffer buffer)
-		{
-			vertexBuffer = buffer;
-		}
-		void init();
+		
+			inline void setVertexBuffer(const std::vector<float>& value)
+			{
+				if (index < vertexBuffers.size())
+				{
+					std::cout << "v" << " " << index << "\n";
+					vertexBuffer = vertexBuffers.at(index);
+				}
+				else
+				{
+					std::cout << "ve" << " " << index << "\n";
+
+					vertexBuffer = createVertexBuffer(value);
+					vertexBuffers.push_back(vertexBuffer);
+				}
+			}
+
+			inline void setIndexBuffer(const std::vector<uint16_t>& value)
+			{
+				if (index < indexBuffers.size())
+				{
+					indexBuffer = indexBuffers.at(index);
+				}
+				else
+				{
+					indexBuffer = createIndexBuffer(value);
+					indexBuffers.push_back(indexBuffer);
+				}
+				//index++;
+			}
+
+		void init(VertexBuffer* vertexBuffer);
 			BindGroupLayout bindGroupLayout;
 			BindGroupLayoutDescriptor bindGroupLayoutDesc;
 			std::vector<BindGroupLayoutEntry> entries;
 			std::vector<BindGroupEntry> bindings;
-			void setVertexBuffer(VertexBuffer);
 			void setUniform(Uniform* uniform, bool dynamic);
 		void setTexture(Uniform* uniform);
 		void setSampler(Uniform* uniform);
 		void touch();
 		void updateUniform(Uniform* uniform, const float* array);
 
+
 	};
 
 	inline std::vector<Pipeline*> pipelines;
-	Pipeline loadPipeline(std::string source);
+	Pipeline* loadPipeline(std::string source);
 	
 	static std::string loadFromFile(const std::filesystem::path& path) {
 		std::ifstream file(path);
@@ -71,4 +87,6 @@ namespace wgfx
 		file.read(shaderSource.data(), size);
 		return shaderSource;
 	}
+
+	
 }

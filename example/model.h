@@ -79,16 +79,16 @@ public:
 
 	void bind(wgfx::Pipeline* pipeline)
 	{
-		pipeline->updateVertexBuffer(vertices_);
-		pipeline->updateIndexBuffer(indices_); //hmm hmm hm
+		//pipeline->updateVertexBuffer(vertices_);
+		//pipeline->updateIndexBuffer(indices_); //hmm hmm hm
 	}
 
 	void addData(std::vector<float> vertices, std::vector<uint16_t> indices)
 	{
 		vbo_ = wgfx::createVertexBuffer(vertices);
-		vbo_.setAttribute(0, wgfx::vec3f, 0); // pos
-		vbo_.setAttribute(1, wgfx::vec2f, 3); // norm
-		vbo_.setAttribute(2, wgfx::vec3f, 6); // uv
+		vbo_->setAttribute(0, wgfx::vec3f, 0); // pos
+		vbo_->setAttribute(1, wgfx::vec2f, 3); // norm
+		vbo_->setAttribute(2, wgfx::vec3f, 6); // uv
 		ibo_ = wgfx::createIndexBuffer(indices);
 
 	}
@@ -157,8 +157,8 @@ public:
 	std::vector<float> vertices_;
 	std::vector<uint16_t> indices_;
 private:
-	wgfx::VertexBuffer vbo_;
-	wgfx::IndexBuffer ibo_;
+	wgfx::VertexBuffer* vbo_;
+	wgfx::IndexBuffer* ibo_;
 
 
 	int indexCount_ = 0;

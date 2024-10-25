@@ -11,7 +11,7 @@ namespace wgfx
 
 		void end();
 		void setClear(WGPUColor color);
-		void draw(Pipeline pipeline);
+		void draw(Pipeline* pipeline);
 		void touch();
 
 	};

@@ -4,6 +4,11 @@ namespace wgfx
 {
 	void RenderPass::end()
 	{
+		for (auto p : pipelines) // neccessary to loop through setters for vbos/ibos
+		{
+			p->index = 0;
+		}
+
 		renderPass.end();
 		renderPass.release();
 	}
@@ -13,24 +18,28 @@ namespace wgfx
 		clearValue = color;
 	}
 
-	void RenderPass::draw(Pipeline pipeline)
+	void RenderPass::draw(Pipeline* pipeline)
 	{
-		renderPass.setBindGroup(0, pipeline.bindGroup, pipeline.dynamicUniformCount, pipeline.dynamicOffsets.data()); // or here
+		renderPass.setBindGroup(0, pipeline->bindGroup, pipeline->dynamicUniformCount, pipeline->dynamicOffsets.data()); // or here
 		// this "dynamic offset" value must be the issue, we need a dynamicOffset* instead. with a list of dynamic offsets
-		renderPass.setPipeline(pipeline.pipeline);
-		renderPass.setVertexBuffer(0, pipeline.vertexBuffer.buffer, 0, pipeline.vertexBuffer.buffer.getSize());
-		renderPass.setIndexBuffer(pipeline.indexBuffer.buffer, IndexFormat::Uint16, 0, pipeline.indexBuffer.buffer.getSize());
+		renderPass.setPipeline(pipeline->pipeline);
+		renderPass.setVertexBuffer(0, pipeline->vertexBuffer->buffer, 0, pipeline->vertexBuffer->buffer.getSize());
+		renderPass.setIndexBuffer(pipeline->indexBuffer->buffer, IndexFormat::Uint16, 0, pipeline->indexBuffer->buffer.getSize());
 
-		if (reset)
+		if (reset) //reset system for uniforms
 		{
-			for (auto uniform : pipeline.uniforms)
+			for (auto uniform : pipeline->uniforms)
 			{
 				uniform->quantity = 0;
 			}
 		}
 		reset = false;
+		
+		pipeline->index++; // incremenet vbo/ibo draw
+		
 
-		renderPass.drawIndexed(pipeline.indexBuffer.indexCount, 1, 0, 0, 0);
+
+		renderPass.drawIndexed(pipeline->indexBuffer->indexCount, 1, 0, 0, 0);
 	}
 
 	void RenderPass::touch()

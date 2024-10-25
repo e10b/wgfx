@@ -107,14 +107,14 @@ public:
 		mesh = Model(pointData, indexData);
 		texture = wgfx::loadTexture(RESOURCE_DIR "/crate2.jpg");
 
-		wgfx::VertexBuffer vbo = wgfx::createVertexBuffer();
-		vbo.setAttribute(0, wgfx::vec3f, 0); // position
-		vbo.setAttribute(1, wgfx::vec3f, 3); // color
-		vbo.setAttribute(2, wgfx::vec2f, 6); // uv
-		shader.pipeline.setVertexBuffer(vbo);
+		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
+		vbo->setAttribute(0, wgfx::vec3f, 0); // position
+		vbo->setAttribute(1, wgfx::vec3f, 3); // color
+		vbo->setAttribute(2, wgfx::vec2f, 6); // uv
+//		shader.pipeline.setVertexBuffer(vbo);
 
-		wgfx::IndexBuffer ibo = wgfx::createIndexBuffer(indexData);
-		shader.pipeline.setIndexBuffer(ibo);
+		wgfx::IndexBuffer* ibo = wgfx::createIndexBuffer(indexData);
+//		shader.pipeline.setIndexBuffer(ibo);
 
 		shader.setUniform(0); // view
 		shader.setUniform(1); // model
@@ -127,7 +127,7 @@ public:
 		//shader.pipeline.setSampler(tex);
 
 
-		shader.pipeline.init(); // auto init?? well, 
+		//shader.pipeline.init(); // auto init?? well, 
 	}
 
 	void draw(const Camera& camera)
@@ -146,7 +146,7 @@ public:
 					rotationMatrix = glm::rotate(rotationMatrix, time + zz * 0.45f, glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around Y-axis (new rotation for zz)
 
 					rotationMatrix[3] = glm::vec4(-15.0f + float(xx) * 3.0f, -15.0f + float(yy) * 3.0f, -15.0f + float(zz) * 3.0f, 1.0f); // Adjust position for zz
-					shader.pipeline.updateVertexBuffer(pointData);
+					//shader.pipeline.updateVertexBuffer(pointData);
 					shader.updateUniform(1, rotationMatrix);
 					shader.use();
 				}
@@ -155,7 +155,7 @@ public:
 		glm::mat4 translation(1.0f);
 		translation = glm::translate(translation, glm::vec3(1.0f, 0.0f, 0.0f));
 		shader.updateUniform(1, translation);
-		shader.pipeline.updateVertexBuffer(pointData2);
+		//shader.pipeline.updateVertexBuffer(pointData2);
 		shader.use();
 
 		shader.renderPass.end();
