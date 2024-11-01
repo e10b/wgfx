@@ -50,6 +50,9 @@ public:
 		shader_.setVertexBuffer(chunk_.model_.vertices_);
 		shader_.setIndexBuffer(chunk_.model_.indices_);
 		
+		//right so we just plainly do
+		// shader_.setVertexBuffer;
+
 		shader_.use();
 
 		model = glm::translate(glm::mat4(1.0f), chunk2_.getWorldPos() + glm::vec3(0.0f, 0.f, 0.f));

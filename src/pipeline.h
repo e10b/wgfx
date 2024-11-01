@@ -19,11 +19,14 @@ namespace wgfx
 		RenderPipelineDescriptor pipelineDesc;
 		ShaderModule shaderModule;
 
-		VertexBuffer* vertexBuffer;
-		IndexBuffer* indexBuffer;
+		//VertexBuffer* vertexBuffer;
+		//IndexBuffer* indexBuffer;
 		
-		std::vector<VertexBuffer*> vertexBuffers;
-		std::vector<IndexBuffer*> indexBuffers;
+		//std::vector<VertexBuffer*> vertexBuffers;
+		//std::vector<IndexBuffer*> indexBuffers;
+			// bleedin heart rightly mark thee.
+		VertexBuffers vbos;
+		IndexBuffers ibos;
 
 		std::vector<uint32_t> dynamicOffsets;
 

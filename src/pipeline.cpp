@@ -10,7 +10,21 @@ namespace wgfx
 
 	void Pipeline::setVertexBuffer(const std::vector<float>& value)
 	{
-		if (index < vertexBuffers.size())
+		for (auto* vbo : vbos.vertexBuffers)
+		{
+			if (vbo->data == value)
+			{
+				// set current
+				vbos.current = vbo;
+				return;
+			}
+		}
+		// none exists, make a new
+		VertexBuffer* vbo = createVertexBuffer(value);
+		vbos.add(vbo);
+		vbos.current = vbo;
+
+		/*if (index < vertexBuffers.size())
 		{
 			vertexBuffer = vertexBuffers.at(index);
 		}
@@ -18,12 +32,26 @@ namespace wgfx
 		{
 			vertexBuffer = createVertexBuffer(value);
 			vertexBuffers.push_back(vertexBuffer);
-		}
+		}*/
 	}
 	VertexBufferLayout vertexBufferLayout;
 	void Pipeline::setIndexBuffer(const std::vector<uint16_t>& value)
 	{
-		if (index < indexBuffers.size())
+		for (auto* ibo : ibos.indexBuffers)
+		{
+			if (ibo->data == value)
+			{
+				// set current
+				ibos.current = ibo;
+				return;
+			}
+		}
+		// none exists, make a new
+		IndexBuffer* ibo = createIndexBuffer(value);
+		ibos.add(ibo);
+		ibos.current = ibo;
+
+		/*if (index < indexBuffers.size())
 		{
 			indexBuffer = indexBuffers.at(index);
 		}
@@ -31,7 +59,7 @@ namespace wgfx
 		{
 			indexBuffer = createIndexBuffer(value);
 			indexBuffers.push_back(indexBuffer);
-		}
+		}*/
 	}
 
 	void Pipeline::init(VertexBuffer* vertexBuffer)

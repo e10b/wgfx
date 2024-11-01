@@ -16,6 +16,8 @@ public:
 	void setVertexBuffer(std::vector<float> data)
 	{
 		pipeline->setVertexBuffer(data);
+		// hmm I must think plainly, the notion of such confidences lends itself.
+		// 
 	}
 
 	void setIndexBuffer(std::vector<uint16_t> data)
