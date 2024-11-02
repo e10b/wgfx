@@ -1,5 +1,5 @@
 #include "entity.h"
-//#include "manager.h"
+#include "manager.h"
 #include "constants.h"
 
 Entity::Entity() : position_(glm::vec3(0.0f, 0.0f, 0.0f)), velocity_(glm::vec3(0.0f, 0.0f, 0.0f)), size_(glm::vec3(0.8f, 1.8f, 0.8f))
@@ -30,7 +30,6 @@ glm::vec3 Entity::getSize() const
 
 void Entity::move(glm::vec3 delta)
 {
-	/*
 	// Check x, then z, then y
 	int axes[] = { Math::AXIS_X, Math::AXIS_Z, Math::AXIS_Y };
 
@@ -65,7 +64,6 @@ void Entity::move(glm::vec3 delta)
 			}
 		}
 	}
-	*/
 }
 
 void Entity::teleport(glm::vec3 destination)

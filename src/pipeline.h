@@ -36,7 +36,7 @@ namespace wgfx
 			void setVertexBuffer(const std::vector<float>& value);
 
 			void setIndexBuffer(const std::vector<uint16_t>& value);
-			
+
 
 		void init(VertexBuffer* vertexBuffer);
 			BindGroupLayout bindGroupLayout;

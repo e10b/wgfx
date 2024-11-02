@@ -10,29 +10,48 @@
 
 #include "test.h"
 
+#include "manager.h"
+
+#include <omp.h>
+
 int main()
 {
 	Context& context = Context::Instance();
-	Input& input = Input::Instance();
+	//Input& input = Input::Instance();
 
 	Player player;
-	
+
 	//Cube cube;
-	Test test;
+	//Test test;
+
+	Manager& manager = Manager::Instance();
 
 	while (!context.close)
 	{
 		static Clock clock;
 		float dt = clock.restart();
 
-		context.update();
-
-		input.update();
-		player.update(dt);
+		//update
+#pragma omp parallel sections
+		{
+#pragma omp section
+			{
+				context.update();
+			}
+#pragma omp section
+			{
+				player.update(dt);
+			}
+#pragma omp section
+			{
+				manager.updateChunks(player.getCamera().getPosition(), dt);
+			}
+		}
 
 		const Camera& cam = player.getCamera();
+		manager.drawChunks(cam);
 		//cube.draw(cam);
-		test.render(cam);
+		//test.render(cam);
 
 		context.draw();
 	}

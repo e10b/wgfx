@@ -100,6 +100,8 @@ public:
 
 		indexCount_ = 0;
 
+
+
 		// destroy vbo and ibo! hmm..
 	}
 
@@ -127,8 +129,8 @@ public:
 			vertices_.push_back(face.normals.at(index2++));
 			vertices_.push_back(face.normals.at(index2++));
 
-			vertices_.push_back(uv.at(index3++));
-			vertices_.push_back(uv.at(index3++));
+			vertices_.push_back(uv.at(index3++) * uvScale + uvOffset.x);
+			vertices_.push_back(uv.at(index3++) * uvScale + uvOffset.y);
 
 
 		}

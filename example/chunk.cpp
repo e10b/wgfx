@@ -1,6 +1,6 @@
 
 #include "chunk.h"
-//#include "manager.h"
+#include "manager.h"
 
 #include "glm/gtc/noise.hpp"
 #include "glm/gtx/compatibility.hpp"
@@ -304,7 +304,6 @@ bool Chunk::checkForBlock(glm::ivec3 pos) const
 		if (pos.y < -1)
 			return false;
 
-		/*
 		// Block in another chunk
 		glm::ivec3 world = localToWorld(pos);
 		Block block = Manager::Instance().getBlock(world);
@@ -313,7 +312,6 @@ bool Chunk::checkForBlock(glm::ivec3 pos) const
 
 		return block.type == Block::AIR;
 
-		*/
 	}
 }
 

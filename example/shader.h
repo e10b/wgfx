@@ -10,7 +10,7 @@ public:
 	Shader(const char* shader)
 	{
 		pipeline = wgfx::loadPipeline(wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/" + shader).c_str()));
-		renderPass.setClear({ 0.0375, 0.0375, 0.0375, 1 });
+		renderPass.setClear({ 0.4, 0.7, 1, 1 });
 	}
 
 	void setVertexBuffer(std::vector<float> data)

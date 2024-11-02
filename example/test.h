@@ -15,14 +15,17 @@ public:
 	Test()
 		: shader_("shader.wgsl"),
 		chunk_({0,0}),
-		chunk2_({1, 0})
+		chunk2_({ 1, 0 }),
+		chunk3_({0, -2})
 	{
 		texture = wgfx::loadTexture(RESOURCE_DIR "/stone.png");
 		chunk_.generate(terrain_);
 		chunk2_.generate(terrain_);
+		chunk3_.generate(terrain_);
 		
 		chunk_.buildMesh();
 		chunk2_.buildMesh();
+		chunk3_.buildMesh();
 	
 		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
 		vbo->setAttribute(0, wgfx::vec3f, 0); // position
@@ -62,6 +65,13 @@ public:
 
 		shader_.use();
 		
+		model = glm::translate(glm::mat4(1.0f), chunk3_.getWorldPos() + glm::vec3(0.0f, 0.f, 0.f));
+		shader_.updateUniform(1, model);
+		shader_.setVertexBuffer(chunk3_.model_.vertices_);
+		shader_.setIndexBuffer(chunk3_.model_.indices_);
+
+		shader_.use();
+
 		shader_.end();
 		
 	}
@@ -69,6 +79,7 @@ public:
 private:
 	Chunk chunk_;
 	Chunk chunk2_;
+	Chunk chunk3_;
 	Terrain terrain_;
 
 	Shader shader_;

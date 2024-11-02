@@ -1,6 +1,7 @@
 #pragma once
 
 #include "surface.h"
+#include <unordered_map>
 
 namespace wgfx
 {

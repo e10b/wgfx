@@ -50,7 +50,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 	//let color = vec3f(normal); // This will give a gradient based on UVs
 
 
-
 	let corrected_color = pow(color, vec3f(2.2));
 
 	return vec4f(corrected_color, 1.0);
