@@ -142,7 +142,7 @@ void Chunk::buildMesh()
 						glm::vec2 offset = Math::getUVFromSheet(tilesheetSize, tilesheetSize, index, Math::CORNER_TOP_LEFT);
 						//offset.y = 1.0f - offset.y - (1.0f / tilesheetSize); // flip tex
 
-						model_.addQuad(quads[Math::Direction(d)], offset, 1.0f / tilesheetSize, { x,y,z });
+						model_.addQuad(quads[Math::Direction(d)], offset, 1.0f / tilesheetSize, { x,y,z }, getWorldPos());
 					}
 				}
 

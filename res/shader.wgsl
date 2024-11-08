@@ -20,7 +20,7 @@ struct VertexOutput {
 fn vs_main(in: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
 	
-	out.position = camera * model * vec4f(in.position, 1.0);
+	out.position = camera * vec4f(in.position, 1.0);
 	//out.color = in.color;
 
 	out.normal = in.normal;

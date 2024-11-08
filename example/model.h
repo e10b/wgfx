@@ -75,7 +75,8 @@ public:
 		const Face& face,
 		glm::vec2 uvOffset,
 		float uvScale,
-		const glm::ivec3 pos
+		const glm::ivec3 pos,
+		glm::ivec3 chunkpos
 	)
 	{
 		int index = 0;
@@ -84,9 +85,9 @@ public:
 		for (int i = 0; i < 4; i++)
 		{
 
-			vertices_.push_back(face.vertices.at(index++) + pos.x);
-			vertices_.push_back(face.vertices.at(index++) + pos.y);
-			vertices_.push_back(face.vertices.at(index++) + pos.z);
+			vertices_.push_back(face.vertices.at(index++) + pos.x + chunkpos.x);
+			vertices_.push_back(face.vertices.at(index++) + pos.y + chunkpos.y);
+			vertices_.push_back(face.vertices.at(index++) + pos.z + chunkpos.z);
 
 			vertices_.push_back(face.normals.at(index2++));
 			vertices_.push_back(face.normals.at(index2++));
