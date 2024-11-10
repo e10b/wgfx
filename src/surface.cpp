@@ -64,7 +64,7 @@ namespace wgfx
 		config.viewFormatCount = 0;
 		config.viewFormats = nullptr;
 		config.device = device;
-		config.presentMode = PresentMode::Fifo;
+		config.presentMode = PresentMode::Immediate; // vysnc off
 		config.alphaMode = CompositeAlphaMode::Auto;
 
 		surface.configure(config);

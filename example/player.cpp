@@ -65,7 +65,7 @@ void Player::update(float dt)
     camera_.setPitch(camera_.getPitch() - deltaMouse.y);
     }
     
-   noclip_ = true; //if on then fly
+   //noclip_ = true; //if on then fly
     if (!noclip_)
     {
         glm::vec3 dir = glm::vec3(0.0f);

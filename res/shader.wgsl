@@ -35,10 +35,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 
     // Define the sunlight direction and color
     let sunlightDirection = normalize(vec3f(0.3, 0.5, -1.0));  // Adjust direction for desired angle
-    let sunlightColor = vec3f(1.0, 0.85, 0.6);  // Warm sunlight color
+    let sunlightColor = vec3f(2.0, 1.85, 1.6);  // Warm sunlight color
 
     // Define a subtle ambient color to simulate sky light
-    let ambientColor = vec3f(0.1, 0.1, 0.2);  // Soft, cool ambient light
+    let ambientColor = vec3f(0.4, 0.4, 0.6);  // Soft, cool ambient light
 
     // Calculate the light shading based on sunlight direction
     let normal = normalize(in.normal);

@@ -26,10 +26,19 @@ int main()
 
 	Manager& manager = Manager::Instance();
 
+	int boo = 0;
+
 	while (!context.close)
 	{
 		static Clock clock;
 		float dt = clock.restart();
+
+		if (boo % 50 == 0)
+		{
+		context.fps(dt);
+		boo++;
+		}
+		boo++;
 
 		//update
 #pragma omp parallel sections
