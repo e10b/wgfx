@@ -12,7 +12,7 @@
 
 #include "manager.h"
 
-#include <omp.h>
+//#include <omp.h>
 
 int main()
 {

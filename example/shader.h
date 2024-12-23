@@ -61,7 +61,7 @@ public:
 		uniforms.push_back(uniform);
 	}
 
-	void updateUniform(int index, glm::mat4& value)
+	void updateUniform(int index, const glm::mat4& value)
 	{
 		pipeline->updateUniform(uniforms.at(index), glm::value_ptr(value));
 	}
