@@ -42,18 +42,37 @@ public:
 
 	void bind(wgfx::Pipeline* pipeline)
 	{
+		// nothing seems to be happening here,
+		/*
+		but something ought to be happening here
+
+		pipeline->setVertexBuffer(vbo_); << << << hmm it ought to update it. but at the same time...
+
+		*/
+		pipeline->setVertexBuffer(vbo_);
+		pipeline->setIndexBuffer(ibo_);
+
 		//pipeline->updateVertexBuffer(vertices_);
 		//pipeline->updateIndexBuffer(indices_); //hmm hmm hm
 	}
 
 	void addData(std::vector<float> vertices, std::vector<uint16_t> indices)
 	{
+		// could it just be that we need to give vbo_ an index, of some kind. a unique identifier.
+		// when create vbo give a hash,
+		// then update it.
+
+
+		//WE CREATE THE thing
+		// then we udpate it, and 
+		// trouble trouble double double
+
+
 		vbo_ = wgfx::createVertexBuffer(vertices);
 		vbo_->setAttribute(0, wgfx::vec3f, 0); // pos
 		vbo_->setAttribute(1, wgfx::vec2f, 3); // norm
 		vbo_->setAttribute(2, wgfx::vec3f, 6); // uv
 		ibo_ = wgfx::createIndexBuffer(indices);
-
 	}
 
 	void clear()

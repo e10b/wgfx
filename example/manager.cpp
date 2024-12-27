@@ -210,8 +210,9 @@ void Manager::drawChunks(const Camera& camera)
 
 		if (c.second->meshBuilt())
 		{
-			shader_.setVertexBuffer(c.second->model_.vertices_);
-			shader_.setIndexBuffer(c.second->model_.indices_);
+			//shader_.setVertexBuffer(c.second->model_.vertices_);
+			//shader_.setIndexBuffer(c.second->model_.indices_);
+			c.second->model_.bind(shader_.pipeline);
 			shader_.use(); // DAMN YOU
 		}
 		// 

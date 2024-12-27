@@ -5,19 +5,33 @@
 
 namespace wgfx
 {
+
+
 	class VertexBuffer
 	{
 	public:
 		std::vector<VertexAttribute> vertexAttribs;
 		Buffer buffer;
 		int fields = 0;
-
+		int id = -1;
 		std::vector<float> data;
 
 		VertexBuffer() {};
 
 		//VertexBuffer(std::vector<float> vertices);
 		void setAttribute(int location, VertexFormat type, int offset);
+
+		void write(std::vector<float> vertices)
+		{
+			/*size_t dataSize = vertices.size() * sizeof(float);
+			if (dataSize > buffer.getSize())
+			{
+				std::cout << "too small!\n";
+				return;
+			}*/
+
+			queue.writeBuffer(buffer, 0, vertices.data(), vertices.size() * sizeof(float));
+		}
 	};
 
 	class VertexBuffers
@@ -41,6 +55,7 @@ namespace wgfx
 	public:
 		Buffer buffer;
 		uint32_t indexCount;
+		int id = -1;
 
 		std::vector<uint16_t> data;
 
@@ -53,7 +68,6 @@ namespace wgfx
 		std::vector<IndexBuffer*> indexBuffers;
 
 		IndexBuffer* current;
-
 		void add(IndexBuffer* buffer)
 		{
 			indexBuffers.push_back(buffer);

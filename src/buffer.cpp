@@ -9,18 +9,25 @@ namespace wgfx
 
 	VertexBuffer* createVertexBuffer(std::vector<float> vertices)
 	{
-		VertexBuffer* buffer = new VertexBuffer();
+		VertexBuffer* buffer = new VertexBuffer(); // heap really shouldn't matter..
 		buffer->data = vertices;
 		//initDepth();
 
 		// Create vertex buffer
-		bufferDesc.size = vertices.size() * sizeof(float);
-		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Vertex; // Vertex usage here!
-		bufferDesc.mappedAtCreation = false;
+		BufferDescriptor bufferDesc;
+			bufferDesc.size = vertices.size() * sizeof(float);
+			bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Vertex; // Vertex usage here!
+			bufferDesc.mappedAtCreation = true;
 		buffer->buffer = device.createBuffer(bufferDesc);
 
+		void* map = buffer->buffer.getMappedRange(0, vertices.size() * sizeof(float));
+		memcpy(map, vertices.data(), vertices.size() * sizeof(float));
+		buffer->buffer.unmap();
+
 		// Upload geometry data to the buffer
-		queue.writeBuffer(buffer->buffer, 0, vertices.data(), bufferDesc.size);
+		//queue.writeBuffer(buffer->buffer, 0, vertices.data(), vertices.size() * sizeof(float));
+		// occurs at write
+		//std::cout << "balls\n";
 
 		return buffer;
 	}

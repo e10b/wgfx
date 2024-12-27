@@ -7,6 +7,16 @@ namespace wgfx
 		std::cout << "Creating render pipeline..." << std::endl;
 		pipelineDesc = RenderPipelineDescriptor();
 	}
+	bool first = false;
+
+	/*
+	
+	what we need to do is not send data. we need to create a vbo handle and send that,
+	in that way, we update it instead of recreating it.
+
+	it is generated then sent
+
+	*/
 
 	void Pipeline::setVertexBuffer(const std::vector<float>& value)
 	{
@@ -19,23 +29,20 @@ namespace wgfx
 				return;
 			}
 		}
-		VertexBuffer* vbo = createVertexBuffer(value);
-		vbos.add(vbo);
-		vbos.current = vbo;
-
-		/*
-		VertexBuffer* vbo = vbos.get(value);
-		if (vbo)
-		{
-			// Set current
-			vbos.current = vbo;
-			return;
-		}
-		// none exists, make a new
-		vbo = createVertexBuffer(value);
-		vbos.add(vbo);
-		vbos.current = vbo;
-		*/
+			//VertexBuffer* vbo = createVertexBuffer(value);
+			//vbos.add(vbo);
+			//vbos.current = vbo;
+		//if (vbos.current)
+		//{
+		//	vbos.current->write(value); // Update the existing buffer's data
+		//}
+		//else
+		//{
+			// No buffer exists, so create a new one
+			VertexBuffer* newVBO = createVertexBuffer(value);
+			vbos.add(newVBO);
+			vbos.current = newVBO;
+		//}
 
 	}
 	VertexBufferLayout vertexBufferLayout;
