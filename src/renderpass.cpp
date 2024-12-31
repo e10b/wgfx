@@ -20,12 +20,13 @@ namespace wgfx
 
 	void RenderPass::draw(Pipeline* pipeline)
 	{
-		renderPass.setBindGroup(0, pipeline->bindGroup, pipeline->dynamicUniformCount, pipeline->dynamicOffsets.data()); // or here
+		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data()); // or here
 		// this "dynamic offset" value must be the issue, we need a dynamicOffset* instead. with a list of dynamic offsets
 		renderPass.setPipeline(pipeline->pipeline);
 		renderPass.setVertexBuffer(0, pipeline->vbos.current->buffer, 0, pipeline->vbos.current->buffer.getSize());
 		renderPass.setIndexBuffer(pipeline->ibos.current->buffer, IndexFormat::Uint16, 0, pipeline->ibos.current->buffer.getSize());
 
+		/*
 		if (reset) //reset system for uniforms
 		{
 			for (auto uniform : pipeline->uniforms)
@@ -34,6 +35,8 @@ namespace wgfx
 			}
 		}
 		reset = false;
+		*/
+		pipeline->uniforms.clear();
 		
 		pipeline->index++; // incremenet vbo/ibo draw
 		

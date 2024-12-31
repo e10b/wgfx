@@ -36,14 +36,14 @@ public:
 	void setUniform(int index)
 	{
 		wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(glm::mat4), 1.0f);
-		pipeline->setUniform(uniform, true);
+		pipeline->setUniform(uniform);
 		uniforms.push_back(uniform);
 	}
 
 	void setUniform(int index, glm::mat4& value)
 	{
 		wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(glm::mat4), glm::value_ptr(value));
-		pipeline->setUniform(uniform, true);
+		pipeline->setUniform(uniform);
 		uniforms.push_back(uniform);
 	}
 

@@ -10,32 +10,32 @@ namespace wgfx
 {
 	struct Pipeline
 	{
-		std::vector<Uniform*> uniforms;
-		int dynamicUniformCount = 0;
-		RenderPipeline pipeline;
+		//std::vector<Uniform*> uniforms; // this is the issue
+		//int dynamicUniformCount = 0; // likewise
+		RenderPipeline pipeline; // should be fine
 
-		int index = 0;
+		int index = 0; // bad notation
 
 		RenderPipelineDescriptor pipelineDesc;
 		ShaderModule shaderModule;
 
-		//VertexBuffer* vertexBuffer;
-		//IndexBuffer* indexBuffer;
-		
-		//std::vector<VertexBuffer*> vertexBuffers;
-		//std::vector<IndexBuffer*> indexBuffers;
+							//VertexBuffer* vertexBuffer;
+							//IndexBuffer* indexBuffer;
+							//std::vector<VertexBuffer*> vertexBuffers;
+							//std::vector<IndexBuffer*> indexBuffers;
 			// bleedin heart rightly mark thee.
+		Uniforms uniforms;
 		VertexBuffers vbos;
 		IndexBuffers ibos;
 
-		std::vector<uint32_t> dynamicOffsets;
+		//std::vector<uint32_t> dynamicOffsets; // this also shouldn't be here.
 
 		Pipeline();
-			BindGroup bindGroup;
+								//BindGroup bindGroup;
 		
-			void setVertexBuffer(const std::vector<float>& value);
-
-			void setIndexBuffer(const std::vector<uint16_t>& value);
+					// delete me and abstract the other
+					void setVertexBuffer(const std::vector<float>& value);
+					void setIndexBuffer(const std::vector<uint16_t>& value);
 
 			void setVertexBuffer(VertexBuffer* vbo)
 			{
@@ -74,16 +74,33 @@ namespace wgfx
 			}
 
 		void init(VertexBuffer* vertexBuffer);
-			BindGroupLayout bindGroupLayout;
-			BindGroupLayoutDescriptor bindGroupLayoutDesc;
-			std::vector<BindGroupLayoutEntry> entries;
-			std::vector<BindGroupEntry> bindings;
-			void setUniform(Uniform* uniform, bool dynamic);
-		void setTexture(Uniform* uniform);
-		void setSampler(Uniform* uniform);
-		void touch();
-		void updateUniform(Uniform* uniform, const float* array);
+			//BindGroupLayout bindGroupLayout;
+			//BindGroupLayoutDescriptor bindGroupLayoutDesc;
+			//std::vector<BindGroupLayoutEntry> entries;
+			//std::vector<BindGroupEntry> bindings;
+			
+			
+			//void setUniform(Uniform* uniform, bool dynamic);
+			void setUniform(Uniform* uniform)
+			{
+				uniforms.setUniform(uniform);
+			}
 
+
+			void setTexture(Uniform* uniform)
+			{
+				uniforms.setTexture(uniform);
+			}
+			void setSampler(Uniform* uniform)
+			{
+				uniforms.setSampler(uniform);
+			}
+		void touch();
+		//void updateUniform(Uniform* uniform, const float* array);
+		void updateUniform(Uniform* uniform, const float* array)
+		{
+			uniforms.updateUniform(uniform, array);
+		}
 
 	};
 

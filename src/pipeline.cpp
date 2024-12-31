@@ -142,17 +142,26 @@ namespace wgfx
 
 		// Create a bind group layout
 		//bindGroupLayoutDesc;
-		bindGroupLayoutDesc.entryCount = entries.size(); // uh
-		bindGroupLayoutDesc.entries = entries.data();
-		bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
-
+			//bindGroupLayoutDesc.entryCount = entries.size(); // uh
+			//bindGroupLayoutDesc.entries = entries.data();
+			//bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
+		uniforms.touch();
 		// uniform groups
+		/*
+						// A bind group contains one or multiple bindings
+						BindGroupDescriptor bindGroupDesc;
+						bindGroupDesc.layout = bindGroupLayout;
+						bindGroupDesc.entryCount = (uint32_t)bindings.size();
+						bindGroupDesc.entries = bindings.data(); // Pass the array of entries
+						bindGroup = device.createBindGroup(bindGroupDesc);
+		*/
 
 
 		// Create the pipeline layout
 		PipelineLayoutDescriptor layoutDesc;
 		layoutDesc.bindGroupLayoutCount = 1;
-		layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bindGroupLayout;
+		//layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bindGroupLayout;
+		layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&uniforms.bindGroupLayout;
 		PipelineLayout layout = device.createPipelineLayout(layoutDesc);
 		pipelineDesc.layout = layout;
 
@@ -160,98 +169,15 @@ namespace wgfx
 		std::cout << "Render pipeline: " << pipeline << std::endl;
 		shaderModule.release();
 
+		/*
+			test moving the prepare operation after the pipeline creation;
+		*/
 
-
-
-		// A bind group contains one or multiple bindings
-		BindGroupDescriptor bindGroupDesc;
-		bindGroupDesc.layout = bindGroupLayout;
-		bindGroupDesc.entryCount = (uint32_t)bindings.size();
-		bindGroupDesc.entries = bindings.data(); // Pass the array of entries
-		bindGroup = device.createBindGroup(bindGroupDesc);
-
-	}
-	void Pipeline::setUniform(Uniform* uniform, bool dynamic)
-	{
-		BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
-		// The binding index as used in the @binding attribute in the shader
-		bindingLayout.binding = uniform->index;
-		// The stage that needs to access this resource
-		bindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
-		bindingLayout.buffer.type = BufferBindingType::Uniform;
-		bindingLayout.buffer.minBindingSize = uniform->scale;
-		if (dynamic)
-		{
-			bindingLayout.buffer.hasDynamicOffset = true; // DYNAMIC
-			dynamicUniformCount++;
-			dynamicOffsets.push_back(0); // the 
-		}
-		uniforms.push_back(uniform);
-		entries.push_back(bindingLayout);
-		bindings.push_back(uniform->binding);
-	}
-	void Pipeline::setTexture(Uniform* uniform)
-	{
-		BindGroupLayoutEntry bindingLayout = Default;							/// layout needs to be created in joint with the actual entry
-		bindingLayout.binding = uniform->index;
-		bindingLayout.visibility = ShaderStage::Fragment;
-		bindingLayout.texture.sampleType = TextureSampleType::Float;
-		bindingLayout.texture.viewDimension = TextureViewDimension::_2D;
-
-		uniforms.push_back(uniform);
-		entries.push_back(bindingLayout);
-		bindings.push_back(uniform->binding);
-	}
-
-	void Pipeline::setSampler(Uniform* uniform)
-	{
-		// The texture sampler binding
-		BindGroupLayoutEntry samplerBindingLayout = Default;
-		samplerBindingLayout.binding = uniform->index;
-		samplerBindingLayout.visibility = ShaderStage::Fragment;
-		samplerBindingLayout.sampler.type = SamplerBindingType::Filtering;
-
-
-		uniforms.push_back(uniform);
-		entries.push_back(samplerBindingLayout);
-		bindings.push_back(uniform->binding);
-	}
-	void Pipeline::touch()
-	{
-		// Create a bind group layout
-		//bindGroupLayoutDesc;
-		bindGroupLayoutDesc.entryCount = entries.size(); // uh
-		bindGroupLayoutDesc.entries = entries.data();
-		bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
-
-		// uniform groups
-
-
-		// Create the pipeline layout
-		PipelineLayoutDescriptor layoutDesc;
-		layoutDesc.bindGroupLayoutCount = 1;
-		layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bindGroupLayout;
-		PipelineLayout layout = device.createPipelineLayout(layoutDesc);
-		pipelineDesc.layout = layout;
-
-		pipeline = device.createRenderPipeline(pipelineDesc);
-		std::cout << "Render pipeline: " << pipeline << std::endl;
-		shaderModule.release();
-	}
 
 
 
-	void Pipeline::updateUniform(Uniform* uniform, const float* array)
-	{
-		uint32_t dynamicOffset = uniforms.at(uniform->index)->quantity * uniforms.at(uniform->index)->stride;
-
-		if (dynamicOffsets.size() <= uniform->index) { dynamicOffsets.resize(uniform->index + 1); } // resize
-		dynamicOffsets.at(uniform->index) = (dynamicOffset); // propogate current offsets
-
-		queue.writeBuffer(uniforms.at(uniform->index)->buffer, dynamicOffset, array, uniform->scale);
-		uniforms.at(uniform->index)->quantity++;
-
-	} // problem area has to be << 
+	}
+	
 
 	Pipeline* loadPipeline(std::string source)
 	{

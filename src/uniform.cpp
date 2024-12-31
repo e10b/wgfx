@@ -10,8 +10,8 @@ namespace wgfx
 	Uniform* createUniform(int i, size_t size, float data)
 	{
 		Uniform* uniform = new Uniform();
-		uniform->index = i;
-		uniform->scale = size;
+		uniform->binding = i;
+		uniform->minBindingSize = size;
 		// all uniforms are currently large enough for dynamics but shouldn't be if not dynamic
 		uint32_t uniformStride = ceilToNextMultiple(
 			(uint32_t)size,
@@ -25,18 +25,18 @@ namespace wgfx
 
 		queue.writeBuffer(uniform->buffer, 0, &data, size);
 
-		uniform->binding.binding = i;
-		uniform->binding.buffer = uniform->buffer;
-		uniform->binding.offset = 0;
-		uniform->binding.size = size;
+		uniform->entry.binding = i;
+		uniform->entry.buffer = uniform->buffer;
+		uniform->entry.offset = 0;
+		uniform->entry.size = size;
 
 		return uniform;
 	}
 	Uniform* createUniform(int i, size_t size, const float* array)
 	{
 		Uniform* uniform = new Uniform();
-		uniform->index = i;
-		uniform->scale = size;
+		uniform->binding = i;
+		uniform->minBindingSize = size;
 
 		uint32_t uniformStride = ceilToNextMultiple(
 			(uint32_t)size,
@@ -51,29 +51,29 @@ namespace wgfx
 		// Use writeBuffer with the pointer to float data
 		queue.writeBuffer(uniform->buffer, 0, array, size);
 
-		uniform->binding.binding = i;
-		uniform->binding.buffer = uniform->buffer;
-		uniform->binding.offset = 0;
-		uniform->binding.size = size;
+		uniform->entry.binding = i;
+		uniform->entry.buffer = uniform->buffer;
+		uniform->entry.offset = 0;
+		uniform->entry.size = size;
 		return uniform;
 	}
 	Uniform* createTexture(int i, Texture texture)
 	{
 		Uniform* uniform = new Uniform();
-		uniform->index = i;
+		uniform->binding = i;
 
-		uniform->binding.binding = i;
-		uniform->binding.textureView = texture.textureView;
+		uniform->entry.binding = i;
+		uniform->entry.textureView = texture.textureView;
 
 		return uniform;
 	}
 	Uniform* createSampler(int i, Texture texture)
 	{
 		Uniform* uniform = new Uniform();
-		uniform->index = i;
+		uniform->binding = i;
 
-		uniform->binding.binding = i;
-		uniform->binding.sampler = texture.sampler;
+		uniform->entry.binding = i;
+		uniform->entry.sampler = texture.sampler;
 
 		return uniform;
 	}

@@ -49,7 +49,7 @@ void Player::update(float dt)
 
                 if (!Math::AABBCollision(getPosition(), getSize(), glm::vec3(pos) + glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 1.0f, 1.0f)))
                 {
-                    chunks.setBlock(pos, { Block::DIRT }, true); // set to dirt if placing and not overlapping player
+                    chunks.setBlock(pos, { Block::LOG }, true); // set to dirt if placing and not overlapping player
                 }
             }
         }
