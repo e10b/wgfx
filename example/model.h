@@ -49,8 +49,8 @@ public:
 		pipeline->setVertexBuffer(vbo_); << << << hmm it ought to update it. but at the same time...
 
 		*/
-		pipeline->setVertexBuffer(vbo_);
-		pipeline->setIndexBuffer(ibo_);
+		pipeline->setVertexBuffer(vbo_.get());
+		pipeline->setIndexBuffer(ibo_.get());
 
 		//pipeline->updateVertexBuffer(vertices_);
 		//pipeline->updateIndexBuffer(indices_); //hmm hmm hm
@@ -67,12 +67,13 @@ public:
 		// then we udpate it, and 
 		// trouble trouble double double
 
-
-		vbo_ = wgfx::createVertexBuffer(vertices);
+		vbo_ = std::unique_ptr<wgfx::VertexBuffer>(wgfx::createVertexBuffer(vertices));;
+		//vbo_ = wgfx::createVertexBuffer(vertices);
 		vbo_->setAttribute(0, wgfx::vec3f, 0); // pos
 		vbo_->setAttribute(1, wgfx::vec2f, 3); // norm
 		vbo_->setAttribute(2, wgfx::vec3f, 6); // uv
-		ibo_ = wgfx::createIndexBuffer(indices);
+
+		ibo_ = std::unique_ptr<wgfx::IndexBuffer>(wgfx::createIndexBuffer(indices));
 	}
 
 	void clear()
@@ -141,9 +142,12 @@ public:
 
 	std::vector<float> vertices_;
 	std::vector<uint16_t> indices_;
+	//wgfx::VertexBuffer* vbo_ = nullptr;
+	std::unique_ptr<wgfx::VertexBuffer> vbo_;
+
+	//wgfx::IndexBuffer* ibo_ = nullptr;
+	std::unique_ptr<wgfx::IndexBuffer> ibo_;
 private:
-	wgfx::VertexBuffer* vbo_;
-	wgfx::IndexBuffer* ibo_;
 
 
 	int indexCount_ = 0;

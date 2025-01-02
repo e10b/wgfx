@@ -134,7 +134,7 @@ void Manager::updateChunks(glm::vec3 playerPos, float dt)
 		if (chunkInRange(playerPos, it->second->getWorldPos()))
 		{
 			// Build meshes of all chunks and add unmeshed ones surrounding
-			if (/*loadedChunks < World::renderSpeed &&*/ !it->second->meshBuilt() && builtNeighborCount(it->first) >= 3)
+			if (loadedChunks < World::renderSpeed && !it->second->meshBuilt() && builtNeighborCount(it->first) >= 3)
 			{
 				loadedChunks++;
 				addChunk(it->first);
@@ -159,7 +159,10 @@ void Manager::updateChunks(glm::vec3 playerPos, float dt)
 			// Only remove mesh of chunk if it has neighbors
 			if (builtNeighborCount(it->first) > 0)
 			{
+				//std::cout << it->second->model_.vbo_->id << "\n";
 				it->second->clear();
+				
+
 				++it;
 			}
 			else
@@ -169,6 +172,7 @@ void Manager::updateChunks(glm::vec3 playerPos, float dt)
 				delete temp->second;
 				chunks_.erase(temp);*/
 				it->second->clear();
+				
 
 				delete it->second;
 				it = chunks_.erase(it);
@@ -206,7 +210,7 @@ void Manager::drawChunks(const Camera& camera)
 		// 
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), c.second->getWorldPos() );
 
-		shader_.updateUniform(1, model);
+		//shader_.updateUniform(1, model);
 
 		if (c.second->meshBuilt())
 		{

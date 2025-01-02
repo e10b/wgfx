@@ -18,6 +18,16 @@ namespace wgfx
 
 		VertexBuffer() {};
 
+		~VertexBuffer()
+		{
+			//if (!buffer) return;
+			if (buffer != nullptr)
+			{
+				buffer.destroy();
+				buffer.release();
+			}
+		}
+
 		//VertexBuffer(std::vector<float> vertices);
 		void setAttribute(int location, VertexFormat type, int offset);
 
