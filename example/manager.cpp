@@ -199,29 +199,22 @@ void Manager::drawChunks(const Camera& camera)
 
 	shader_.updateUniform(0, camera.getMatrix());
 
+	Math::Frustum cameraFrustum = Math::calculateFrustum(camera.getMatrix());
 	for (const auto& c : chunks_)
 	{
+		if (c.second->isVisible(cameraFrustum))
+		{
 
-		//shader_.setVar("modelMatrix", model);
-		//shader_.setVar("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		//shader_.setVar("normalMatrix", (glm::mat3(model)));
-		//shader_.loadModelMatrix(c.second->getWorldPos());
-		//c.second->draw(shader_.pipeline);
-		// 
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), c.second->getWorldPos() );
 
 		//shader_.updateUniform(1, model);
 
 		if (c.second->meshBuilt())
 		{
-			//shader_.setVertexBuffer(c.second->model_.vertices_);
-			//shader_.setIndexBuffer(c.second->model_.indices_);
 			c.second->model_.bind(shader_.pipeline);
 			shader_.use(); // DAMN YOU
 		}
-		// 
-		// 
-		//texture_.bind(); 
+		}
 	}
 	shader_.end();
 }

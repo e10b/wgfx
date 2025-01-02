@@ -318,17 +318,18 @@ bool Chunk::checkForBlock(glm::ivec3 pos) const
 bool Chunk::isVisible(const Math::Frustum& camera) const
 {
 	glm::vec3 position = getWorldPos();
+	float s = 1.f;
 
 	for (unsigned i = 0; i < std::size(camera.planes); i++)
 	{
 		// Frustum + aabb collision
 		glm::vec3 positive = position;
 		if (camera.planes[i].a >= 0)
-			positive.x += World::chunkSize;
+			positive.x += World::chunkSize * s;
 		if (camera.planes[i].b >= 0)
-			positive.y += World::chunkHeight;
+			positive.y += World::chunkHeight * s;
 		if (camera.planes[i].c >= 0)
-			positive.z += World::chunkSize;
+			positive.z += World::chunkSize * s;
 
 		if (positive.x * camera.planes[i].a + positive.y * camera.planes[i].b + positive.z * camera.planes[i].c + camera.planes[i].d < 0)
 			return false;

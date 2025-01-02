@@ -66,7 +66,7 @@ void Player::update(float dt)
     }
     
    //noclip_ = true; //if on then fly
-    if (noclip_)
+    if (!noclip_)
     {
         glm::vec3 dir = glm::vec3(0.0f);
 

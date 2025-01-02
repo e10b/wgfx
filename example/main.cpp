@@ -33,7 +33,7 @@ int main()
 		static Clock clock;
 		float dt = clock.restart();
 
-		if (boo % 50 == 0)
+		if (boo % 400 == 0)
 		{
 		context.fps(dt);
 		boo++;
