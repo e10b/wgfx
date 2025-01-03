@@ -43,7 +43,7 @@ namespace wgfx
 			(uint32_t)deviceLimits.minUniformBufferOffsetAlignment
 		);
 		uniform->stride = uniformStride;
-		bufferDesc.size = 256 * uniformStride + size;
+		bufferDesc.size = 2560 * uniformStride + size;
 		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 		bufferDesc.mappedAtCreation = false;
 		uniform->buffer = device.createBuffer(bufferDesc);

@@ -44,7 +44,6 @@ private:
 	glm::ivec2 pos_;
 
 	glm::vec3 worldPos_;
-
 	int highestBlock_;
 
 	std::array<Block, World::chunkSize* World::chunkSize* World::chunkHeight> blocks_ = {};

@@ -80,14 +80,13 @@ namespace wgfx
 
 			int dynamicOffset = current->quantity * current->stride;
 			
-			if (dynamicOffsets.size() <= uniform->binding) { dynamicOffsets.resize(uniform->binding + 1); }
+			if (dynamicOffsets.size() <= uniform->binding) { dynamicOffsets.resize(uniform->binding + 1, 0); }
 			dynamicOffsets.at(uniform->binding) = dynamicOffset;
 
 			queue.writeBuffer(current->buffer, dynamicOffset, array, uniform->minBindingSize);
 
 			current->quantity++;
 		}
-
 
 		//hmm
 			void setUniform(Uniform* uniform)

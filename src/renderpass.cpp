@@ -36,7 +36,7 @@ namespace wgfx
 		}
 		reset = false;
 		*/
-		pipeline->uniforms.clear();
+		//pipeline->uniforms.clear();
 		
 		pipeline->index++; // incremenet vbo/ibo draw
 		

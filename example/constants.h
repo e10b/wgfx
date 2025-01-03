@@ -2,8 +2,8 @@
 
 namespace World
 {
-	const float renderDistance = 256.0f; // block render radius
-	const unsigned renderSpeed = 1; // chunks generated per frame
+	const float renderDistance = 400.0f; // block render radius
+	const unsigned renderSpeed = 20; // chunks generated per frame
 
 	// Entity gravity force
 	const float gravity = 20.0f;
@@ -37,7 +37,7 @@ namespace World
 		const unsigned detailMaxHeight = 100;
 
 		// Trees
-		const float treeDensity = 0.03f;
+		const float treeDensity = 0.01f;//0.03f;
 
 		// Interpolation grid size
 		const float terrainInterpGrid = 4.0f;

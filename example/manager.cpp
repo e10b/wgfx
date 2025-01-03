@@ -22,8 +22,18 @@ Manager::Manager() : shader_("shader.wgsl")//, texture_("res/textures/mangoose.p
 
 	shader_.setUniform(0); // camera
 	shader_.setUniform(1); // model
+	
+	
 	shader_.setTexture(2, texture_); // tex
 	shader_.setSampler(3, texture_); // sampler
+
+	shader_.setUniform(4, 0.7f / World::renderDistance); //fog amount
+	shader_.setUniform(5); //campos
+
+	shader_.setUniform(6); //view
+	shader_.setUniform(7); //proj
+
+	//shader_.setUniform(4, 0.7f / World::renderDistance); // fog
 
 	shader_.pipeline->init(vbo); // auto init?? well, 
 
@@ -197,7 +207,13 @@ void Manager::drawChunks(const Camera& camera)
 	//shader_.setVar("cameraMatrix", camera.getMatrix());
 	shader_.touch();
 
-	shader_.updateUniform(0, camera.getMatrix());
+
+	shader_.updateUniform(5, camera.getPosition()); // camPos
+
+	shader_.updateUniform(0, camera.getMatrix()); // cameraMatrix
+
+	shader_.updateUniform(6, camera.getViewMatrix()); // cameraMatrix
+	shader_.updateUniform(7, camera.getProjectionMatrix()); // cameraMatrix
 
 	Math::Frustum cameraFrustum = Math::calculateFrustum(camera.getMatrix());
 	for (const auto& c : chunks_)
@@ -205,9 +221,12 @@ void Manager::drawChunks(const Camera& camera)
 		if (c.second->isVisible(cameraFrustum))
 		{
 
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), c.second->getWorldPos() );
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), c.second->getWorldPos());
 
-		//shader_.updateUniform(1, model);
+		// we want shader_.setUniform(1, model); << or something. we don't want to continuously update the value
+		// but simply set it.
+		// this implys recreating it? no-- yes, no, yes. no.
+		shader_.updateUniform(1, model);
 
 		if (c.second->meshBuilt())
 		{

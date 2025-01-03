@@ -31,11 +31,18 @@ public:
 	}
 
 	void touch() { renderPass.touch(); }
-	void end() { renderPass.end(); }
+	void end() { renderPass.end(); pipeline->uniforms.clear(); }
 
 	void setUniform(int index)
 	{
 		wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(glm::mat4), 1.0f);
+		pipeline->setUniform(uniform);
+		uniforms.push_back(uniform);
+	}
+
+	void setUniform(int index, float value)
+	{
+		wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(float), value);
 		pipeline->setUniform(uniform);
 		uniforms.push_back(uniform);
 	}
@@ -62,6 +69,11 @@ public:
 	}
 
 	void updateUniform(int index, const glm::mat4& value)
+	{
+		pipeline->updateUniform(uniforms.at(index), glm::value_ptr(value));
+	}
+
+	void updateUniform(int index, const glm::vec3& value)
 	{
 		pipeline->updateUniform(uniforms.at(index), glm::value_ptr(value));
 	}
