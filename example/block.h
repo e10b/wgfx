@@ -4,6 +4,13 @@
 
 #include "maths.h"
 
+#include <iostream>
+#include <array>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <stdexcept>
+
 // Textures for each side of a block
 struct SideTextureIndicies
 {
@@ -36,6 +43,21 @@ struct Block
 	};
 
 	BlockType type;
+
+	Block(BlockType t = AIR) : type(t) {}
+
+	// Serialize the block to a string
+	std::string serialize() const {
+		return std::to_string(static_cast<unsigned char>(type));
+	}
+
+	static Block deserialize(const std::string& data) {
+		unsigned char typeValue = static_cast<unsigned char>(std::stoi(data));
+		if (typeValue >= COUNT) {
+			throw std::runtime_error("Invalid BlockType in deserialization");
+		}
+		return Block(static_cast<BlockType>(typeValue));
+	}
 
 };
 typedef std::pair<glm::ivec3, Block> BlockInfo;

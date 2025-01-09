@@ -6,10 +6,85 @@
 
 #include "constants.h"
 #include "chunk.h"
+
+#include <sstream>
+
 //#include "network.h"
 
-Manager::Manager() : shader_("shader.wgsl")//, texture_("res/textures/mangoose.png")
+
+/*
+leveldb::DB* db;
+
+inline std::string serializeBlocks(const Blocks &blocks) {
+	std::stringstream ss;
+	for (const auto& block : blocks) {
+		ss << block.serialize() << " "; // Space separated
+	}
+	return ss.str();
+}
+
+inline Blocks deserializeBlocks(const std::string& serialized) {
+	std::stringstream ss(serialized);
+	std::string token;
+	Blocks blocks;
+
+	int index = 0;
+	while (ss >> token && index < blocks.size()) {
+		blocks[index] = Block::deserialize(token); // Deserialize each token into a Block
+		++index;
+	}
+
+	if (index != blocks.size()) {
+		throw std::runtime_error("Deserialization error: Incorrect number of items.");
+	}
+
+	return blocks;
+}
+
+inline std::string generateChunkKey(const glm::ivec2& pos) {
+	return "chunk_" + std::to_string(pos.x) + "_" + std::to_string(pos.y);
+}
+inline void saveChunks(leveldb::DB* db, const ChunkContainer& chunks) {
+	for (const auto& [position, chunk] : chunks) {
+		// Serialize the chunk's blocks
+		std::string blocks = serializeBlocks(chunk->blocks_);
+		// Generate a unique key for the chunk
+		std::string key = generateChunkKey(position);
+		// Write the serialized data to the database
+		leveldb::Status status = db->Put(leveldb::WriteOptions(), key, blocks);
+
+		if (!status.ok()) {
+			std::cerr << "Error saving chunk at " << key << ": " << status.ToString() << "\n";
+		}
+	}
+}
+
+inline static Chunk* loadChunk(leveldb::DB* db, const glm::ivec2& pos) {
+	std::string key = generateChunkKey(pos);
+	std::string serialBlocks;
+
+	// Attempt to read the serialized blocks from the database
+	if (db->Get(leveldb::ReadOptions(), key, &serialBlocks).ok()) {
+		// Deserialize the blocks
+		auto blocks = deserializeBlocks(serialBlocks);
+		// Create a new chunk and initialize it
+		Chunk* chunk = new Chunk(pos);
+		chunk->blocks_ = blocks;
+		chunk->buildMesh();
+		return chunk;
+	}
+
+	// Return nullptr if the chunk was not found in the database
+	std::cerr << "Warning: Chunk at " << key << " not found in database.\n";
+	return nullptr;
+}
+*/
+
+//leveldb::DB* db;
+
+Manager::Manager() : shader_("shader.wgsl"), db_(RESOURCE_DIR "savemeplease")//, texture_("res/textures/mangoose.png")
 {
+
 	texture_ = wgfx::loadTexture(RESOURCE_DIR "/goose.png");
 	//shader_.setVar("fogAmount", 0.7f / World::renderDistance);
 
@@ -37,12 +112,24 @@ Manager::Manager() : shader_("shader.wgsl")//, texture_("res/textures/mangoose.p
 
 	shader_.pipeline->init(vbo); // auto init?? well, 
 
+	// Open LevelDB
+	/*leveldb::Options options;
+	options.create_if_missing = true;
+	leveldb::Status status = leveldb::DB::Open(options, RESOURCE_DIR "CHUNK", &db);
+	if (!status.ok()) {
+		std::cerr << "Unable to open/create LevelDB: " << status.ToString() << std::endl;
+	}*/
 }
 
 Manager::~Manager()
 {
+	db_.saveChunks(*this);
+	//
+// saveChunks(db, chunks_);
 	for (const auto& c : chunks_)
+	{
 		delete c.second;
+	}
 }
 
 Chunk* Manager::addChunk(glm::ivec2 coord)
@@ -51,15 +138,20 @@ Chunk* Manager::addChunk(glm::ivec2 coord)
 	Chunk* current = getChunk(coord);
 	if (current == nullptr)
 	{
-		// gen this chunk
-		current = new Chunk(coord);
-		current->generate(noise_);
+		current = db_.loadChunk(coord);
 		chunks_[coord] = current;
+		if (current == nullptr)
+		{
+			// gen this chunk
+			current = new Chunk(coord);
+			current->generate(noise_);
+			chunks_[coord] = current;
+		}
 	}
-	else if (current->meshBuilt())
+	// Ensure the chunk's mesh is built
+	if (!current->meshBuilt())
 	{
-		// chunk alread exists
-		return current;
+		current->buildMesh();
 	}
 
 	// gen surroudnign chunks and add
@@ -68,9 +160,14 @@ Chunk* Manager::addChunk(glm::ivec2 coord)
 		glm::ivec2 newCoord = coord + Math::surrounding[i];
 		if (getChunk(newCoord) == nullptr)
 		{
-			Chunk* newChunk = new Chunk(newCoord);
-			newChunk->generate(noise_);
+			Chunk* newChunk = db_.loadChunk(newCoord);
 			chunks_[newCoord] = newChunk;
+			if (newChunk == nullptr)
+			{
+				Chunk* newChunk = new Chunk(newCoord);
+				newChunk->generate(noise_);
+				chunks_[newCoord] = newChunk;
+			}
 		}
 	}
 
@@ -161,6 +258,7 @@ void Manager::updateChunks(glm::vec3 playerPos, float dt)
 
 				if (chunk != chunks_.end() && !chunk->second->meshBuilt() && builtNeighborCount(newCoord, it->first) == 0)
 				{
+					//saveChunks(db, chunks_);
 					delete chunk->second;
 					chunks_.erase(chunk);
 				}
@@ -169,6 +267,8 @@ void Manager::updateChunks(glm::vec3 playerPos, float dt)
 			// Only remove mesh of chunk if it has neighbors
 			if (builtNeighborCount(it->first) > 0)
 			{
+				//saveChunks(db, chunks_);
+
 				//std::cout << it->second->model_.vbo_->id << "\n";
 				it->second->clear();
 				
@@ -181,8 +281,8 @@ void Manager::updateChunks(glm::vec3 playerPos, float dt)
 				++it;
 				delete temp->second;
 				chunks_.erase(temp);*/
+				//saveChunks(db, chunks_);
 				it->second->clear();
-				
 
 				delete it->second;
 				it = chunks_.erase(it);

@@ -99,7 +99,7 @@ void Chunk::buildMesh()
 	model_.clear();
 
 	// loop over all blocks
-	for (int y = 0; y <= highestBlock_; y++) {
+	for (int y = 0; y <= 200; y++) {
 		for (int z = 0; z < World::chunkSize; z++) {
 			for (int x = 0; x < World::chunkSize; x++) {
 				// if not air
@@ -199,6 +199,10 @@ void Chunk::buildMesh()
 
 void Chunk::clear()
 {
+	if (this == nullptr)
+	{
+		return;
+	}
 	model_.clear();
 }
 

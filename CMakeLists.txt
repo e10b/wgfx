@@ -33,7 +33,7 @@ else()
  )
 endif()
 
-target_link_libraries(App PRIVATE webgpu sdl2webgpu SDL3-static glm::glm)
+target_link_libraries(App PRIVATE webgpu sdl2webgpu SDL3-static glm::glm leveldb)
 target_include_directories(App PRIVATE src "deps/sdl3/include" "deps")
 
 target_copy_webgpu_binaries(App)

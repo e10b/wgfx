@@ -13,13 +13,18 @@
 #include "shader.h"
 
 #include "camera.h"
+#include "chunk.h"
 
-class Chunk;
+#include "database.h"
+
+//class Chunk;
 class Camera;
 
 class Manager
 {
 public:
+    typedef std::unordered_map<glm::ivec2, Chunk*> ChunkContainer;
+
 
 	static Manager& Instance()
 	{
@@ -47,19 +52,91 @@ public:
 	RaycastResult raycast(glm::vec3 pos, glm::vec3 dir, float length = INFINITY);
 
 	Shader& getShader();
+    /*
+    void saveChunks(leveldb::DB* db) {
+        //leveldb::DB* db;
+        //leveldb::Options options;
+        //options.create_if_missing = true;
 
-private:
-	//typedef std::unordered_map<glm::ivec2, std::unique_ptr<Chunk>> ChunkContainer;
-	//returning to raw pointers temp seems not change
-	typedef std::unordered_map<glm::ivec2, Chunk*> ChunkContainer;
+        //leveldb::Status status = leveldb::DB::Open(options, dbPath, &db);
+        //if (!status.ok()) {
+            //std::cerr << "Failed to open LevelDB: " << status.ToString() << "\n";
+            //return;
+        //}
 
+        for (const auto& [coord, chunk] : chunks_) {
+            std::ostringstream keyStream;
+            keyStream << coord.x << "_" << coord.y;
+            std::string key = keyStream.str();
 
-	Shader shader_;
-	//Texture texture_;
-	wgfx::Texture texture_;
+            // Serialize chunk blocks
+            std::string value(reinterpret_cast<const char*>(chunk->blocks_.data()),
+                sizeof(Block) * chunk->blocks_.size());
+
+            leveldb::Status writeStatus = db->Put(leveldb::WriteOptions(), key, value);
+            if (!writeStatus.ok()) {
+                std::cerr << "Failed to write chunk to LevelDB: " << writeStatus.ToString() << "\n";
+            }
+        }
+
+        delete db;
+    }
+
+    Chunk* loadChunk(glm::ivec2 coord, leveldb::DB* db) {
+        //leveldb::DB* db;
+        //leveldb::Options options;
+
+        //leveldb::Status status = leveldb::DB::Open(options, dbPath, &db);
+        //if (!status.ok()) {
+            //std::cerr << "Failed to open LevelDB: " << status.ToString() << "\n";
+            //return nullptr;
+        //}
+
+        std::ostringstream keyStream;
+        keyStream << coord.x << "_" << coord.y;
+        std::string key = keyStream.str();
+
+        std::string value;
+        leveldb::Status readStatus = db->Get(leveldb::ReadOptions(), key, &value);
+        if (!readStatus.ok()) {
+            //std::cerr << "Chunk not found in LevelDB: " << readStatus.ToString() << "\n";
+            //delete db;
+            return nullptr;
+        }
+
+        Chunk* chunk = new Chunk(coord);
+
+        // Deserialize chunk blocks
+        if (value.size() != sizeof(Block) * chunk->blocks_.size()) {
+            std::cerr << "Chunk data size mismatch\n";
+            delete chunk;
+            //delete db;
+            return nullptr;
+        }
+
+        std::memcpy(chunk->blocks_.data(), value.data(), value.size());
+
+        chunks_[coord] = chunk; // Add to the chunks map
+
+        //delete db;
+        return chunk;
+    }
+    */
+
 
 	ChunkContainer chunks_;
+private:
+	Shader shader_;
+
+	//Texture texture_;
+    Database db_;
+
+	wgfx::Texture texture_;
+
 	Terrain noise_;
+
+
+
 
 	Manager();
 	~Manager();

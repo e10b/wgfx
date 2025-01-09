@@ -10,6 +10,12 @@
 
 #include "terrain.h"
 
+#include <string>
+
+#include <leveldb/include/leveldb/db.h>
+
+typedef std::array<Block, World::chunkSize* World::chunkSize* World::chunkHeight> Blocks;
+
 class Chunk
 {
 public:
@@ -39,6 +45,11 @@ public:
 	bool destroy = false;
 
 	Model model_;
+
+	
+
+	Blocks blocks_ = {};
+
 private:
 
 	glm::ivec2 pos_;
@@ -46,7 +57,6 @@ private:
 	glm::vec3 worldPos_;
 	int highestBlock_;
 
-	std::array<Block, World::chunkSize* World::chunkSize* World::chunkHeight> blocks_ = {};
 
 	glm::ivec3 worldToLocal(glm::ivec3 pos) const;
 	glm::ivec3 localToWorld(glm::ivec3 pos) const;
@@ -58,3 +68,4 @@ private:
 
 	bool checkForBlock(glm::ivec3 pos) const;
 };
+
