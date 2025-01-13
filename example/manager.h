@@ -43,7 +43,7 @@ public:
 
 	void updateChunks(glm::vec3 playerPos, float dt);
 
-	void drawChunks(const Camera& camera);
+	void drawChunks(const Camera& camera, wgfx::RenderPass& pass);
 
 	void setBlock(glm::ivec3 pos, const Block& block, bool network = false);
 	const Block& getBlock(glm::ivec3 pos);
@@ -125,8 +125,8 @@ public:
 
 
 	ChunkContainer chunks_;
-private:
 	Shader shader_;
+private:
 
 	//Texture texture_;
     Database db_;

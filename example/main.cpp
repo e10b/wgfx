@@ -14,6 +14,9 @@
 
 //#include <omp.h>
 
+#include "crosshair.h"
+
+
 int main()
 {
 	Context& context = Context::Instance();
@@ -26,6 +29,10 @@ int main()
 
 	Manager& manager = Manager::Instance();
 
+	Crosshair crosshair;
+
+	wgfx::RenderPass pass;
+	pass.setClear({ 0.4, 0.7, 1, 1 });
 	int boo = 0;
 
 	while (!context.close)
@@ -35,8 +42,8 @@ int main()
 
 		if (boo % 400 == 0)
 		{
-		context.fps(dt);
-		boo++;
+			context.fps(dt);
+			boo++;
 		}
 		boo++;
 
@@ -56,11 +63,23 @@ int main()
 				manager.updateChunks(player.getCamera().getPosition(), dt);
 			}
 		}
+		pass.touch();
 
 		const Camera& cam = player.getCamera();
-		manager.drawChunks(cam);
+		manager.drawChunks(cam, pass);
 		//cube.draw(cam);
 		//test.render(cam);
+		//pass.draw(manager.shader_.pipeline);
+		manager.shader_.pipeline->index++;
+		wgfx::clear();
+
+		//context.draw();
+
+		crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
+		pass.draw(crosshair.shader_.pipeline);
+		wgfx::clear();
+
+		pass.end();
 
 		context.draw();
 	}

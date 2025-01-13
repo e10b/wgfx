@@ -10,7 +10,7 @@
 #include "context.h"
 
 
-Player::Player() : Entity(), camera_(getPosition()), canJump_(false), noclip_(true)
+Player::Player() : Entity(), camera_(getPosition()), canJump_(false), noclip_(!true)
 {
     camera_.setFarPlane(World::renderDistance * 1.25f * 3);
 

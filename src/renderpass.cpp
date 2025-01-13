@@ -4,10 +4,10 @@ namespace wgfx
 {
 	void RenderPass::end()
 	{
-		for (auto p : pipelines) // neccessary to loop through setters for vbos/ibos
-		{
-			p->index = 0;
-		}
+		//for (auto p : pipelines) // neccessary to loop through setters for vbos/ibos
+		//{
+		//	p->index = 0;
+		//}
 
 		renderPass.end();
 		renderPass.release();
@@ -38,7 +38,7 @@ namespace wgfx
 		*/
 		//pipeline->uniforms.clear();
 		
-		pipeline->index++; // incremenet vbo/ibo draw
+		//pipeline->index++; // incremenet vbo/ibo draw
 		
 
 

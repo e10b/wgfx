@@ -291,7 +291,7 @@ void Manager::updateChunks(glm::vec3 playerPos, float dt)
 	}
 }
 
-void Manager::drawChunks(const Camera& camera)
+void Manager::drawChunks(const Camera& camera, wgfx::RenderPass& pass)
 {
 	//uh
 		//shader_.loadMatrix(camera);
@@ -331,11 +331,15 @@ void Manager::drawChunks(const Camera& camera)
 		if (c.second->meshBuilt())
 		{
 			c.second->model_.bind(shader_.pipeline);
-			shader_.use(); // DAMN YOU
+			
+			shader_.use(); // DAMN YOU		VV equal
+				pass.draw(shader_.pipeline);
+
 		}
 		}
 	}
 	shader_.end();
+	pass.setIndex();
 }
 
 void Manager::setBlock(glm::ivec3 pos, const Block& block, bool network)

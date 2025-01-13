@@ -5,7 +5,10 @@
 using namespace wgpu;
 namespace wgfx
 {
-
+	inline void clear()
+	{
+		reset = true;
+	}
 	void init(Surface surface);
 
 	void initSurface();
