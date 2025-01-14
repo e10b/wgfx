@@ -23,7 +23,7 @@ public:
 
 	void render(glm::vec2 size)
 	{
-		shader_.touch();
+		//shader_.touch();
 		//shader_.updateUniform(0, size); // size
 
 		shader_.updateUniform(0, size);
@@ -32,7 +32,7 @@ public:
 		, { 0,1,2,3,2,1 });
 
 		cross_.bind(shader_.pipeline);
-		shader_.use();
+		//shader_.use();
 		shader_.end();
 	}
 

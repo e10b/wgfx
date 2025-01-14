@@ -11,11 +11,8 @@
 #include "test.h"
 
 #include "manager.h"
-
-//#include <omp.h>
-
 #include "crosshair.h"
-
+//#include <omp.h>
 
 int main()
 {
@@ -23,16 +20,15 @@ int main()
 	//Input& input = Input::Instance();
 
 	Player player;
-
+	Crosshair crosshair;
 	//Cube cube;
 	//Test test;
 
 	Manager& manager = Manager::Instance();
 
-	Crosshair crosshair;
-
 	wgfx::RenderPass pass;
 	pass.setClear({ 0.4, 0.7, 1, 1 });
+
 	int boo = 0;
 
 	while (!context.close)
@@ -42,8 +38,8 @@ int main()
 
 		if (boo % 400 == 0)
 		{
-			context.fps(dt);
-			boo++;
+		context.fps(dt);
+		boo++;
 		}
 		boo++;
 
@@ -63,24 +59,20 @@ int main()
 				manager.updateChunks(player.getCamera().getPosition(), dt);
 			}
 		}
-		pass.touch();
 
 		const Camera& cam = player.getCamera();
+		pass.touch();
+
 		manager.drawChunks(cam, pass);
 		//cube.draw(cam);
 		//test.render(cam);
-		//pass.draw(manager.shader_.pipeline);
-		manager.shader_.pipeline->index++;
-		wgfx::clear();
 
-		//context.draw();
-
-		crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
-		pass.draw(crosshair.shader_.pipeline);
-		wgfx::clear();
+		// problem area, with overrunning offset for bind group 0 bind 0. for dynamic uniform. ....
+					crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f); 
+					pass.draw(crosshair.shader_.pipeline);
+		// problem a
 
 		pass.end();
-
 		context.draw();
 	}
 

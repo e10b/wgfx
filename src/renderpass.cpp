@@ -38,7 +38,7 @@ namespace wgfx
 		*/
 		//pipeline->uniforms.clear();
 		
-		//pipeline->index++; // incremenet vbo/ibo draw
+			//pipeline->index++; // incremenet vbo/ibo draw
 		
 
 

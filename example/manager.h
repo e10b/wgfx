@@ -125,8 +125,8 @@ public:
 
 
 	ChunkContainer chunks_;
-	Shader shader_;
 private:
+	Shader shader_;
 
 	//Texture texture_;
     Database db_;

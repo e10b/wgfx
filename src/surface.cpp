@@ -83,7 +83,7 @@ namespace wgfx
 
 	void frame()
 	{
-			//reset = true;
+		reset = true;
 		// nope you need a separate end
 		//program.framebuffers.at(0)->renderPass.end();
 		//program.framebuffers.at(0)->renderPass.release();

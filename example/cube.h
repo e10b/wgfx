@@ -134,7 +134,7 @@ public:
 	{
 		float time = SDL_GetTicks() / 1000.0f; // ought not
 
-		shader.renderPass.touch();
+		//shader.renderPass.touch();
 		shader.updateUniform(0, camera.getViewMatrix());
 		//shader.updateUniform(2, camera.getProjectionMatrix());
 		
@@ -158,6 +158,6 @@ public:
 		//shader.pipeline.updateVertexBuffer(pointData2);
 		shader.use();
 
-		shader.renderPass.end();
+//		shader.renderPass.end();
 	}
 };

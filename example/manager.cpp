@@ -305,7 +305,7 @@ void Manager::drawChunks(const Camera& camera, wgfx::RenderPass& pass)
 
 
 	//shader_.setVar("cameraMatrix", camera.getMatrix());
-	shader_.touch();
+		//shader_.touch();
 
 
 	shader_.updateUniform(5, camera.getPosition()); // camPos
@@ -328,18 +328,15 @@ void Manager::drawChunks(const Camera& camera, wgfx::RenderPass& pass)
 		// this implys recreating it? no-- yes, no, yes. no.
 		shader_.updateUniform(1, model);
 
-		if (c.second->meshBuilt())
-		{
-			c.second->model_.bind(shader_.pipeline);
-			
-			shader_.use(); // DAMN YOU		VV equal
+			if (c.second->meshBuilt())
+			{
+				c.second->model_.bind(shader_.pipeline);
+				//shader_.use(); // DAMN YOU
 				pass.draw(shader_.pipeline);
-
-		}
+			}
 		}
 	}
 	shader_.end();
-	pass.setIndex();
 }
 
 void Manager::setBlock(glm::ivec3 pos, const Block& block, bool network)

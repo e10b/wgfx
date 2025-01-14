@@ -52,13 +52,13 @@ namespace wgfx
 
 		void clear()
 		{
-			if (reset) {
+			//if (reset) {
 				for (auto uniform : uniforms)
 				{
 					uniform->quantity = 0;
 				}
-			}
-			reset = false;
+			//}
+			//reset = false;
 		}
 
 		void touch()

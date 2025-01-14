@@ -11,8 +11,6 @@ public:
 	{
 		pipeline = wgfx::loadPipeline(wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/" + shader).c_str()));
 		//renderPass.setClear({ 0.4, 0.7, 1, 1 });
-		//renderPass.setClear({ 0.133, 0.448, 1, 1 });
-		//renderPass.setClear({ 0.4, 0.7, 1, 1 });
 	}
 
 	void setVertexBuffer(std::vector<float> data)
@@ -32,8 +30,8 @@ public:
 		//renderPass.draw(pipeline);
 	}
 
-	void touch() { /*renderPass.touch(); */}
-	void end() {/* renderPass.end();*/ pipeline->uniforms.clear(); }
+	void touch() {/* renderPass.touch();*/ }
+	void end() { /*renderPass.end(); */pipeline->uniforms.clear(); }
 
 	void setUniform(int index)
 	{
@@ -75,12 +73,11 @@ public:
 		pipeline->updateUniform(uniforms.at(index), glm::value_ptr(value));
 	}
 
-	void updateUniform(int index, const glm::vec2& value)
+	void updateUniform(int index, const glm::vec3& value)
 	{
 		pipeline->updateUniform(uniforms.at(index), glm::value_ptr(value));
 	}
-
-	void updateUniform(int index, const glm::vec3& value)
+	void updateUniform(int index, const glm::vec2& value)
 	{
 		pipeline->updateUniform(uniforms.at(index), glm::value_ptr(value));
 	}
@@ -90,6 +87,6 @@ public:
 	std::vector<wgfx::Uniform*> uniforms;
 
 	wgfx::Pipeline* pipeline;
-	wgfx::RenderPass renderPass;
+	//wgfx::RenderPass renderPass;
 private:
 };
