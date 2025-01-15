@@ -16,6 +16,9 @@ namespace wgfx
 		int id = -1;
 		std::vector<float> data;
 
+		PrimitiveTopology topology = PrimitiveTopology::TriangleList; // e.g. trianglelist or linelist
+		void setTopology(PrimitiveTopology topology) { this->topology = topology; }
+
 		VertexBuffer() {};
 
 		~VertexBuffer()

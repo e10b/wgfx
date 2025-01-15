@@ -10,12 +10,12 @@
 #include "context.h"
 
 
-Player::Player() : Entity(), camera_(getPosition()), canJump_(false), noclip_(true)
+Player::Player() : Entity(), camera_(getPosition()), canJump_(false), noclip_(!true)
 {
     camera_.setFarPlane(World::renderDistance * 1.25f * 3);
 
     teleport(glm::vec3(520.5f, 102.0f, -320.5f));
-    //teleport(glm::vec3(1.f, 0.0f, 0.0f));
+   // teleport(glm::vec3(0.0f, 0.0f, 0.0f));
 }
 
 void Player::update(float dt)
@@ -33,17 +33,17 @@ void Player::update(float dt)
     bool placing = (mouseButtons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     bool destroying = (mouseButtons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
 
-    if (placing != destroying)
+    //if (placing != destroying)
     {
         Manager::RaycastResult raycast = chunks.raycast(camera_.getPosition(), camera_.getForward(), INFINITY);
-      //  std::cout << "balls\n";
+        //  std::cout << "balls\n";
         if (raycast.hit)
         {
             glm::ivec3 pos = raycast.block.first;
-
-            if (destroying)
+            selectionPos = pos;
+            if (destroying && destroying != placing)
                 chunks.setBlock(pos, { Block::AIR }, true); // set to air if destroying
-            if (placing)
+            if (placing && placing != destroying)
             {
                 pos += glm::ivec3(Math::directionVectors[raycast.normal]);
 
@@ -55,17 +55,17 @@ void Player::update(float dt)
         }
     }
 
-    
-   
+
+
     // look
     glm::vec2 deltaMouse = input.getDeltaMouse() * 0.003f;
     if (keyboardState[SDL_SCANCODE_V] || (SDL_BUTTON(SDL_BUTTON_LEFT) && mouseButtons))
     {
-    camera_.setYaw(camera_.getYaw() - deltaMouse.x);
-    camera_.setPitch(camera_.getPitch() - deltaMouse.y);
+        camera_.setYaw(camera_.getYaw() - deltaMouse.x);
+        camera_.setPitch(camera_.getPitch() - deltaMouse.y);
     }
-    
-   //noclip_ = true; //if on then fly
+
+    //noclip_ = true; //if on then fly
     if (!noclip_)
     {
         glm::vec3 dir = glm::vec3(0.0f);
@@ -79,7 +79,7 @@ void Player::update(float dt)
             dir -= camera_.getRight();
         if (keyboardState[SDL_SCANCODE_D])
             dir += camera_.getRight();
-        
+
         // move
         if (dir != glm::vec3(0.0f))
             move(glm::normalize(dir) * (keyboardState[SDL_SCANCODE_LSHIFT] ? 10.f : 5.f) * dt);
@@ -101,17 +101,17 @@ void Player::update(float dt)
         glm::vec3 dir = glm::vec3(0.0f);
 
         // move
-        if (keyboardState[SDL_SCANCODE_W]) 
+        if (keyboardState[SDL_SCANCODE_W])
             dir += camera_.getForwardAligned();
         if (keyboardState[SDL_SCANCODE_S])
             dir -= camera_.getForwardAligned();
-        if (keyboardState[SDL_SCANCODE_A]) 
+        if (keyboardState[SDL_SCANCODE_A])
             dir -= camera_.getRight();
-        if (keyboardState[SDL_SCANCODE_D]) 
+        if (keyboardState[SDL_SCANCODE_D])
             dir += camera_.getRight();
-        if (keyboardState[SDL_SCANCODE_SPACE]) 
+        if (keyboardState[SDL_SCANCODE_SPACE])
             dir += camera_.getUp();
-        if (keyboardState[SDL_SCANCODE_LSHIFT]) 
+        if (keyboardState[SDL_SCANCODE_LSHIFT])
             dir -= camera_.getUp();
 
         if (dir != glm::vec3(0.0f))

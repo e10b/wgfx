@@ -6,13 +6,13 @@
 #include "player.h"
 #include "input.h"
 
-#include "cube.h"
 
 #include "test.h"
 
 #include "manager.h"
 #include "crosshair.h"
 //#include <omp.h>
+#include "selection.h"
 
 int main()
 {
@@ -21,6 +21,8 @@ int main()
 
 	Player player;
 	Crosshair crosshair;
+	Selection selection;
+
 	//Cube cube;
 	//Test test;
 
@@ -64,6 +66,9 @@ int main()
 		pass.touch();
 
 		manager.drawChunks(cam, pass);
+
+		selection.draw(cam, pass, player.selectionPos);
+
 		//cube.draw(cam);
 		//test.render(cam);
 

@@ -125,7 +125,6 @@ public:
 
 
 	ChunkContainer chunks_;
-private:
 	Shader shader_;
 
 	//Texture texture_;
@@ -155,6 +154,7 @@ private:
 	glm::ivec2 toRelativePos(glm::ivec3 pos) const;
 	glm::ivec2 toChunkPos(glm::ivec3 pos) const;
 
+private:
 
 public:
 	Manager(Manager const&) = delete;

@@ -93,7 +93,7 @@ namespace wgfx
 		pipelineDesc.vertex.constantCount = 0;
 		pipelineDesc.vertex.constants = nullptr;
 
-		pipelineDesc.primitive.topology = PrimitiveTopology::TriangleList;
+		pipelineDesc.primitive.topology = vertexBuffer->topology;
 		pipelineDesc.primitive.stripIndexFormat = IndexFormat::Undefined;
 		pipelineDesc.primitive.frontFace = FrontFace::CCW;
 		pipelineDesc.primitive.cullMode = CullMode::Back; // backface culling option, currently thinking about ways to expose this to the mid level wgfx::setState(wgfx::CullBack);
@@ -127,6 +127,13 @@ namespace wgfx
 		depthStencilState.depthCompare = CompareFunction::Less;
 		// Each time a fragment is blended into the target, we update the value of the Z-buffer
 		depthStencilState.depthWriteEnabled = true;
+		
+		if (vertexBuffer->topology == PrimitiveTopology::LineStrip) {
+		depthStencilState.depthBias = 50;
+		depthStencilState.depthBiasSlopeScale = 1.0f; // Scales the bias
+		depthStencilState.depthBiasClamp = 0.0f;      // Maximum bias value
+		}
+
 		// Store the format in a variable as later parts of the code depend on it
 		//TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
 		depthStencilState.format = depthTextureFormat;

@@ -19,6 +19,7 @@ public:
 
 	virtual void onCollision(std::pair<std::vector<BlockInfo>, Math::Direction> collision) override;
 
+	glm::ivec3 selectionPos;
 private:
 	Camera camera_;
 	bool canJump_;
