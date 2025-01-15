@@ -79,11 +79,21 @@ namespace wgfx
 
 	void Pipeline::init(VertexBuffer* vertexBuffer)
 	{
+		samples = (multiSample) ? 4 : 1;
+
 		initDepth();
 		vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer->vertexAttribs.size();
 		vertexBufferLayout.attributes = vertexBuffer->vertexAttribs.data();
 		vertexBufferLayout.arrayStride = (vertexBuffer->fields) * sizeof(float);
 		vertexBufferLayout.stepMode = VertexStepMode::Vertex;
+
+		wgpu::MultisampleState multisampleState = {};
+		multisampleState.count = samples;                  // Number of samples (e.g., 4x MSAA)
+		multisampleState.mask = ~0;                 // Sample mask (default enables all samples)
+		multisampleState.alphaToCoverageEnabled = false; // Optional: Enable alpha-to-coverage
+
+
+		//pipelineDesc.multisample = multisampleState;
 
 		pipelineDesc.vertex.bufferCount = 1;
 		pipelineDesc.vertex.buffers = &vertexBufferLayout;
@@ -128,12 +138,6 @@ namespace wgfx
 		// Each time a fragment is blended into the target, we update the value of the Z-buffer
 		depthStencilState.depthWriteEnabled = true;
 		
-		if (vertexBuffer->topology == PrimitiveTopology::LineStrip) {
-		depthStencilState.depthBias = 50;
-		depthStencilState.depthBiasSlopeScale = 1.0f; // Scales the bias
-		depthStencilState.depthBiasClamp = 0.0f;      // Maximum bias value
-		}
-
 		// Store the format in a variable as later parts of the code depend on it
 		//TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
 		depthStencilState.format = depthTextureFormat;
@@ -143,7 +147,7 @@ namespace wgfx
 
 		pipelineDesc.depthStencil = &depthStencilState;
 
-		pipelineDesc.multisample.count = 1;
+		pipelineDesc.multisample.count = samples;
 		pipelineDesc.multisample.mask = ~0u;
 		pipelineDesc.multisample.alphaToCoverageEnabled = false;
 

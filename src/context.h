@@ -15,7 +15,6 @@ namespace wgfx
     inline Adapter adapter = nullptr;
     inline Instance instance = nullptr;
     inline CommandEncoder encoder = nullptr;
-    inline TextureView targetView = nullptr;
     inline Limits deviceLimits;
     inline std::unique_ptr<ErrorCallback> uncapturedErrorCallbackHandle;
     inline TextureFormat surfaceFormat = TextureFormat::Undefined;
@@ -26,6 +25,12 @@ namespace wgfx
     inline TextureView depthTextureView = nullptr; // Initialize to nullptr
 
     inline bool reset = false;
+
+    inline int samples = 4;
+    inline bool multiSample = true;
+
+    inline int width = 0;
+    inline int height = 0;
 
     // Inline type definitions
     inline wgpu::VertexFormat vec2f = VertexFormat::Float32x2;

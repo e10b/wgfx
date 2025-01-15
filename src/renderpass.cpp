@@ -2,6 +2,11 @@
 
 namespace wgfx
 {
+	RenderPass::RenderPass()
+	{
+		// Get the next target texture view
+	}
+
 	void RenderPass::end()
 	{
 		//for (auto p : pipelines) // neccessary to loop through setters for vbos/ibos
@@ -47,9 +52,18 @@ namespace wgfx
 
 	void RenderPass::touch()
 	{
+
+
 		// Get the next target texture view
 		targetView = getNextSurfaceTextureView();
 		if (!targetView) return;
+		
+		if (!updateMultiSampleView && multiSample)
+		{
+			multiSampleView = getMultiSampleView();
+			if (!multiSampleView) return;
+			updateMultiSampleView = true;
+		}
 
 		// Create a command encoder for the draw call
 		CommandEncoderDescriptor encoderDesc = {};
@@ -63,8 +77,17 @@ namespace wgfx
 		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
 
-		renderPassColorAttachment.view = targetView;
-		renderPassColorAttachment.resolveTarget = nullptr;
+		/*
+		
+		right so right now we are not using a resolvetarget, I am thinking because we are drawing straight into 
+		the targetView,
+
+		lets multisample
+		
+		*/
+		renderPassColorAttachment.view = multiSample ? multiSampleView : targetView;
+		renderPassColorAttachment.resolveTarget = multiSample ? targetView : nullptr;
+
 		renderPassColorAttachment.loadOp = LoadOp::Clear;
 		renderPassColorAttachment.storeOp = StoreOp::Store;
 		renderPassColorAttachment.clearValue = clearValue;
@@ -118,11 +141,11 @@ namespace wgfx
 			return nullptr;
 		}
 		wgpu::Texture texture = surfaceTexture.texture;
-
+		format = texture.getFormat();
 		// Create a view for this surface texture
 		TextureViewDescriptor viewDescriptor;
 		viewDescriptor.label = "Surface texture view";
-		viewDescriptor.format = texture.getFormat();
+		viewDescriptor.format = format;
 		viewDescriptor.dimension = TextureViewDimension::_2D;
 		viewDescriptor.baseMipLevel = 0;
 		viewDescriptor.mipLevelCount = 1;
@@ -131,7 +154,29 @@ namespace wgfx
 		viewDescriptor.aspect = TextureAspect::All;
 		TextureView targetView = texture.createView(viewDescriptor);
 
+
+		/*
+		right i am going to create two, a multisampled and a viewTarget
+		*/
+
 		return targetView;
+	}
+
+	TextureView getMultiSampleView()
+	{
+		wgpu::TextureDescriptor multisampleTextureDesc = {};
+		multisampleTextureDesc.usage = wgpu::TextureUsage::RenderAttachment;
+		multisampleTextureDesc.size = { (uint16_t)width, (uint16_t)height, 1 };
+		multisampleTextureDesc.format = format;
+		multisampleTextureDesc.sampleCount = samples; // Enable 4x MSAA
+		multisampleTextureDesc.mipLevelCount = 1;
+		multisampleTextureDesc.dimension = wgpu::TextureDimension::_2D;
+
+		wgpu::Texture multisampleTexture = device.createTexture(multisampleTextureDesc);
+		wgpu::TextureView multisampleTextureView = multisampleTexture.createView();
+		
+		return multisampleTextureView;
+	
 	}
 
 }

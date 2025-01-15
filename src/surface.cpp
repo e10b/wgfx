@@ -1,5 +1,5 @@
 #include "surface.h"
-
+#include "renderpass.h"
 namespace wgfx
 {
 
@@ -46,16 +46,16 @@ namespace wgfx
 
 	void initSurface()
 	{
-		int w, h;
-		SDL_GetWindowSize(window, &w, &h);
+		//int w, h;
+		SDL_GetWindowSize(window, &width, &height);
 
 		std::cout << "Creating swapchain...\n";
 		// Configure the surface
 		SurfaceConfiguration config = {};
 
 		// Configuration of the textures created for the underlying swap chain
-		config.width = w;
-		config.height = h;
+		config.width = width;
+		config.height = height;
 		config.usage = TextureUsage::RenderAttachment;
 		surfaceFormat = surface.getPreferredFormat(adapter);
 		config.format = surfaceFormat;//TextureFormat::BGRA8Unorm; //surfaceFormat
@@ -102,7 +102,7 @@ namespace wgfx
 		//std::cout << "Command submitted." << std::endl;
 
 		// At the end of the frame
-		targetView.release();
+		//targetView.release();
 #ifndef __EMSCRIPTEN__
 		surface.present();
 #endif
@@ -116,7 +116,6 @@ namespace wgfx
 
 	void initDepth()
 	{
-		int width, height;
 		SDL_GetWindowSize(window, &width, &height);
 
 		// Create the depth texture
@@ -124,7 +123,7 @@ namespace wgfx
 		depthTextureDesc.dimension = TextureDimension::_2D;
 		depthTextureDesc.format = depthTextureFormat;
 		depthTextureDesc.mipLevelCount = 1;
-		depthTextureDesc.sampleCount = 1;
+		depthTextureDesc.sampleCount = samples;
 		depthTextureDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
 		depthTextureDesc.usage = TextureUsage::RenderAttachment;
 		depthTextureDesc.viewFormatCount = 1;
@@ -143,5 +142,6 @@ namespace wgfx
 		depthTextureViewDesc.format = depthTextureFormat;
 		depthTextureView = depthTexture.createView(depthTextureViewDesc);
 		std::cout << "Depth texture view: " << depthTextureView << std::endl;
+		updateMultiSampleView = false;
 	}
 }
