@@ -65,7 +65,7 @@ int main()
 		const Camera& cam = player.getCamera();
 		pass.touch();
 
-		manager.drawChunks(cam, pass);
+		manager.drawChunksLit(cam, pass);
 
 		selection.draw(cam, pass, player.selectionPos);
 

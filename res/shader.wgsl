@@ -7,10 +7,6 @@
 @group(0) @binding(4) var<uniform> fogAmount: f32;
 @group(0) @binding(5) var<uniform> camPos: vec4f;
 
-@group(0) @binding(6) var<uniform> view: mat4x4f;
-@group(0) @binding(7) var<uniform> proj: mat4x4f;
-
-
 struct VertexInput {
 	@location(0) position: vec3f,
 	@location(1) normal: vec3f,
@@ -31,17 +27,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 	let world = model * vec4f(in.position, 1.0);
 	out.worldPos = world.xyz;
-	
-	
-	let viewPos = view * world;
-	
-	//out.position = camera * world;
-	out.position = proj * viewPos;
-
-	//out.position = camera * vec4f(in.position, 1.0);
-	//out.color = in.color;
-	//out.worldPos = (model *  vec4f(in.position, 1.0)).xyz;
-
+	out.position = camera * world;
 
 	out.normal = in.normal;
 

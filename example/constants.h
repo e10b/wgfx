@@ -2,8 +2,8 @@
 
 namespace World
 {
-	const float renderDistance = 200.0f; // block render radius
-	const unsigned renderSpeed = 20; // chunks generated per frame
+	const float renderDistance = 400.0f; // block render radius
+	const unsigned renderSpeed = 120; // chunks generated per frame
 
 	// Entity gravity force
 	const float gravity = 20.0f;

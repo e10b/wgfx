@@ -43,7 +43,46 @@ public:
 
 	void updateChunks(glm::vec3 playerPos, float dt);
 
-	void drawChunks(const Camera& camera, wgfx::RenderPass& pass);
+	//void drawChunks(const Camera& camera, wgfx::RenderPass& pass);
+	void drawChunks(const glm::mat4& cameraMatrix, const Shader& shader, wgfx::RenderPass& pass)
+	{
+		shader_.updateUniform(0, cameraMatrix); // cameraMatrix
+		
+		Math::Frustum cameraFrustum = Math::calculateFrustum(cameraMatrix);
+		for (const auto& c : chunks_)
+		{
+			if (c.second->isVisible(cameraFrustum))
+			{
+
+				glm::mat4 model = glm::translate(glm::mat4(1.0f), c.second->getWorldPos());
+
+				// we want shader_.setUniform(1, model); << or something. we don't want to continuously update the value
+				// but simply set it.
+				// this implys recreating it? no-- yes, no, yes. no.
+				shader_.updateUniform(1, model);
+
+				if (c.second->meshBuilt())
+				{
+					c.second->model_.bind(shader_.pipeline);
+					//shader_.use(); // DAMN YOU
+					pass.draw(shader_.pipeline);
+				}
+			}
+		}
+		shader_.end();
+	}
+
+	void drawChunksLit(const Camera& camera, wgfx::RenderPass& pass)
+	{
+		glm::mat4 cameraMatrix = camera.getMatrix();
+		
+		//camera uniforms
+		shader_.updateUniform(5, camera.getPosition()); // camPos
+		//near far planes
+
+		// cascades
+		drawChunks(cameraMatrix, shader_, pass);
+	}
 
 	void setBlock(glm::ivec3 pos, const Block& block, bool network = false);
 	const Block& getBlock(glm::ivec3 pos);
@@ -52,76 +91,7 @@ public:
 	RaycastResult raycast(glm::vec3 pos, glm::vec3 dir, float length = INFINITY);
 
 	Shader& getShader();
-    /*
-    void saveChunks(leveldb::DB* db) {
-        //leveldb::DB* db;
-        //leveldb::Options options;
-        //options.create_if_missing = true;
-
-        //leveldb::Status status = leveldb::DB::Open(options, dbPath, &db);
-        //if (!status.ok()) {
-            //std::cerr << "Failed to open LevelDB: " << status.ToString() << "\n";
-            //return;
-        //}
-
-        for (const auto& [coord, chunk] : chunks_) {
-            std::ostringstream keyStream;
-            keyStream << coord.x << "_" << coord.y;
-            std::string key = keyStream.str();
-
-            // Serialize chunk blocks
-            std::string value(reinterpret_cast<const char*>(chunk->blocks_.data()),
-                sizeof(Block) * chunk->blocks_.size());
-
-            leveldb::Status writeStatus = db->Put(leveldb::WriteOptions(), key, value);
-            if (!writeStatus.ok()) {
-                std::cerr << "Failed to write chunk to LevelDB: " << writeStatus.ToString() << "\n";
-            }
-        }
-
-        delete db;
-    }
-
-    Chunk* loadChunk(glm::ivec2 coord, leveldb::DB* db) {
-        //leveldb::DB* db;
-        //leveldb::Options options;
-
-        //leveldb::Status status = leveldb::DB::Open(options, dbPath, &db);
-        //if (!status.ok()) {
-            //std::cerr << "Failed to open LevelDB: " << status.ToString() << "\n";
-            //return nullptr;
-        //}
-
-        std::ostringstream keyStream;
-        keyStream << coord.x << "_" << coord.y;
-        std::string key = keyStream.str();
-
-        std::string value;
-        leveldb::Status readStatus = db->Get(leveldb::ReadOptions(), key, &value);
-        if (!readStatus.ok()) {
-            //std::cerr << "Chunk not found in LevelDB: " << readStatus.ToString() << "\n";
-            //delete db;
-            return nullptr;
-        }
-
-        Chunk* chunk = new Chunk(coord);
-
-        // Deserialize chunk blocks
-        if (value.size() != sizeof(Block) * chunk->blocks_.size()) {
-            std::cerr << "Chunk data size mismatch\n";
-            delete chunk;
-            //delete db;
-            return nullptr;
-        }
-
-        std::memcpy(chunk->blocks_.data(), value.data(), value.size());
-
-        chunks_[coord] = chunk; // Add to the chunks map
-
-        //delete db;
-        return chunk;
-    }
-    */
+    
 
 
 	ChunkContainer chunks_;
