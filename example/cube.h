@@ -114,12 +114,22 @@ public:
 		//shader.pipeline.init(); // auto init?? well, 
 	}
 
-	void draw(const Camera& camera, wgfx::RenderPass& pass)
+	void drawLit(const Camera& camera)
+	{
+		shader.touch();
+
+		glm::mat4 cameraMatrix = camera.getViewMatrix();
+
+		draw(cameraMatrix, shader);
+	}
+
+	//void draw(const Camera& camera, wgfx::RenderPass& pass)
+	void draw(const glm::mat4& cameraMatrix, Shader& shader)
 	{
 		float time = SDL_GetTicks() / 1000.0f; // ought not
 
 		//shader.renderPass.touch();
-		shader.updateUniform(0, camera.getViewMatrix());
+		shader.updateUniform(0, cameraMatrix);
 		//shader.updateUniform(2, camera.getProjectionMatrix());
 
 		//for (uint32_t zz = 0; zz < 11; ++zz) {
@@ -146,8 +156,9 @@ public:
 				glm::mat4 identity = glm::mat4(1.0f);
 				identity = glm::translate(identity, glm::vec3(i, 0, j));
 				shader.updateUniform(1, identity);
-				mesh.bind(shader.pipeline);
-				pass.draw(shader.pipeline);
+				mesh.bind(shader.pipeline); 
+				//pass.draw(shader.pipeline);
+				shader.renderPass.draw(shader.pipeline);
 
 			}
 		}
@@ -160,7 +171,9 @@ public:
 				identity = glm::translate(identity, glm::vec3(0, i, 0));
 				shader.updateUniform(1, identity);
 				mesh.bind(shader.pipeline);
-				pass.draw(shader.pipeline);
+				//pass.draw(shader.pipeline);
+				//shader.use();
+				shader.renderPass.draw(shader.pipeline);
 		}
 
 		shader.end();
