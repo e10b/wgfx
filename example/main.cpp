@@ -18,8 +18,9 @@
 int main()
 {
 	Context& context = Context::Instance();
+	Cube& cube = Cube::Instance();
 	Player player;
-	Cube test;
+	//Cube test;
 	//wgfx::RenderPass pass;
 	//pass.setClear({ 0.4, 0.7, 1, 1 });
 	//int boo = 0;
@@ -47,7 +48,8 @@ int main()
 		//manager.drawChunksLit(cam, pass);
 
 		//selection.draw(cam, pass, player.selectionPos);
-		test.drawLit(cam);
+		//test.drawLit(cam);
+		cube.drawLit(cam);
 		//cube.draw(cam);
 		//test.draw(cam, pass);
 

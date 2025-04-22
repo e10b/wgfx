@@ -80,6 +80,15 @@ class Cube
 
 public:
 
+	static Cube& Instance()
+	{
+		static Cube instance;
+		return instance;
+	}
+
+	Cube(Cube const&) = delete;
+	void operator=(Cube const&) = delete;
+
 	Cube()
 	{
 
@@ -87,10 +96,10 @@ public:
 		mesh = Model(pointData, indexData);
 		texture = wgfx::loadTexture(RESOURCE_DIR "/crate.png");
 
-		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer(pointData);
-		vbo->setAttribute(0, wgfx::vec3f, 0); // position
-		vbo->setAttribute(1, wgfx::vec3f, 3); // color
-		vbo->setAttribute(2, wgfx::vec2f, 6); // uv
+		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
+			vbo->setAttribute(0, wgfx::vec3f, 0); // position
+			vbo->setAttribute(1, wgfx::vec3f, 3); // color
+			vbo->setAttribute(2, wgfx::vec2f, 6); // uv
 		shader.setVertexBuffer({ 0.0 });
 		shader.setIndexBuffer({ 0 }); // initial data point hmm 
 
@@ -99,14 +108,14 @@ public:
 		//wgfx::IndexBuffer* ibo = wgfx::createIndexBuffer(indexData);
 		//shader.pipeline.setIndexBuffer(ibo);
 
-		shader.setUniform(0); // view
-		shader.setUniform(1); // model
-		glm::mat4 proj = glm::perspective(glm::radians(90.0f)/*fov*/, float(1920) / 1080, 0.1f, 1000.0f); // reduce memory usage only send uniform for perspective once.
-		shader.setUniform(2, proj); // proj
-		shader.setTexture(3, texture); // tex wgfx::Uniform* sampler = wgfx::createTexture(3, texture);
-		shader.setSampler(4, texture); //sampler  wgfx::Uniform* tex = wgfx::createSampler(4, texture);
+			shader.setUniform(0); // view
+			shader.setUniform(1); // model
+			glm::mat4 proj = glm::perspective(glm::radians(90.0f)/*fov*/, float(1920) / 1080, 0.1f, 1000.0f); // reduce memory usage only send uniform for perspective once.
+			shader.setUniform(2, proj); // proj
+			shader.setTexture(3, texture); // tex wgfx::Uniform* sampler = wgfx::createTexture(3, texture);
+			shader.setSampler(4, texture); //sampler  wgfx::Uniform* tex = wgfx::createSampler(4, texture);
 
-		shader.pipeline->init(vbo);
+			shader.pipeline->init(vbo);
 		//shader.pipeline.setTexture(sampler);
 		//shader.pipeline.setSampler(tex);
 
