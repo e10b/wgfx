@@ -80,7 +80,6 @@ namespace wgfx
 		std::cout << "Requesting adapter..." << std::endl;
 		return surface = SDL_GetWGPUSurface(instance, w);
 	}
-
 	void frame()
 	{
 		reset = true;
@@ -95,6 +94,7 @@ namespace wgfx
 		cmdBufferDescriptor.label = "Command buffer";
 		CommandBuffer command = encoder.finish(cmdBufferDescriptor);
 		encoder.release();
+		encoder = nullptr; // Clear the reference
 
 		//std::cout << "Submitting command..." << std::endl;
 		queue.submit(1, &command);
@@ -113,10 +113,20 @@ namespace wgfx
 		//device.poll(false);
 #endif
 	}
-
 	void initDepth()
 	{
 		SDL_GetWindowSize(window, &width, &height);
+
+		// Release previous depth texture and view if they exist
+		static wgpu::Texture previousDepthTexture = nullptr;
+		if (depthTextureView) {
+			depthTextureView.release();
+			depthTextureView = nullptr;
+		}
+		if (previousDepthTexture) {
+			previousDepthTexture.release();
+			previousDepthTexture = nullptr;
+		}
 
 		// Create the depth texture
 		TextureDescriptor depthTextureDesc;
@@ -143,5 +153,8 @@ namespace wgfx
 		depthTextureView = depthTexture.createView(depthTextureViewDesc);
 		std::cout << "Depth texture view: " << depthTextureView << std::endl;
 		updateMultiSampleView = false;
+
+		// Store reference for cleanup in next call
+		previousDepthTexture = depthTexture;
 	}
 }

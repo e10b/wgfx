@@ -6,7 +6,6 @@ namespace wgfx
 	{
 		// Get the next target texture view
 	}
-
 	void RenderPass::end()
 	{
 		//for (auto p : pipelines) // neccessary to loop through setters for vbos/ibos
@@ -14,8 +13,11 @@ namespace wgfx
 		//	p->index = 0;
 		//}
 
-		renderPass.end();
-		renderPass.release();
+		if (renderPass) {
+			renderPass.end();
+			renderPass.release();
+			renderPass = nullptr;
+		}
 	}
 
 	void RenderPass::setClear(WGPUColor color)
@@ -163,10 +165,21 @@ namespace wgfx
 
 		renderPass = encoder.beginRenderPass(renderPassDesc);
 	}
-
 	void RenderPass::prepareColor()
 	{
 		std::cout << "you working?\n";
+		
+		// Release previous offscreen texture and view if they exist
+		static wgpu::Texture previousOffscreenTexture = nullptr;
+		if (offscreenView) {
+			offscreenView.release();
+			offscreenView = nullptr;
+		}
+		if (previousOffscreenTexture) {
+			previousOffscreenTexture.release();
+			previousOffscreenTexture = nullptr;
+		}
+		
 		// this is sort of a getColorView(); method
 		WGPUTextureDescriptor offscreenDesc = {};
 		offscreenDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
@@ -178,6 +191,10 @@ namespace wgfx
 
 		offscreenTexture = device.createTexture(offscreenDesc);
 		offscreenView = offscreenTexture.createView();
+		
+		// Store reference for cleanup in next call
+		previousOffscreenTexture = offscreenTexture;
+		
 		///
 		if (!offscreenView) {
 			std::cerr << "Failed to create offscreenView!" << std::endl;
@@ -186,9 +203,15 @@ namespace wgfx
 			std::cout << "offscreenView successfully created." << std::endl;
 		}
 	}
-
 	TextureView getNextSurfaceTextureView()
 	{
+		// Release previous target view to prevent accumulation
+		static TextureView previousTargetView = nullptr;
+		if (previousTargetView) {
+			previousTargetView.release();
+			previousTargetView = nullptr;
+		}
+
 		// Get the surface texture
 		SurfaceTexture surfaceTexture;
 		surface.getCurrentTexture(&surfaceTexture);
@@ -197,6 +220,7 @@ namespace wgfx
 		}
 		wgpu::Texture texture = surfaceTexture.texture;
 		format = texture.getFormat();
+		
 		// Create a view for this surface texture
 		TextureViewDescriptor viewDescriptor;
 		viewDescriptor.label = "Surface texture view";
@@ -209,31 +233,55 @@ namespace wgfx
 		viewDescriptor.aspect = TextureAspect::All;
 		TextureView targetView = texture.createView(viewDescriptor);
 
-
-		/*
-		right i am going to create two, a multisampled and a viewTarget
-		*/
+		// Store reference to release in next call
+		previousTargetView = targetView;
 
 		return targetView;
 	}
 
 
-
 	TextureView getMultiSampleView()
 	{
-		wgpu::TextureDescriptor multisampleTextureDesc = {};
-		multisampleTextureDesc.usage = wgpu::TextureUsage::RenderAttachment;
-		multisampleTextureDesc.size = { (uint16_t)width, (uint16_t)height, 1 };
-		multisampleTextureDesc.format = format;
-		multisampleTextureDesc.sampleCount = samples; // Enable 4x MSAA
-		multisampleTextureDesc.mipLevelCount = 1;
-		multisampleTextureDesc.dimension = wgpu::TextureDimension::_2D;
+		// Static variables to cache the multisample texture and avoid recreating every frame
+		static wgpu::Texture multisampleTexture = nullptr;
+		static wgpu::TextureView multisampleTextureView = nullptr;
+		static uint32_t cachedWidth = 0;
+		static uint32_t cachedHeight = 0;
+		static TextureFormat cachedFormat = TextureFormat::Undefined;
+		static uint32_t cachedSamples = 0;
 
-		wgpu::Texture multisampleTexture = device.createTexture(multisampleTextureDesc);
-		wgpu::TextureView multisampleTextureView = multisampleTexture.createView();
+		// Check if we need to recreate the texture (size, format, or sample count changed)
+		if (!multisampleTexture || 
+			cachedWidth != width || 
+			cachedHeight != height || 
+			cachedFormat != format || 
+			cachedSamples != samples) {
+			
+			// Release previous texture if it exists
+			if (multisampleTexture) {
+				multisampleTextureView.release();
+				multisampleTexture.release();
+			}
+
+			wgpu::TextureDescriptor multisampleTextureDesc = {};
+			multisampleTextureDesc.usage = wgpu::TextureUsage::RenderAttachment;
+			multisampleTextureDesc.size = { (uint16_t)width, (uint16_t)height, 1 };
+			multisampleTextureDesc.format = format;
+			multisampleTextureDesc.sampleCount = samples; // Enable 4x MSAA
+			multisampleTextureDesc.mipLevelCount = 1;
+			multisampleTextureDesc.dimension = wgpu::TextureDimension::_2D;
+
+			multisampleTexture = device.createTexture(multisampleTextureDesc);
+			multisampleTextureView = multisampleTexture.createView();
+			
+			// Update cached values
+			cachedWidth = width;
+			cachedHeight = height;
+			cachedFormat = format;
+			cachedSamples = samples;
+		}
 		
 		return multisampleTextureView;
-	
 	}
 
 }

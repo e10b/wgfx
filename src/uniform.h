@@ -75,6 +75,19 @@ namespace wgfx
 		BindGroupLayout bindGroupLayout;
 		BindGroupLayoutDescriptor bindGroupLayoutDesc;
 
+		// Destructor to clean up WebGPU resources
+		~Uniforms()
+		{
+			if (bindGroup) {
+				bindGroup.release();
+				bindGroup = nullptr;
+			}
+			if (bindGroupLayout) {
+				bindGroupLayout.release();
+				bindGroupLayout = nullptr;
+			}
+		}
+
 		void clear()
 		{
 			//if (reset) {
@@ -85,9 +98,18 @@ namespace wgfx
 			//}
 			//reset = false;
 		}
-
 		void touch()
 		{
+			// Release previous bind group and layout if they exist
+			if (bindGroup) {
+				bindGroup.release();
+				bindGroup = nullptr;
+			}
+			if (bindGroupLayout) {
+				bindGroupLayout.release();
+				bindGroupLayout = nullptr;
+			}
+
 			bindGroupLayoutDesc.entryCount = layouts.size();
 			bindGroupLayoutDesc.entries = layouts.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
