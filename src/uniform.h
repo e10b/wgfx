@@ -3,8 +3,7 @@
 #include "texture.h"
 
 namespace wgfx
-{
-	struct Uniform
+{	struct Uniform
 	{
 		bool isDepth = false;
 
@@ -22,6 +21,14 @@ namespace wgfx
 		int quantity = 0; // uncrease when hmm, 
 
 		Uniform() = default;
+
+		~Uniform()
+		{
+			if (buffer) {
+				buffer.destroy();
+				buffer.release();
+			}
+		}
 
 	};
 

@@ -79,8 +79,7 @@ namespace wgfx
 		instance = wgpuCreateInstance(nullptr);
 		std::cout << "Requesting adapter..." << std::endl;
 		return surface = SDL_GetWGPUSurface(instance, w);
-	}
-	void frame()
+	}	void frame()
 	{
 		reset = true;
 		// nope you need a separate end
@@ -101,8 +100,12 @@ namespace wgfx
 		command.release();
 		//std::cout << "Command submitted." << std::endl;
 
-		// At the end of the frame
-		//targetView.release();
+		// At the end of the frame - clean up target view if it exists
+		if (targetView) {
+			targetView.release();
+			targetView = nullptr;
+		}
+		
 #ifndef __EMSCRIPTEN__
 		surface.present();
 #endif

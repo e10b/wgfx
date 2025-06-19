@@ -1,8 +1,7 @@
 #include "renderpass.h"
 
 namespace wgfx
-{
-	RenderPass::RenderPass()
+{	RenderPass::RenderPass()
 	{
 		// Get the next target texture view
 	}
@@ -18,6 +17,9 @@ namespace wgfx
 			renderPass.release();
 			renderPass = nullptr;
 		}
+		
+		// Don't release targetView here - it's needed until frame submission
+		// The surface texture view will be released automatically when the surface presents
 	}
 
 	void RenderPass::setClear(WGPUColor color)
@@ -61,7 +63,6 @@ namespace wgfx
 
 		renderPass.drawIndexed(pipeline->ibos.current->indexCount, 1, 0, 0, 0);
 	}
-
 	void RenderPass::touch()
 	{
 		// i mean here we are touching the pass sooooo
@@ -70,18 +71,17 @@ namespace wgfx
 		targetView = getNextSurfaceTextureView();
 		if (!targetView) return;
 
-
-		
-
-
-
-
-
 		if (!updateMultiSampleView && multiSample)
 		{
 			multiSampleView = getMultiSampleView();
 			if (!multiSampleView) return;
 			updateMultiSampleView = true;
+		}
+
+		// Release previous command encoder if it exists
+		if (encoder) {
+			encoder.release();
+			encoder = nullptr;
 		}
 
 		// Create a command encoder for the draw calls
@@ -202,16 +202,8 @@ namespace wgfx
 		else {
 			std::cout << "offscreenView successfully created." << std::endl;
 		}
-	}
-	TextureView getNextSurfaceTextureView()
+	}	TextureView getNextSurfaceTextureView()
 	{
-		// Release previous target view to prevent accumulation
-		static TextureView previousTargetView = nullptr;
-		if (previousTargetView) {
-			previousTargetView.release();
-			previousTargetView = nullptr;
-		}
-
 		// Get the surface texture
 		SurfaceTexture surfaceTexture;
 		surface.getCurrentTexture(&surfaceTexture);
@@ -232,9 +224,6 @@ namespace wgfx
 		viewDescriptor.arrayLayerCount = 1;
 		viewDescriptor.aspect = TextureAspect::All;
 		TextureView targetView = texture.createView(viewDescriptor);
-
-		// Store reference to release in next call
-		previousTargetView = targetView;
 
 		return targetView;
 	}
