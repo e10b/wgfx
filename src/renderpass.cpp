@@ -25,6 +25,16 @@ namespace wgfx
 
 	void RenderPass::draw(Pipeline* pipeline)
 	{
+		// some checks
+		//std::cout << "Number of uniforms: " << pipeline->uniforms.uniforms.size() << "\n";
+		//std::cout << "Number of vbos: " << pipeline->vbos.vertexBuffers.size() << "\n";
+		//std::cout << "Number of ibos: " << pipeline->ibos.indexBuffers.size() << "\n";
+
+
+
+
+
+
 		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data()); // or here
 		// this "dynamic offset" value must be the issue, we need a dynamicOffset* instead. with a list of dynamic offsets
 		renderPass.setPipeline(pipeline->pipeline);

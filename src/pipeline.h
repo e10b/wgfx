@@ -66,6 +66,8 @@ namespace wgfx
 				}
 				//vbos.vertexBuffers.push_back(vbo);
 				vbos.current = vbo;
+				//std::cout << "vbos count a : " << vbos.vertexBuffers.size() << "\n";
+
 			}
 
 			void setIndexBuffer(IndexBuffer* ibo)
@@ -83,6 +85,8 @@ namespace wgfx
 					ibos.indexBuffers.at(ibo->id) = ibo;
 				}
 				ibos.current = ibo;
+				//std::cout << "ibos count a : " << ibos.indexBuffers.size() << "\n";
+
 			}
 
 		void init(VertexBuffer* vertexBuffer);
@@ -96,22 +100,29 @@ namespace wgfx
 			void setUniform(Uniform* uniform)
 			{
 				uniforms.setUniform(uniform);
+				//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
 			}
 
 
 			void setTexture(Uniform* uniform)
 			{
 				uniforms.setTexture(uniform);
+				//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
+
 			}
 			void setSampler(Uniform* uniform)
 			{
 				uniforms.setSampler(uniform);
+				//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
+
 			}
 		void touch();
 		//void updateUniform(Uniform* uniform, const float* array);
 		void updateUniform(Uniform* uniform, const float* array)
 		{
 			uniforms.updateUniform(uniform, array);
+			//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
+
 		}
 
 	};

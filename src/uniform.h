@@ -101,16 +101,17 @@ namespace wgfx
 
 		void updateUniform(Uniform* uniform, const float* array)
 		{
-			Uniform* current = uniforms.at(uniform->binding);
+			auto& current = *uniforms.at(uniform->binding);
 
-			int dynamicOffset = current->quantity * current->stride;
-			
-			if (dynamicOffsets.size() <= uniform->binding) { dynamicOffsets.resize(uniform->binding + 1, 0); }
-			dynamicOffsets.at(uniform->binding) = dynamicOffset;
+			const uint32_t offset = current.quantity * current.stride;
 
-			queue.writeBuffer(current->buffer, dynamicOffset, array, uniform->minBindingSize);
+			if (dynamicOffsets.size() <= uniform->binding) {
+				dynamicOffsets.resize(uniform->binding + 1, 0);
+			}
+			dynamicOffsets[uniform->binding] = offset;
 
-			current->quantity++;
+			queue.writeBuffer(current.buffer, offset, array, current.minBindingSize);
+			current.quantity++;
 		}
 
 		//hmm

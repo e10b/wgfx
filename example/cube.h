@@ -135,6 +135,8 @@ public:
 	//void draw(const Camera& camera, wgfx::RenderPass& pass)
 	void draw(const glm::mat4& cameraMatrix, Shader& shader, wgfx::RenderPass& pass)
 	{
+		shader.end();
+
 		float time = SDL_GetTicks() / 1000.0f; // ought not
 
 		//shader.renderPass.touch();
@@ -185,7 +187,7 @@ public:
 				//shader.renderPass.draw(shader.pipeline);
 		}
 
-		shader.end();
+		//shader.end();
 	}
 };
 

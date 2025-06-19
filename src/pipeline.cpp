@@ -44,6 +44,9 @@ namespace wgfx
 			vbos.current = newVBO;
 		//}
 
+		// little check
+			//std::cout << "vbos count: " << vbos.vertexBuffers.size() << "\n";
+
 	}
 	VertexBufferLayout vertexBufferLayout;
 	void Pipeline::setIndexBuffer(const std::vector<uint16_t>& value)
@@ -74,6 +77,7 @@ namespace wgfx
 		//ibo = createIndexBuffer(value);
 		//ibos.add(ibo);
 		//ibos.current = ibo;
+		//std::cout << "ibos count: " << ibos.indexBuffers.size() << "\n";
 
 	}
 
@@ -123,10 +127,9 @@ namespace wgfx
 		blendState.alpha.dstFactor = BlendFactor::One;
 		blendState.alpha.operation = BlendOperation::Add;
 
+		ColorTargetState colorTarget[2];
 		if (multiTarget)
 		{
-
-		ColorTargetState colorTarget[2];
 		colorTarget[0].format = surfaceFormat;
 		colorTarget[0].blend = &blendState;
 		colorTarget[0].writeMask = ColorWriteMask::All;
@@ -137,18 +140,18 @@ namespace wgfx
 
 
 		fragmentState.targetCount = 2; // two targets
-		fragmentState.targets = colorTarget;
+		//fragmentState.targets = colorTarget;
 		}
 		else
 		{
-			ColorTargetState colorTarget;
-			colorTarget.format = surfaceFormat;
-			colorTarget.blend = &blendState;
-			colorTarget.writeMask = ColorWriteMask::All;
+			//ColorTargetState colorTarget;
+			colorTarget[0].format = surfaceFormat;
+			colorTarget[0].blend = &blendState;
+			colorTarget[0].writeMask = ColorWriteMask::All;
 
 			fragmentState.targetCount = 1; // two targets
-			fragmentState.targets = &colorTarget;
 		}
+			fragmentState.targets = colorTarget;
 
 		// We setup a depth buffer state for the render pipeline
 		DepthStencilState depthStencilState = Default;
