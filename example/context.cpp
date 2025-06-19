@@ -48,5 +48,16 @@ void Context::update()
 void Context::draw()
 {
 	wgfx::frame();
+	
+	// Add explicit memory management every few frames
+	static int frameCount = 0;
+	frameCount++;
+	if (frameCount % 60 == 0) { // Every 60 frames (about once per second at 60fps)
+#if defined(WEBGPU_BACKEND_DAWN)
+		wgfx::device.tick();
+#elif defined(WEBGPU_BACKEND_WGPU)
+		wgfx::device.poll(true); // Force wait for completion
+#endif
+	}
 }
 

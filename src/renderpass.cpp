@@ -1,10 +1,12 @@
 #include "renderpass.h"
 
 namespace wgfx
-{	RenderPass::RenderPass()
+{
+	RenderPass::RenderPass()
 	{
 		// Get the next target texture view
 	}
+
 	void RenderPass::end()
 	{
 		//for (auto p : pipelines) // neccessary to loop through setters for vbos/ibos
@@ -26,47 +28,23 @@ namespace wgfx
 	{
 		clearValue = color;
 	}
-
 	void RenderPass::draw(Pipeline* pipeline)
 	{
-		// some checks
-		//std::cout << "Number of uniforms: " << pipeline->uniforms.uniforms.size() << "\n";
-		//std::cout << "Number of vbos: " << pipeline->vbos.vertexBuffers.size() << "\n";
-		//std::cout << "Number of ibos: " << pipeline->ibos.indexBuffers.size() << "\n";
+		// Reset uniforms at the start of each frame (only once per frame)
+		if (reset) {
+			pipeline->uniforms.clear();
+			reset = false;
+		}
 
-
-
-
-
-
-		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data()); // or here
-		// this "dynamic offset" value must be the issue, we need a dynamicOffset* instead. with a list of dynamic offsets
+		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data());
 		renderPass.setPipeline(pipeline->pipeline);
 		renderPass.setVertexBuffer(0, pipeline->vbos.current->buffer, 0, pipeline->vbos.current->buffer.getSize());
 		renderPass.setIndexBuffer(pipeline->ibos.current->buffer, IndexFormat::Uint16, 0, pipeline->ibos.current->buffer.getSize());
-
-		/*
-		if (reset) //reset system for uniforms
-		{
-			for (auto uniform : pipeline->uniforms)d
-			{
-				uniform->quantity = 0;
-			}
-		}
-		reset = false;
-		*/
-		//pipeline->uniforms.clear();
-		
-			//pipeline->index++; // incremenet vbo/ibo draw
-		
-
 
 		renderPass.drawIndexed(pipeline->ibos.current->indexCount, 1, 0, 0, 0);
 	}
 	void RenderPass::touch()
 	{
-		// i mean here we are touching the pass sooooo
-
 		// Get the next surface texture view
 		targetView = getNextSurfaceTextureView();
 		if (!targetView) return;
@@ -88,6 +66,9 @@ namespace wgfx
 		CommandEncoderDescriptor encoderDesc = {};
 		encoderDesc.label = "Frame command encoder";
 		encoder = device.createCommandEncoder();
+		
+		// Reset the global reset flag to ensure uniforms get reset
+		reset = true;
 	}
 
 	void RenderPass::post()
@@ -98,14 +79,9 @@ namespace wgfx
 		//renderPassColorAttachment.view = targetView;  // No multisampling here for post-process
 		renderPassColorAttachment.view = multiSample ? multiSampleView : targetView;
 		renderPassColorAttachment.resolveTarget = multiSample ? targetView : nullptr;
-
 		renderPassColorAttachment.loadOp = LoadOp::Load;  // Keep content from scene pass
 		renderPassColorAttachment.storeOp = StoreOp::Store;
 		renderPassColorAttachment.clearValue = {};  // Not used with Load op
-
-#ifndef WEBGPU_BACKEND_WGPU
-		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-#endif
 
 		renderPassDesc.colorAttachmentCount = 1;
 		renderPassDesc.colorAttachments = &renderPassColorAttachment;
@@ -115,7 +91,6 @@ namespace wgfx
 
 		renderPass = encoder.beginRenderPass(renderPassDesc);
 	}
-
 	void RenderPass::scene()
 	{
 		RenderPassDescriptor renderPassDesc{};
@@ -164,45 +139,57 @@ namespace wgfx
 		renderPassDesc.timestampWrites = nullptr;
 
 		renderPass = encoder.beginRenderPass(renderPassDesc);
-	}
-	void RenderPass::prepareColor()
+	}	void RenderPass::prepareColor()
 	{
 		std::cout << "you working?\n";
 		
-		// Release previous offscreen texture and view if they exist
-		static wgpu::Texture previousOffscreenTexture = nullptr;
-		if (offscreenView) {
-			offscreenView.release();
-			offscreenView = nullptr;
-		}
-		if (previousOffscreenTexture) {
-			previousOffscreenTexture.release();
-			previousOffscreenTexture = nullptr;
-		}
+		// Use static variables to cache the offscreen texture and avoid recreating every call
+		static wgpu::Texture cachedOffscreenTexture = nullptr;
+		static wgpu::TextureView cachedOffscreenView = nullptr;
+		static uint32_t cachedWidth = 0;
+		static uint32_t cachedHeight = 0;
 		
-		// this is sort of a getColorView(); method
-		WGPUTextureDescriptor offscreenDesc = {};
-		offscreenDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
-		offscreenDesc.size = { (uint16_t)width, (uint16_t)height, 1 };
-		offscreenDesc.format = wgpu::TextureFormat::BGRA8UnormSrgb;
-		offscreenDesc.sampleCount = 1; // Enable 4x MSAA
-		offscreenDesc.mipLevelCount = 1;
-		offscreenDesc.dimension = wgpu::TextureDimension::_2D;
+		// Only recreate if size changed or texture doesn't exist
+		if (!cachedOffscreenTexture || cachedWidth != width || cachedHeight != height) {
+			// Release previous resources
+			if (cachedOffscreenView) {
+				cachedOffscreenView.release();
+				cachedOffscreenView = nullptr;
+			}
+			if (cachedOffscreenTexture) {
+				cachedOffscreenTexture.release();
+				cachedOffscreenTexture = nullptr;
+			}
+			
+			// Create new texture
+			WGPUTextureDescriptor offscreenDesc = {};
+			offscreenDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
+			offscreenDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
+			offscreenDesc.format = wgpu::TextureFormat::BGRA8UnormSrgb;
+			offscreenDesc.sampleCount = 1;
+			offscreenDesc.mipLevelCount = 1;
+			offscreenDesc.dimension = wgpu::TextureDimension::_2D;
 
-		offscreenTexture = device.createTexture(offscreenDesc);
-		offscreenView = offscreenTexture.createView();
-		
-		// Store reference for cleanup in next call
-		previousOffscreenTexture = offscreenTexture;
-		
-		///
-		if (!offscreenView) {
-			std::cerr << "Failed to create offscreenView!" << std::endl;
+			cachedOffscreenTexture = device.createTexture(offscreenDesc);
+			cachedOffscreenView = cachedOffscreenTexture.createView();
+			
+			// Update cached values
+			cachedWidth = width;
+			cachedHeight = height;
+			
+			if (!cachedOffscreenView) {
+				std::cerr << "Failed to create offscreenView!" << std::endl;
+			} else {
+				std::cout << "offscreenView successfully created." << std::endl;
+			}
 		}
-		else {
-			std::cout << "offscreenView successfully created." << std::endl;
-		}
-	}	TextureView getNextSurfaceTextureView()
+		
+		// Update global references
+		offscreenTexture = cachedOffscreenTexture;
+		offscreenView = cachedOffscreenView;
+	}
+
+	TextureView getNextSurfaceTextureView()
 	{
 		// Get the surface texture
 		SurfaceTexture surfaceTexture;
@@ -273,4 +260,17 @@ namespace wgfx
 		return multisampleTextureView;
 	}
 
+	void cleanupStaticResources()
+	{
+		// Clean up static cached resources
+		static wgpu::Texture* multisampleTexture = nullptr;
+		static wgpu::TextureView* multisampleTextureView = nullptr;
+		static wgpu::Texture* cachedOffscreenTexture = nullptr;
+		static wgpu::TextureView* cachedOffscreenView = nullptr;
+		static wgpu::Texture* previousDepthTexture = nullptr;
+		
+		// Get static variables from each function and clean them up
+		// This would normally require refactoring to make these accessible
+		// For now, we'll add cleanup in the destructor or app exit
+	}
 }

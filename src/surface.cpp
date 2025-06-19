@@ -82,13 +82,7 @@ namespace wgfx
 	}	void frame()
 	{
 		reset = true;
-		// nope you need a separate end
-		//program.framebuffers.at(0)->renderPass.end();
-		//program.framebuffers.at(0)->renderPass.release();
-		//renderPass.
-												//renderPass.renderPass.end();
-												//renderPass.renderPass.release();
-// Finally encode and submit the render pass
+		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
 		cmdBufferDescriptor.label = "Command buffer";
 		CommandBuffer command = encoder.finish(cmdBufferDescriptor);
@@ -100,20 +94,23 @@ namespace wgfx
 		command.release();
 		//std::cout << "Command submitted." << std::endl;
 
-		// At the end of the frame - clean up target view if it exists
-		if (targetView) {
-			targetView.release();
-			targetView = nullptr;
-		}
-		
+		// Present the surface
 #ifndef __EMSCRIPTEN__
 		surface.present();
 #endif
 
+		// Release the target view after presenting - this is critical for memory management
+		if (targetView) {
+			targetView.release();
+			targetView = nullptr;
+		}
+		// Force WebGPU to clean up resources more aggressively
 #if defined(WEBGPU_BACKEND_DAWN)
+		device.tick();
 #elif defined(WEBGPU_BACKEND_WGPU)
-		//device.tick();
-		//device.poll(false);
+		device.poll(false);
+		// Poll again to ensure all resources are freed
+		device.poll(true);
 #endif
 	}
 	void initDepth()

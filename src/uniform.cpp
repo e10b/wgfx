@@ -6,9 +6,11 @@ namespace wgfx
 		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
 		return step * divide_and_ceil;
 	}
-
 	Uniform* createUniform(int i, size_t size, float data)
 	{
+		// Debug: Log uniform buffer creation
+		std::cout << "Creating uniform buffer " << i << " with size " << size << std::endl;
+		
 		Uniform* uniform = new Uniform();
 		uniform->binding = i;
 		uniform->minBindingSize = size;
@@ -23,6 +25,8 @@ namespace wgfx
 		bufferDesc.mappedAtCreation = false;
 		uniform->buffer = device.createBuffer(bufferDesc);
 
+		std::cout << "Created uniform buffer with total size: " << bufferDesc.size << " bytes" << std::endl;
+
 		queue.writeBuffer(uniform->buffer, 0, &data, size);
 
 		uniform->entry.binding = i;
@@ -31,9 +35,11 @@ namespace wgfx
 		uniform->entry.size = size;
 
 		return uniform;
-	}
-	Uniform* createUniform(int i, size_t size, const float* array)
+	}	Uniform* createUniform(int i, size_t size, const float* array)
 	{
+		// Debug: Log uniform buffer creation
+		std::cout << "Creating uniform buffer " << i << " with size " << size << " (array)" << std::endl;
+		
 		Uniform* uniform = new Uniform();
 		uniform->binding = i;
 		uniform->minBindingSize = size;
@@ -47,6 +53,8 @@ namespace wgfx
 		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 		bufferDesc.mappedAtCreation = false;
 		uniform->buffer = device.createBuffer(bufferDesc);
+
+		std::cout << "Created uniform buffer with total size: " << bufferDesc.size << " bytes" << std::endl;
 
 		// Use writeBuffer with the pointer to float data
 		queue.writeBuffer(uniform->buffer, 0, array, size);

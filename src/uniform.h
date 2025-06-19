@@ -94,16 +94,13 @@ namespace wgfx
 				bindGroupLayout = nullptr;
 			}
 		}
-
 		void clear()
 		{
-			//if (reset) {
-				for (auto uniform : uniforms)
-				{
-					uniform->quantity = 0;
-				}
-			//}
-			//reset = false;
+			// Always reset uniform quantities to prevent buffer overflow
+			for (auto uniform : uniforms)
+			{
+				uniform->quantity = 0;
+			}
 		}
 		void touch()
 		{

@@ -131,13 +131,12 @@ public:
 
 		draw(cameraMatrix, shader, pass);
 	}
-
-	//void draw(const Camera& camera, wgfx::RenderPass& pass)
 	void draw(const glm::mat4& cameraMatrix, Shader& shader, wgfx::RenderPass& pass)
 	{
-		shader.end();
+		// Note: uniforms.clear() is now handled by the render pass, not here
+		// shader.end(); // Remove this to prevent double-clearing uniforms
 
-		float time = SDL_GetTicks() / 1000.0f; // ought not
+		float time = SDL_GetTicks() / 1000.0f;
 
 		//shader.renderPass.touch();
 		shader.updateUniform(0, cameraMatrix);

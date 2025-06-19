@@ -38,6 +38,9 @@ namespace wgfx
 
 	inline bool updateMultiSampleView = false;
 
+	// Memory management utilities
+	void cleanupStaticResources();
+
 	TextureView getNextSurfaceTextureView();
 	TextureView getMultiSampleView();
 }
