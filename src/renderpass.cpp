@@ -34,7 +34,7 @@ namespace wgfx
 		/*
 		if (reset) //reset system for uniforms
 		{
-			for (auto uniform : pipeline->uniforms)
+			for (auto uniform : pipeline->uniforms)d
 			{
 				uniform->quantity = 0;
 			}
@@ -52,12 +52,19 @@ namespace wgfx
 
 	void RenderPass::touch()
 	{
+		// i mean here we are touching the pass sooooo
 
-
-		// Get the next target texture view
+		// Get the next surface texture view
 		targetView = getNextSurfaceTextureView();
 		if (!targetView) return;
+
+
 		
+
+
+
+
+
 		if (!updateMultiSampleView && multiSample)
 		{
 			multiSampleView = getMultiSampleView();
@@ -65,53 +72,72 @@ namespace wgfx
 			updateMultiSampleView = true;
 		}
 
-		// Create a command encoder for the draw call
+		// Create a command encoder for the draw calls
 		CommandEncoderDescriptor encoderDesc = {};
-		encoderDesc.label = "My command encoder";
-		//encoder = wgpuDeviceCreateCommandEncoder(device, &encoderDesc);
+		encoderDesc.label = "Frame command encoder";
 		encoder = device.createCommandEncoder();
+	}
 
-		// Create the render pass that clears the screen with our color
+	void RenderPass::post()
+	{
 		RenderPassDescriptor renderPassDesc{};
 
-		// The attachment part of the render pass descriptor describes the target texture of the pass
 		RenderPassColorAttachment renderPassColorAttachment = {};
-
-		/*
-		
-		right so right now we are not using a resolvetarget, I am thinking because we are drawing straight into 
-		the targetView,
-
-		lets multisample
-		
-		*/
+		//renderPassColorAttachment.view = targetView;  // No multisampling here for post-process
 		renderPassColorAttachment.view = multiSample ? multiSampleView : targetView;
 		renderPassColorAttachment.resolveTarget = multiSample ? targetView : nullptr;
 
-		renderPassColorAttachment.loadOp = LoadOp::Clear;
+		renderPassColorAttachment.loadOp = LoadOp::Load;  // Keep content from scene pass
 		renderPassColorAttachment.storeOp = StoreOp::Store;
-		renderPassColorAttachment.clearValue = clearValue;
+		renderPassColorAttachment.clearValue = {};  // Not used with Load op
+
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-#endif // NOT WEBGPU_BACKEND_WGPU
+#endif
 
 		renderPassDesc.colorAttachmentCount = 1;
 		renderPassDesc.colorAttachments = &renderPassColorAttachment;
 
-		// We now add a depth/stencil attachment:
-		RenderPassDepthStencilAttachment depthStencilAttachment;
-		// The view of the depth texture
-		depthStencilAttachment.view = depthTextureView;
+		renderPassDesc.depthStencilAttachment = nullptr; // No depth/stencil for post-process
+		renderPassDesc.timestampWrites = nullptr;
 
-		// The initial value of the depth buffer, meaning "far"
+		renderPass = encoder.beginRenderPass(renderPassDesc);
+	}
+
+	void RenderPass::scene()
+	{
+		RenderPassDescriptor renderPassDesc{};
+
+		RenderPassColorAttachment renderPassColorAttachment[2] = {};
+		renderPassColorAttachment[0].view = multiSample ? multiSampleView : targetView;
+		renderPassColorAttachment[0].resolveTarget = multiSample ? targetView : nullptr;
+		renderPassColorAttachment[0].loadOp = LoadOp::Clear;
+		renderPassColorAttachment[0].storeOp = StoreOp::Store;
+		renderPassColorAttachment[0].clearValue = clearValue;
+		/*
+#ifndef WEBGPU_BACKEND_WGPU
+		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif
+		*/
+		renderPassColorAttachment[1].view = offscreenView;
+		renderPassColorAttachment[1].resolveTarget = nullptr;
+		renderPassColorAttachment[1].loadOp = LoadOp::Clear;
+		renderPassColorAttachment[1].storeOp = StoreOp::Store;	
+		renderPassColorAttachment[1].clearValue = clearValue;
+
+
+
+
+		renderPassDesc.colorAttachmentCount = 2; /// two`	
+		renderPassDesc.colorAttachments = renderPassColorAttachment;
+
+		// Setup depth/stencil attachment
+		RenderPassDepthStencilAttachment depthStencilAttachment{};
+		depthStencilAttachment.view = depthTextureView;
 		depthStencilAttachment.depthClearValue = 1.0f;
-		// Operation settings comparable to the color attachment
 		depthStencilAttachment.depthLoadOp = LoadOp::Clear;
 		depthStencilAttachment.depthStoreOp = StoreOp::Store;
-		// we could turn off writing to the depth buffer globally here
 		depthStencilAttachment.depthReadOnly = false;
-
-		// Stencil setup, mandatory but unused
 		depthStencilAttachment.stencilClearValue = 0;
 #ifdef WEBGPU_BACKEND_WGPU
 		depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
@@ -123,13 +149,32 @@ namespace wgfx
 		depthStencilAttachment.stencilReadOnly = true;
 
 		renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
-		//renderPassDesc.depthStencilAttachment = nullptr;
-
 		renderPassDesc.timestampWrites = nullptr;
-		//renderPass = encoder.beginRenderPass(renderPassDesc);
 
 		renderPass = encoder.beginRenderPass(renderPassDesc);
+	}
 
+	void RenderPass::prepareColor()
+	{
+		std::cout << "you working?\n";
+		// this is sort of a getColorView(); method
+		WGPUTextureDescriptor offscreenDesc = {};
+		offscreenDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
+		offscreenDesc.size = { (uint16_t)width, (uint16_t)height, 1 };
+		offscreenDesc.format = wgpu::TextureFormat::BGRA8UnormSrgb;
+		offscreenDesc.sampleCount = 1; // Enable 4x MSAA
+		offscreenDesc.mipLevelCount = 1;
+		offscreenDesc.dimension = wgpu::TextureDimension::_2D;
+
+		offscreenTexture = device.createTexture(offscreenDesc);
+		offscreenView = offscreenTexture.createView();
+		///
+		if (!offscreenView) {
+			std::cerr << "Failed to create offscreenView!" << std::endl;
+		}
+		else {
+			std::cout << "offscreenView successfully created." << std::endl;
+		}
 	}
 
 	TextureView getNextSurfaceTextureView()
@@ -161,6 +206,8 @@ namespace wgfx
 
 		return targetView;
 	}
+
+
 
 	TextureView getMultiSampleView()
 	{

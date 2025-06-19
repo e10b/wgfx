@@ -123,13 +123,32 @@ namespace wgfx
 		blendState.alpha.dstFactor = BlendFactor::One;
 		blendState.alpha.operation = BlendOperation::Add;
 
-		ColorTargetState colorTarget;
-		colorTarget.format = surfaceFormat;
-		colorTarget.blend = &blendState;
-		colorTarget.writeMask = ColorWriteMask::All;
+		if (multiTarget)
+		{
 
-		fragmentState.targetCount = 1;
-		fragmentState.targets = &colorTarget;
+		ColorTargetState colorTarget[2];
+		colorTarget[0].format = surfaceFormat;
+		colorTarget[0].blend = &blendState;
+		colorTarget[0].writeMask = ColorWriteMask::All;
+
+		colorTarget[1].format = surfaceFormat;
+		colorTarget[1].blend = &blendState;
+		colorTarget[1].writeMask = ColorWriteMask::All;
+
+
+		fragmentState.targetCount = 2; // two targets
+		fragmentState.targets = colorTarget;
+		}
+		else
+		{
+			ColorTargetState colorTarget;
+			colorTarget.format = surfaceFormat;
+			colorTarget.blend = &blendState;
+			colorTarget.writeMask = ColorWriteMask::All;
+
+			fragmentState.targetCount = 1; // two targets
+			fragmentState.targets = &colorTarget;
+		}
 
 		// We setup a depth buffer state for the render pipeline
 		DepthStencilState depthStencilState = Default;
@@ -145,7 +164,15 @@ namespace wgfx
 		depthStencilState.stencilReadMask = 0;
 		depthStencilState.stencilWriteMask = 0;
 
-		pipelineDesc.depthStencil = &depthStencilState;
+		if (useDepth)
+		{
+		pipelineDesc.depthStencil = &depthStencilState; // keep in mind that the depthStencil is only when you want to create a depth for the pass.
+		// don't need it for shadow pass or post processing pass in general. Unless you want a depth texture of a quad. etc.
+		}
+		else
+		{
+			pipelineDesc.depthStencil = nullptr;
+		}
 
 		pipelineDesc.multisample.count = samples;
 		pipelineDesc.multisample.mask = ~0u;

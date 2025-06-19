@@ -6,6 +6,8 @@ namespace wgfx
 {
 	struct Uniform
 	{
+		bool isDepth = false;
+
 		Buffer buffer;
 		//BindGroupEntry binding;
 		BindGroupEntry entry;
@@ -27,6 +29,29 @@ namespace wgfx
 	Uniform* createUniform(int i, size_t size, const float* array);
 	Uniform* createTexture(int i, Texture texture);
 	Uniform* createSampler(int i, Texture texture);
+
+
+	inline Uniform* createTexture2(int i, wgpu::TextureView t)
+	{
+		Uniform* uniform = new Uniform();
+		uniform->binding = i;
+
+		uniform->entry.binding = i;
+		uniform->entry.textureView = t;
+
+		return uniform;
+	}
+
+	inline Uniform* createSampler2(int i, wgpu::Sampler s)
+	{
+		Uniform* uniform = new Uniform();
+		uniform->binding = i;
+
+		uniform->entry.binding = i;
+		uniform->entry.sampler = s;
+
+		return uniform;
+	}
 
 	// right, so we have a << hmm, a container.
 	
@@ -91,7 +116,7 @@ namespace wgfx
 		//hmm
 			void setUniform(Uniform* uniform)
 			{
-				BindGroupLayoutEntry layout = Default;
+				BindGroupLayoutEntry layout = {};
 					layout.binding = uniform->binding;
 					layout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
 					layout.buffer.type = BufferBindingType::Uniform;
@@ -106,10 +131,21 @@ namespace wgfx
 
 			void setTexture(Uniform* uniform)
 			{
-				BindGroupLayoutEntry layout = Default;							/// layout needs to be created in joint with the actual entry
+				BindGroupLayoutEntry layout = {};							/// layout needs to be created in joint with the actual entry
 					layout.binding = uniform->binding;
 					layout.visibility = ShaderStage::Fragment;
-					layout.texture.sampleType = TextureSampleType::Float;
+					//layout.texture.sampleType = TextureSampleType::Float;
+
+					if (uniform->isDepth) // Add a boolean flag in Uniform for this
+					{
+						layout.texture.sampleType = TextureSampleType::Depth;
+					}
+					else
+					{
+						layout.texture.sampleType = TextureSampleType::Float;
+					}
+
+
 					layout.texture.viewDimension = TextureViewDimension::_2D;
 				uniforms.push_back(uniform);
 				layouts.push_back(layout);
@@ -118,7 +154,7 @@ namespace wgfx
 
 			void setSampler(Uniform* uniform)
 			{
-				BindGroupLayoutEntry layout = Default;
+				BindGroupLayoutEntry layout = {};
 					layout.binding = uniform->binding;
 					layout.visibility = ShaderStage::Fragment;
 					layout.sampler.type = SamplerBindingType::Filtering;

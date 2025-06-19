@@ -15,7 +15,7 @@ Player::Player() : Entity(), camera_(getPosition()), canJump_(false), noclip_(tr
     camera_.setFarPlane(World::renderDistance * 1.25f * 3);
 
    // teleport(glm::vec3(520.5f, 102.0f, -320.5f));
-   // teleport(glm::vec3(0.0f, 0.0f, 0.0f));
+    teleport(glm::vec3(0.0f, 0.0f, 20.0f));
 }
 
 void Player::update(float dt)

@@ -5,18 +5,41 @@
 #include "shader.h"
 #include "model.h"
 
+#include "wgfx.h"
+
 class Crosshair
 {
 public:
+
+	wgfx::Texture depth;
+
 	Crosshair()
 		:shader_("crosshair.wgsl")
 	{
+		depth = wgfx::loadTexture(wgfx::offscreenView);
 		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
 		vbo->setAttribute(0, wgfx::vec3f, 0); // pos
+		vbo->setAttribute(1, wgfx::vec2f, 3); // uv
 		shader_.setVertexBuffer({ 0.0 });
 		shader_.setIndexBuffer({ 0 });
 
 		shader_.setUniform(0); // size
+		//shader_.setUniform(1); // size
+
+
+
+		shader_.pipeline->multiTarget = false;
+		shader_.pipeline->useDepth = false;
+
+		//depth = wgfx::loadTexture(RESOURCE_DIR "/crate.png");
+
+		//depth = wgfx::loadTexture(wgfx::offscreenView);
+		shader_.setTexture(1, depth);
+		shader_.setSampler(2, depth);
+		
+		
+		//shader_.setDepthTexture(1, depth);
+		//shader_.setTexture();
 
 		shader_.pipeline->init(vbo);
 	}
@@ -28,8 +51,25 @@ public:
 
 		shader_.updateUniform(0, size);
 
-		cross_.addData({ -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f }
-		, { 0,1,2,3,2,1 });
+		/*cross_.addData({ -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f }
+		, { 0,1,2,3,2,1 });*/
+		float quadWidth = 0.3f;
+		float quadHeight = 0.3f;
+
+		// Offset from center to bottom-right
+		float x = 1.0f - quadWidth;
+		float y = -1.0f + quadHeight;
+
+		cross_.addData({
+			//   x,             y,            z,      u,    v
+			-quadWidth + x, -quadHeight + y, 0.0f,   0.0f, 0.0f, // bottom-left
+			 quadWidth + x, -quadHeight + y, 0.0f,   1.0f, 0.0f, // bottom-right
+			 quadWidth + x,  quadHeight + y, 0.0f,   1.0f, 1.0f, // top-right
+			-quadWidth + x,  quadHeight + y, 0.0f,   0.0f, 1.0f  // top-left
+			}, {
+				0, 1, 2,
+				0, 2, 3
+			});
 
 		cross_.bind(shader_.pipeline);
 		//shader_.use();

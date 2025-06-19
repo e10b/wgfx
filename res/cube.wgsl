@@ -17,6 +17,11 @@ struct VertexOutput {
 	@location(1) uv: vec2f,
 };
 
+struct FragmentOutput {
+    @location(0) color0: vec4f,
+    @location(1) color1: vec4f,
+};
+
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
@@ -30,7 +35,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 }
 
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4f {
+fn fs_main(in: VertexOutput) -> FragmentOutput {
 	let texelCoords = vec2i(in.uv * vec2f(textureDimensions(gradientTexture)));
 	
 	let normal = normalize(in.normal);
@@ -46,8 +51,12 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 
 		//let color = textureLoad(gradientTexture, texelCoords, 0).rgb;
 	let color = textureSample(gradientTexture, textureSampler, in.uv).rgb;// * shading;
-
 	let corrected_color = pow(color, vec3f(2.2));
+	let finalColor = vec4f(corrected_color, 1.0); // You can also multiply by shading here
 
-	return vec4f(corrected_color, 1.0);
+	var out: FragmentOutput;
+    out.color0 = finalColor; // writes to first attachment (targetView)
+    out.color1 = finalColor; // writes to second attachment (offscreenView)
+
+    return out;
 }

@@ -4,6 +4,11 @@
 
 namespace wgfx
 {
+
+	inline TextureView offscreenView = nullptr;
+	inline wgpu::Texture offscreenTexture;
+	inline TextureFormat format = wgpu::TextureFormat::Undefined;
+
 	struct RenderPass
 	{
 		RenderPassEncoder renderPass = nullptr;
@@ -17,12 +22,21 @@ namespace wgfx
 		void setClear(WGPUColor color);
 		void draw(Pipeline* pipeline);
 		void touch();
+		void scene();
+		void post();
+
+
+		void prepareColor();
 
 	};
 	inline TextureView multiSampleView = nullptr;
 	inline TextureView targetView = nullptr;
+
+	//testing here, hmmmmmm
+
+
+
 	inline bool updateMultiSampleView = false;
-	inline TextureFormat format = wgpu::TextureFormat::Undefined;
 
 	TextureView getNextSurfaceTextureView();
 	TextureView getMultiSampleView();

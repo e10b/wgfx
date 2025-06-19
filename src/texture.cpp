@@ -138,4 +138,37 @@ namespace wgfx
 
 		return texture;
 	}
+
+	Texture loadTexture(wgpu::TextureView& textureView)
+	{
+		Texture texture;
+
+		// Create a sampler
+		SamplerDescriptor samplerDesc;
+		samplerDesc.addressModeU = AddressMode::Repeat;
+		samplerDesc.addressModeV = AddressMode::Repeat;
+		samplerDesc.addressModeW = AddressMode::Repeat;
+		samplerDesc.magFilter = FilterMode::Nearest; // or FilterMode::Linear
+		samplerDesc.minFilter = FilterMode::Nearest; // or FilterMode::Linear
+		samplerDesc.mipmapFilter = MipmapFilterMode::Linear;
+		samplerDesc.lodMinClamp = 0.0f;
+		samplerDesc.lodMaxClamp = 8.0f;
+		samplerDesc.compare = CompareFunction::Undefined;
+		samplerDesc.maxAnisotropy = 1;
+		texture.sampler = device.createSampler(samplerDesc);
+
+		// Assign the texture view passed in
+		texture.textureView = textureView;
+
+		if (!texture.textureView)
+		{
+			std::cerr << "Invalid TextureView passed to loadTextureFromView!\n";
+		}
+		else
+		{
+			std::cout << "Loaded TextureView successfully.\n";
+		}
+
+		return texture;
+	}
 }

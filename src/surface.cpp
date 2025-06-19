@@ -125,7 +125,7 @@ namespace wgfx
 		depthTextureDesc.mipLevelCount = 1;
 		depthTextureDesc.sampleCount = samples;
 		depthTextureDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
-		depthTextureDesc.usage = TextureUsage::RenderAttachment;
+		depthTextureDesc.usage = TextureUsage::RenderAttachment | TextureUsage::TextureBinding;
 		depthTextureDesc.viewFormatCount = 1;
 		depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
 		wgpu::Texture depthTexture = device.createTexture(depthTextureDesc);

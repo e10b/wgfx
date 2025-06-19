@@ -8,8 +8,20 @@
 
 namespace wgfx
 {
+	
+	//todo
+	// need a pipeline config of some kind so that i can have useDepth etc, in the configuration for now see useDepth
+	// e.g. we need a multisample value in the config
+	// then get rid of the auto msample in the renderpass for post proces.
+
+
+
 	struct Pipeline
 	{
+		bool useDepth = true;
+
+		bool multiTarget = true;
+
 		//std::vector<Uniform*> uniforms; // this is the issue
 		//int dynamicUniformCount = 0; // likewise
 		RenderPipeline pipeline; // should be fine
