@@ -12,7 +12,7 @@ struct VertexOutput {
     @location(0) uv: vec2f, // This must match the fragment input location
 };
 
-@vertex
+@vertex 
 fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     output.position = vec4f(input.position, 1.0);
@@ -22,7 +22,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
-    let d = textureSample(tex, texSampler, input.uv);
+    let d = 1 - textureSample(tex, texSampler, input.uv);
     //return vec4f(.2, .2, .2, 1.0);
     return vec4<f32>(d, d, d, 1.0);
 }

@@ -115,7 +115,17 @@ void Player::update(float dt)
             dir -= camera_.getUp();
 
         if (dir != glm::vec3(0.0f))
-            teleport(getPosition() + glm::normalize(dir) * (keyboardState[SDL_SCANCODE_LCTRL] ? 100.f : 10.f) * dt);
+        {
+            float speed = 10.f;
+            if (keyboardState[SDL_SCANCODE_LCTRL]) {
+                speed = 100.f;
+            }
+            if (keyboardState[SDL_SCANCODE_C]) {
+                speed /= 3.f;
+            }
+            teleport(getPosition() + glm::normalize(dir) * speed * dt);
+        }
+            //teleport(getPosition() + glm::normalize(dir) * (keyboardState[SDL_SCANCODE_LCTRL] ? 100.f : 10.f) * dt);
         //teleport(getPosition() + glm::normalize(dir) * (input.getKey(Key::Run) ? 100.f : 10.f) * dt);
     }
 

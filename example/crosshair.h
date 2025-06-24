@@ -29,10 +29,10 @@ public:
 
 		cross_.addData({
 			//   x,             y,            z,      u,    v
-			-quadWidth + x, -quadHeight + y, 0.0f,   0.0f, 0.0f, // bottom-left
-			 quadWidth + x, -quadHeight + y, 0.0f,   1.0f, 0.0f, // bottom-right
-			 quadWidth + x,  quadHeight + y, 0.0f,   1.0f, 1.0f, // top-right
-			-quadWidth + x,  quadHeight + y, 0.0f,   0.0f, 1.0f  // top-left
+			-quadWidth + x, -quadHeight + y, 0.0f,   0.0f, 1.0f, // bottom-left
+			 quadWidth + x, -quadHeight + y, 0.0f,   1.0f, 1.0f, // bottom-right
+			 quadWidth + x,  quadHeight + y, 0.0f,   1.0f, 0.0f, // top-right
+			-quadWidth + x,  quadHeight + y, 0.0f,   0.0f, 0.0f  // top-left
 			}, {
 				0, 1, 2,
 				0, 2, 3
