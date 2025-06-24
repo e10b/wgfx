@@ -139,7 +139,7 @@ namespace wgfx
 		colorTarget[1].writeMask = ColorWriteMask::All;
 
 
-		fragmentState.targetCount = 2; // two targets
+		fragmentState.targetCount = 1; // two targets
 		//fragmentState.targets = colorTarget;
 		}
 		else

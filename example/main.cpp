@@ -23,7 +23,7 @@ int main()
 	Player player;
 
 	wgfx::RenderPass pass; // only need the one member
-	pass.prepareColor();
+	//pass.prepareColor();
 	wgfx::initDepth();
 	
 	Crosshair crosshair;

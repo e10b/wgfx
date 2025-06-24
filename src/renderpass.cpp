@@ -115,7 +115,7 @@ namespace wgfx
 
 
 
-		renderPassDesc.colorAttachmentCount = 2; /// two`	
+		renderPassDesc.colorAttachmentCount = 1; /// two`	
 		renderPassDesc.colorAttachments = renderPassColorAttachment;
 
 		// Setup depth/stencil attachment
