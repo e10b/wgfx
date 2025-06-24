@@ -118,7 +118,7 @@ namespace wgfx
 		SDL_GetWindowSize(window, &width, &height);
 
 		// Release previous depth texture and view if they exist
-		static wgpu::Texture previousDepthTexture = nullptr;
+		/*static wgpu::Texture previousDepthTexture = nullptr;
 		if (depthTextureView) {
 			depthTextureView.release();
 			depthTextureView = nullptr;
@@ -126,7 +126,7 @@ namespace wgfx
 		if (previousDepthTexture) {
 			previousDepthTexture.release();
 			previousDepthTexture = nullptr;
-		}
+		}*/
 
 		// Create the depth texture
 		TextureDescriptor depthTextureDesc;
@@ -155,6 +155,6 @@ namespace wgfx
 		updateMultiSampleView = false;
 
 		// Store reference for cleanup in next call
-		previousDepthTexture = depthTexture;
+		//previousDepthTexture = depthTexture;
 	}
 }

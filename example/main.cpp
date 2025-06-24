@@ -24,7 +24,8 @@ int main()
 
 	wgfx::RenderPass pass; // only need the one member
 	pass.prepareColor();
-
+	wgfx::initDepth();
+	
 	Crosshair crosshair;
 	
 	

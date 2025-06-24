@@ -48,7 +48,7 @@ public:
 
 
 
-		depth = wgfx::loadTexture(wgfx::offscreenView);
+		depth = wgfx::loadTexture(wgfx::depthTextureView);
 		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
 		vbo->setAttribute(0, wgfx::vec3f, 0); // pos
 		vbo->setAttribute(1, wgfx::vec2f, 3); // uv
@@ -66,7 +66,7 @@ public:
 		//depth = wgfx::loadTexture(RESOURCE_DIR "/crate.png");
 
 		//depth = wgfx::loadTexture(wgfx::offscreenView);
-		shader_.setTexture(1, depth);
+		shader_.setDepthTexture(1, depth);
 		shader_.setSampler(2, depth);
 		
 		

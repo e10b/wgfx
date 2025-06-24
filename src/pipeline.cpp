@@ -85,7 +85,7 @@ namespace wgfx
 	{
 		samples = (multiSample) ? 4 : 1;
 
-		initDepth();
+		//initDepth();
 		vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer->vertexAttribs.size();
 		vertexBufferLayout.attributes = vertexBuffer->vertexAttribs.data();
 		vertexBufferLayout.arrayStride = (vertexBuffer->fields) * sizeof(float);
