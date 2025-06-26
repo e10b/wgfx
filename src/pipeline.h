@@ -5,6 +5,7 @@
 
 #include "uniform.h"
 #include "buffer.h"
+#include <cstdlib> // for std::exit
 
 namespace wgfx
 {
@@ -131,8 +132,14 @@ namespace wgfx
 	Pipeline* loadPipeline(std::string source);
 	
 	static std::string loadFromFile(const std::filesystem::path& path) {
-		std::ifstream file(path);
-		if (!file.is_open()) { return nullptr; }
+		std::ifstream file(path, std::ios::binary);
+		if (!file.is_open()) {
+			if (!file.is_open()) {
+				std::cerr << "ERROR: Couldn't open file at path '" << path << "'\n";
+				throw std::runtime_error("Failed to open file: " + path.string());
+			}
+		}
+
 		file.seekg(0, std::ios::end);
 		size_t size = file.tellg();
 		std::string shaderSource(size, ' ');
