@@ -90,6 +90,11 @@ public:
 		pipeline->updateUniform(uniforms.at(index), glm::value_ptr(value));
 	}
 
+	void updateTexture(int index, wgfx::Texture tex)
+	{
+		pipeline->uniforms.updateTexture(uniforms.at(index), tex.textureView);
+	}
+
 
 
 	std::vector<wgfx::Uniform*> uniforms;

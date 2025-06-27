@@ -34,6 +34,8 @@ namespace wgfx
     inline int width = 0;
     inline int height = 0;
 
+    inline bool resetDepth = true;
+
     // Inline type definitions
     inline wgpu::VertexFormat vec2f = VertexFormat::Float32x2;
     inline wgpu::VertexFormat vec3f = VertexFormat::Float32x3;

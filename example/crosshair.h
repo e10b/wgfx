@@ -13,11 +13,17 @@ public:
 
 	wgfx::Texture depth;
 
+
+	void setDepthTexture()
+	{
+		depth = wgfx::loadTexture(wgfx::depthTextureView);
+		shader_.setDepthTexture(1, depth);
+		shader_.setSampler(2, depth);
+	}
+
 	Crosshair()
 		:shader_("crosshair.wgsl")
 	{
-
-
 
 
 		float quadWidth = 0.3f;
@@ -37,16 +43,6 @@ public:
 				0, 1, 2,
 				0, 2, 3
 			});
-
-
-
-
-
-
-
-
-
-
 
 		depth = wgfx::loadTexture(wgfx::depthTextureView);
 		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
@@ -83,6 +79,13 @@ public:
 		shader_.end();
 
 		shader_.updateUniform(0, size);
+
+		if (wgfx::resetDepth)
+		{
+			std::cout << "UPDATATING DEPTH!\n";
+			depth = wgfx::loadTexture(wgfx::depthTextureView);
+			shader_.updateTexture(1, depth);
+		}
 
 		/*cross_.addData({ -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f }
 		, { 0,1,2,3,2,1 });*/

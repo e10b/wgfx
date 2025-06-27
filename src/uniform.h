@@ -156,6 +156,26 @@ namespace wgfx
 				entries.push_back(uniform->entry);
 			}
 
+			void updateTexture(Uniform* uniform, wgpu::TextureView newView)
+			{
+				uniform->entry.textureView = newView;
+
+				// Also update the entry in the master entry list
+				for (auto& entry : entries)
+				{
+					if (entry.binding == uniform->binding)
+					{
+						entry.textureView = newView;
+						break;
+					}
+				}
+
+				// Recreate the bind group with the updated texture view
+				touch();
+			}
+
+
+
 			void setTexture(Uniform* uniform)
 			{
 				BindGroupLayoutEntry layout = {};							/// layout needs to be created in joint with the actual entry

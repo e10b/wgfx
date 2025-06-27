@@ -79,9 +79,15 @@ namespace wgfx
 		instance = wgpuCreateInstance(nullptr);
 		std::cout << "Requesting adapter..." << std::endl;
 		return surface = SDL_GetWGPUSurface(instance, w);
-	}	void frame()
+	}	
+	
+	
+	void frame()
 	{
 		reset = true;
+
+		if (resetDepth) { resetDepth = false; }
+
 		// Finally encode and submit the render pass
 		CommandBufferDescriptor cmdBufferDescriptor = {};
 		cmdBufferDescriptor.label = "Command buffer";
@@ -113,6 +119,7 @@ namespace wgfx
 		device.poll(true);
 #endif
 	}
+
 	void initDepth()
 	{
 		SDL_GetWindowSize(window, &width, &height);
@@ -153,7 +160,7 @@ namespace wgfx
 		depthTextureView = depthTexture.createView(depthTextureViewDesc);
 		std::cout << "Depth texture view: " << depthTextureView << std::endl;
 		updateMultiSampleView = false;
-
+		resetDepth = true;
 		// Store reference for cleanup in next call
 		//previousDepthTexture = depthTexture;
 	}
