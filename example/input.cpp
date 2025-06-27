@@ -94,8 +94,8 @@ Key Input::SDLScancodeToKey(SDL_Scancode scancode) const
     case SDL_SCANCODE_SPACE: return Key::Up;
     case SDL_SCANCODE_LCTRL: return Key::Down;
     case SDL_SCANCODE_ESCAPE: return Key::Menu;
-    case SDL_BUTTON_LEFT: return Key::Place;
-    case SDL_BUTTON_RIGHT: return Key::Break;
+    // case SDL_BUTTON_LEFT: return Key::Place;
+    // case SDL_BUTTON_RIGHT: return Key::Break;
     case SDL_SCANCODE_LSHIFT: return Key::Run;
     case SDL_SCANCODE_F1: return Key::Fly;
 

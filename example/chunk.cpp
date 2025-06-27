@@ -199,19 +199,19 @@ void Chunk::buildMesh()
 
 void Chunk::clear()
 {
-	if (this == nullptr)
-	{
-		return;
-	}
+	// if (this == nullptr)
+	// {
+	// 	return;
+	// }
 	model_.clear();
 }
 
 bool Chunk::meshBuilt() const
 {
-	if (this == nullptr) {
-		// Handle the case where 'this' is nullptr, e.g., by returning a default value
-		return false; // or any other default value
-	}
+	// if (this == nullptr) {
+	// 	// Handle the case where 'this' is nullptr, e.g., by returning a default value
+	// 	return false; // or any other default value
+	// }
 	return model_.indexCount() != 0;
 }
 
@@ -247,10 +247,10 @@ glm::ivec3 Chunk::getPos() const
 
 glm::vec3 Chunk::getWorldPos() const
 {
-	if (this == nullptr) {
-		// Handle the case where 'this' is nullptr, e.g., by returning a default value
-		return glm::vec3(0.0f); // or any other default value
-	}
+	// if (this == nullptr) {
+	// 	// Handle the case where 'this' is nullptr, e.g., by returning a default value
+	// 	return glm::vec3(0.0f); // or any other default value
+	// }
 
 	return glm::vec3(pos_.x * (float)World::chunkSize, 0, pos_.y * (float)World::chunkSize);
 }
