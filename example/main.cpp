@@ -13,13 +13,60 @@
 #include "crosshair.h"
 //#include <omp.h>
 #include "selection.h"
+#include "shader.h"
+// quick red quad
 
+class Red
+{
+public:
+	Shader shader;
+	Model model;
+	Red()
+		:shader("red.wgsl")
+	{
+		float quadWidth = 0.3f;
+		float quadHeight = 0.3f;
+
+		// Offset from center to bottom-right
+		float x = 1.0f - quadWidth - 0.5;
+		float y = -1.0f + quadHeight;
+
+		model.addData({
+			//   x,             y,            z,      u,    v
+			-quadWidth + x, -quadHeight + y, 0.0f,   0.0f, 1.0f, // bottom-left
+			 quadWidth + x, -quadHeight + y, 0.0f,   1.0f, 1.0f, // bottom-right
+			 quadWidth + x,  quadHeight + y, 0.0f,   1.0f, 0.0f, // top-right
+			-quadWidth + x,  quadHeight + y, 0.0f,   0.0f, 0.0f  // top-left
+			}, {
+				0, 1, 2,
+				0, 2, 3
+			});
+
+			wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
+			vbo->setAttribute(0, wgfx::vec3f, 0); // pos
+			vbo->setAttribute(1, wgfx::vec2f, 3); // uv
+			shader.setVertexBuffer({ 0.0 });
+			shader.setIndexBuffer({ 0 });
+			shader.setUniform(0); // time
+			shader.pipeline->useDepth = false;
+			
+			shader.pipeline->init(vbo);
+	}
+	void render(float dt)
+	{
+		shader.end();
+		
+		shader.updateUniform(0, glm::vec2(dt,0));
+		model.bind(shader.pipeline);
+	}
+};
 
 
 int main()
 {
 	Context& context = Context::Instance();
 	Cube& cube = Cube::Instance();
+	Red red;
 	Player player;
 
 	wgfx::RenderPass pass; // only need the one member
@@ -77,7 +124,11 @@ int main()
 		pass.post();
 		crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
 		pass.draw(crosshair.shader_.pipeline);
+		pass.end();
 
+		pass.post();
+		red.render(dt);
+		pass.draw(red.shader.pipeline);
 		pass.end();
 
 
