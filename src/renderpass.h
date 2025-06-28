@@ -22,7 +22,7 @@ namespace wgfx
 		void setClear(WGPUColor color);
 		void draw(Pipeline* pipeline);
 		void touch();
-		void scene();
+		void scene(bool test);
 		void post();
 
 

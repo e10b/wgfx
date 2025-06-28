@@ -65,7 +65,13 @@ public:
 int main()
 {
 	Context& context = Context::Instance();
-	Cube& cube = Cube::Instance();
+	Cube& cube = Cube();
+	Cube& cube2 = Cube();
+	cube.init(0);
+	cube2.init(1); // color as i am sending 1 render target.
+
+
+
 	Red red;
 	Player player;
 
@@ -104,33 +110,49 @@ int main()
 
 		const Camera& cam = player.getCamera();
 		pass.touch();
-		pass.scene();
-
-		//manager.drawChunksLit(cam, pass);
-
-		//selection.draw(cam, pass, player.selectionPos);
-		//test.drawLit(cam);
-		cube.drawLit(cam, pass);
-
-		//crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
-		pass.end();
+		
+		
+		
 
 		// an interesting breakthrough, we do not need two renderpass member variables,
 		// apparently we only need two if we are maintaining two distint passes at the same time
 		// instead we end one and then begin a new one with the same member
 		// calling analagous to pass = encoder.beginRenderPass(newPassDesc); << so the member is the same but the desc is diff.
+		pass.scene(true);
+		cube.drawLit(cam, pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
+		// the preferable way to do it is with clear definition and implementation.
+		// so you would declare your pipeline and your renderpass. for the pipeline you might say that you are going to 
+		// 
+		pass.end();
 
 
+
+		// render post-processing effects first
 		pass.post();
-		crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
+			crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
 		pass.draw(crosshair.shader_.pipeline);
 		pass.end();
 
 		pass.post();
-		red.render(dt);
+			red.render(dt);
 		pass.draw(red.shader.pipeline);
 		pass.end();
 
+		// Clear uniforms before scene rendering to reset buffer offsets
+
+		// render scene depth then render scene.
+
+		//cube.shader.pipeline->uniforms.clear(); right that was annoying
+
+		pass.scene(false);
+			cube2.drawLit(cam, pass); 
+		pass.end();
+
+		// now here i want to draw scene with color and depth, full draw.
+
+		// notation?
+
+		// targets.
 
 
 

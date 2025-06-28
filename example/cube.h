@@ -74,22 +74,23 @@ std::vector<uint16_t> indexData =
 
 class Cube
 {
+public:
 	Shader shader;
 	Model mesh;
 	wgfx::Texture texture;
 
-public:
 
-	static Cube& Instance()
+	/*static Cube& Instance()
 	{
 		static Cube instance;
 		return instance;
 	}
 
 	Cube(Cube const&) = delete;
-	void operator=(Cube const&) = delete;
+	void operator=(Cube const&) = delete;*/
 
-	Cube()
+	Cube() {};
+	void init(int targets)
 	{
 
 		shader = Shader("cube.wgsl");
@@ -104,7 +105,8 @@ public:
 		shader.setIndexBuffer({ 0 }); // initial data point hmm 
 
 		//shader.pipeline.setVertexBuffer(vbo);
-
+		std::cout << "targets!: " << targets << "\n";
+		shader.pipeline->targets = targets;
 		//wgfx::IndexBuffer* ibo = wgfx::createIndexBuffer(indexData);
 		//shader.pipeline.setIndexBuffer(ibo);
 
@@ -186,7 +188,7 @@ public:
 				//shader.renderPass.draw(shader.pipeline);
 		}
 
-		//shader.end();
+		shader.end();
 	}
 };
 

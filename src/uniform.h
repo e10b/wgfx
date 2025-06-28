@@ -138,6 +138,7 @@ namespace wgfx
 
 			queue.writeBuffer(current.buffer, offset, array, current.minBindingSize);
 			current.quantity++;
+			
 		}
 
 		//hmm

@@ -139,7 +139,7 @@ namespace wgfx
 		colorTarget[1].writeMask = ColorWriteMask::All;
 
 
-		fragmentState.targetCount = 1; // two targets
+		//fragmentState.targetCount = 1; // two targets
 		//fragmentState.targets = colorTarget;
 		}
 		else
@@ -149,9 +149,17 @@ namespace wgfx
 			colorTarget[0].blend = &blendState;
 			colorTarget[0].writeMask = ColorWriteMask::All;
 
-			fragmentState.targetCount = 1; // two targets
 		}
-			fragmentState.targets = colorTarget;
+		if (targets == 0)
+		{
+			fragmentState.targetCount = targets; // two targets
+			fragmentState.targets = nullptr; // two targets
+		} 
+		else
+		{
+			fragmentState.targetCount = targets; // two targets
+		fragmentState.targets = colorTarget;
+		}
 
 		// We setup a depth buffer state for the render pipeline
 		DepthStencilState depthStencilState = Default;

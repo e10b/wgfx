@@ -54,7 +54,7 @@ public:
 		shader_.setUniform(0); // size
 		//shader_.setUniform(1); // size
 
-
+		shader_.pipeline->targets = 1;
 
 		shader_.pipeline->multiTarget = false;
 		shader_.pipeline->useDepth = false;

@@ -20,7 +20,7 @@ namespace wgfx
 	struct Pipeline
 	{
 		bool useDepth = true;
-
+		int targets = 1;
 		bool multiTarget = true;
 
 		//std::vector<Uniform*> uniforms; // this is the issue

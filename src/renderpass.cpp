@@ -91,7 +91,7 @@ namespace wgfx
 
 		renderPass = encoder.beginRenderPass(renderPassDesc);
 	}
-	void RenderPass::scene()
+	void RenderPass::scene(bool test)
 	{
 		RenderPassDescriptor renderPassDesc{};
 
@@ -114,9 +114,16 @@ namespace wgfx
 
 
 
-
-		renderPassDesc.colorAttachmentCount = 1; /// two`	
-		renderPassDesc.colorAttachments = renderPassColorAttachment;
+		if (test)
+		{
+		renderPassDesc.colorAttachmentCount = 0; /// two`	
+		renderPassDesc.colorAttachments = nullptr;//renderPassColorAttachment;
+		}
+		else
+		{
+			renderPassDesc.colorAttachmentCount = 1; /// two`	
+			renderPassDesc.colorAttachments = renderPassColorAttachment;
+		}
 
 		// Setup depth/stencil attachment
 		RenderPassDepthStencilAttachment depthStencilAttachment{};
@@ -139,7 +146,9 @@ namespace wgfx
 		renderPassDesc.timestampWrites = nullptr;
 
 		renderPass = encoder.beginRenderPass(renderPassDesc);
-	}	void RenderPass::prepareColor()
+	}	
+	
+	void RenderPass::prepareColor()
 	{
 		std::cout << "you working?\n";
 		
