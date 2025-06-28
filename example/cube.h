@@ -125,13 +125,14 @@ public:
 		//shader.pipeline.init(); // auto init?? well, 
 	}
 
-	void drawLit(const Camera& camera, wgfx::RenderPass& pass)
+	//void drawLit(const Camera& camera, wgfx::RenderPass& pass)
+		void drawLit(glm::mat4 cam, wgfx::RenderPass& pass)
 	{
 		shader.touch();
 
-		glm::mat4 cameraMatrix = camera.getViewMatrix();
+		//glm::mat4 cameraMatrix = camera.getViewMatrix();
 
-		draw(cameraMatrix, shader, pass);
+		draw(cam, shader, pass);
 	}
 	void draw(const glm::mat4& cameraMatrix, Shader& shader, wgfx::RenderPass& pass)
 	{

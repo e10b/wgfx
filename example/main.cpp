@@ -67,8 +67,8 @@ int main()
 	Context& context = Context::Instance();
 	Cube& cube = Cube();
 	Cube& cube2 = Cube();
-	cube.init(0);
-	cube2.init(1); // color as i am sending 1 render target.
+	cube.init(1);
+	cube2.init(0); // color as i am sending 1 render target.
 
 
 
@@ -118,12 +118,29 @@ int main()
 		// apparently we only need two if we are maintaining two distint passes at the same time
 		// instead we end one and then begin a new one with the same member
 		// calling analagous to pass = encoder.beginRenderPass(newPassDesc); << so the member is the same but the desc is diff.
-		pass.scene(true);
-		cube.drawLit(cam, pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
+		pass.scene(false);
+		cube.drawLit(cam.getViewMatrix(), pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
 		// the preferable way to do it is with clear definition and implementation.
 		// so you would declare your pipeline and your renderpass. for the pipeline you might say that you are going to 
 		// 
 		pass.end();
+
+
+
+
+
+		pass.scene(true);
+		glm::mat4 rotDown = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		glm::mat4 view = cam.getViewMatrix();
+		glm::mat4 rotatedView = rotDown * view;
+
+		cube2.drawLit(rotatedView, pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
+		// the preferable way to do it is with clear definition and implementation.
+		// so you would declare your pipeline and your renderpass. for the pipeline you might say that you are going to 
+		// 
+		pass.end();
+
+
 
 
 
@@ -133,10 +150,10 @@ int main()
 		pass.draw(crosshair.shader_.pipeline);
 		pass.end();
 
-		pass.post();
+		/*pass.post();
 			red.render(dt);
 		pass.draw(red.shader.pipeline);
-		pass.end();
+		pass.end();*/
 
 		// Clear uniforms before scene rendering to reset buffer offsets
 
@@ -144,16 +161,22 @@ int main()
 
 		//cube.shader.pipeline->uniforms.clear(); right that was annoying
 
-		pass.scene(false);
+		/*pass.scene(false);
 			cube2.drawLit(cam, pass); 
-		pass.end();
+		pass.end();*/
 
 		// now here i want to draw scene with color and depth, full draw.
 
 		// notation?
 
 		// targets.
+		// okay so now i want to um, flip it.
+		// so i want to render different views.
 
+		// and the way i will do it is to render the depth from one static view
+		// then render the scene proper. hmm. yes.
+
+		// then i will layer them by.. uh idk.
 
 
 		context.draw();
