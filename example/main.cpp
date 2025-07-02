@@ -70,9 +70,10 @@ int main()
 	cube.init(1);
 	//cube2.init(0); // color as i am sending 1 render target.
 
-	wgfx::ColorTexture& color = wgfx::ColorTexture();
-	wgfx::DepthTexture& depth = wgfx::DepthTexture();
-
+	wgfx::ColorTexture* color = new wgfx::ColorTexture();
+	//wgfx::ColorTexture& color = wgfx::ColorTexture();
+	wgfx::DepthTexture* depth = new wgfx::DepthTexture();
+	//wgfx::DepthTexture& depth = wgfx::DepthTexture();
 
 	Red red;
 	Player player;
@@ -80,10 +81,18 @@ int main()
 	wgfx::RenderPass pass; // only need the one member
 	pass.addTarget(color);
 	pass.addTarget(depth);
+
+
+
+
+	wgfx::RenderPass pass2; // only need the one member
+	pass2.addTarget(color);
+
+
+	Crosshair crosshair(depth);
 	//pass.prepareColor();
 	//wgfx::initDepth();
 	
-	//Crosshair crosshair;
 	
 	
 	pass.setClear({ 0.4, 0.7, 1, 1 });
@@ -119,11 +128,15 @@ int main()
 
 		pass.prepare();
 		//pass.draw(red.shader.pipeline);
-
-		cube.drawLit(cam.getViewMatrix(), pass);
+			cube.drawLit(cam.getViewMatrix(), pass);
 		pass.end();
 
-		
+
+		pass2.prepare();
+			crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
+			pass2.draw(crosshair.shader_.pipeline);
+		pass2.end();
+
 
 		// an interesting breakthrough, we do not need two renderpass member variables,
 		// apparently we only need two if we are maintaining two distint passes at the same time

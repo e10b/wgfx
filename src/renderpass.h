@@ -103,22 +103,22 @@ namespace wgfx
 	};
 
 	TextureView getNextSurfaceTextureView();
-	inline void touch(ColorTexture& colorTex)
+	inline void touch(ColorTexture* colorTex)
 	{
-		// Only update surface textures
-		if (!colorTex.isSurfaceTexture) {
-			std::cerr << "Warning: touch() called on non-surface ColorTexture" << std::endl;
-			return;
-		}
+		//// Only update surface textures
+		//if (!colorTex.isSurfaceTexture) {
+		//	std::cerr << "Warning: touch() called on non-surface ColorTexture" << std::endl;
+		//	return;
+		//}
 
-		// Release the previous color view if it exists
-		if (colorTex.colorView) {
-			colorTex.colorView.release();
-			colorTex.colorView = nullptr;
+		//// Release the previous color view if it exists
+		if (colorTex->colorView) {
+			colorTex->colorView.release();
+			colorTex->colorView = nullptr;
 		}
 		
-		colorTex.colorView = getNextSurfaceTextureView();
-		if (!colorTex.colorView) return;
+		colorTex->colorView = getNextSurfaceTextureView();
+		if (!colorTex->colorView) return;
 
 		if (encoder)
 		{
@@ -141,10 +141,10 @@ namespace wgfx
 		WGPUColor clearValue;
 		std::vector<ColorTexture*> colors;
 		DepthTexture* depth = nullptr;
-		std::vector<RenderPassColorAttachment> colorAttachments; // Store attachments as member
+		//std::vector<RenderPassColorAttachment> colorAttachments; // Store attachments as member
 
-		void addTarget(ColorTexture& color) { colors.push_back(&color); }
-		void addTarget(DepthTexture& depth) { depth.useDepth = true; this->depth = &depth; }
+		void addTarget(ColorTexture* color) { colors.push_back(color); }
+		void addTarget(DepthTexture* depth) { depth->useDepth = true; this->depth = depth; }
 
 		RenderPass();
 		~RenderPass() {
@@ -153,7 +153,7 @@ namespace wgfx
 				renderPass.release();
 				renderPass = nullptr;
 			}
-			colorAttachments.clear();
+			//colorAttachments.clear();
 		}
 
 		void end();
@@ -166,7 +166,7 @@ namespace wgfx
 			// Cleanup any existing render pass state
 
 			// Create a new command encoder only if one doesn't exist
-			if (!encoder) {
+			/*if (!encoder) {
 				CommandEncoderDescriptor encoderDesc = {};
 				encoderDesc.label = "Render pass command encoder";
 				encoder = device.createCommandEncoder(encoderDesc);
@@ -174,10 +174,10 @@ namespace wgfx
 					std::cerr << "Failed to create command encoder!" << std::endl;
 					return;
 				}
-			}
-			std::cout << "Preparing render pass with " << colors.size() << " color targets\n";
+			}*/
+			//std::cout << "Preparing render pass with " << colors.size() << " color targets\n";
 			// Prepare color attachments
-			colorAttachments.clear(); // Clear previous attachments
+			std::vector<RenderPassColorAttachment> colorAttachments;
 			colorAttachments.reserve(colors.size());
 
 			for (size_t i = 0; i < colors.size(); ++i) {
@@ -186,6 +186,7 @@ namespace wgfx
 					return;
 				}
 				RenderPassColorAttachment attachment{};
+				std::cout << "HOW MANY???: " << colors.size() << "\n";
 				attachment.view = colors[i]->colorView;
 				attachment.resolveTarget = nullptr;
 				attachment.loadOp = LoadOp::Clear;

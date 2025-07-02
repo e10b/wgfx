@@ -5,7 +5,7 @@ namespace wgfx
 	RenderPass::RenderPass()
 	{
 		// Initialize clear color to a sensible default
-		clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+		clearValue = { 0.0f, 0.0f, 0.0f, 0.0f };
 		depth = nullptr;
 	}
 
@@ -23,7 +23,7 @@ namespace wgfx
 		}
 		
 		// Clear the color attachments to free memory
-		colorAttachments.clear();
+		//colorAttachments.clear();
 		
 		// Don't release targetView here - it's needed until frame submission
 		// The surface texture view will be released automatically when the surface presents

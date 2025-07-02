@@ -21,7 +21,7 @@ namespace wgfx
 	{
 		bool useDepth = true;
 		int targets = 1;
-		bool multiTarget = true;
+		//bool multiTarget = true;
 
 		//std::vector<Uniform*> uniforms; // this is the issue
 		//int dynamicUniformCount = 0; // likewise

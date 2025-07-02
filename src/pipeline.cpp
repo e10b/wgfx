@@ -127,9 +127,9 @@ namespace wgfx
 		blendState.alpha.dstFactor = BlendFactor::One;
 		blendState.alpha.operation = BlendOperation::Add;
 
-		ColorTargetState colorTarget[2];
-		if (multiTarget)
-		{
+		ColorTargetState colorTarget[10];
+		//if (multiTarget)
+		//{
 		colorTarget[0].format = surfaceFormat;
 		colorTarget[0].blend = &blendState;
 		colorTarget[0].writeMask = ColorWriteMask::All;
@@ -138,27 +138,41 @@ namespace wgfx
 		colorTarget[1].blend = &blendState;
 		colorTarget[1].writeMask = ColorWriteMask::All;
 
+		colorTarget[2].format = surfaceFormat;
+		colorTarget[2].blend = &blendState;
+		colorTarget[2].writeMask = ColorWriteMask::All;
+
+		colorTarget[3].format = surfaceFormat;
+		colorTarget[3].blend = &blendState;
+		colorTarget[3].writeMask = ColorWriteMask::All;
+		// ideally we product these based on the preset targets.... << ye
+		// ideally we product these based on the preset targets.... << ye
+		// ideally we product these based on the preset targets.... << ye
+		// ideally we product these based on the preset targets.... << ye
+		// ideally we product these based on the preset targets.... << ye
+
+
 
 		//fragmentState.targetCount = 1; // two targets
 		//fragmentState.targets = colorTarget;
-		}
-		else
-		{
+		//}
+		//else
+		//{
 			//ColorTargetState colorTarget;
-			colorTarget[0].format = surfaceFormat;
-			colorTarget[0].blend = &blendState;
-			colorTarget[0].writeMask = ColorWriteMask::All;
+			//colorTarget[0].format = surfaceFormat;
+			//colorTarget[0].blend = &blendState;
+			//colorTarget[0].writeMask = ColorWriteMask::All;
 
-		}
-		if (targets == 0)
+		//}
+		if (targets != 0)
 		{
 			fragmentState.targetCount = targets; // two targets
-			fragmentState.targets = nullptr; // two targets
+			fragmentState.targets = colorTarget;
 		} 
 		else
 		{
-			fragmentState.targetCount = targets; // two targets
-		fragmentState.targets = colorTarget;
+			fragmentState.targetCount = 0; // two targets
+			fragmentState.targets = nullptr; // two targets
 		}
 
 		// We setup a depth buffer state for the render pipeline

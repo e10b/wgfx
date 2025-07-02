@@ -20,8 +20,8 @@ public:
 		shader_.setDepthTexture(1, depth);
 		shader_.setSampler(2, depth);
 	}
-
-	Crosshair()
+		
+	Crosshair(wgfx::DepthTexture* depthTex)
 		:shader_("crosshair.wgsl")
 	{
 
@@ -44,7 +44,7 @@ public:
 				0, 2, 3
 			});
 
-		depth = wgfx::loadTexture(wgfx::depthTextureView);
+		depth = wgfx::loadTexture(depthTex->depthView);
 		wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
 		vbo->setAttribute(0, wgfx::vec3f, 0); // pos
 		vbo->setAttribute(1, wgfx::vec2f, 3); // uv
@@ -55,9 +55,9 @@ public:
 		//shader_.setUniform(1); // size
 
 		shader_.pipeline->targets = 1;
-
-		shader_.pipeline->multiTarget = false;
 		shader_.pipeline->useDepth = false;
+
+		//shader_.pipeline->multiTarget = false;
 
 		//depth = wgfx::loadTexture(RESOURCE_DIR "/crate.png");
 
@@ -80,12 +80,12 @@ public:
 
 		shader_.updateUniform(0, size);
 
-		if (wgfx::resetDepth)
+		/*if (wgfx::resetDepth)
 		{
 			std::cout << "UPDATATING DEPTH!\n";
 			depth = wgfx::loadTexture(wgfx::depthTextureView);
 			shader_.updateTexture(1, depth);
-		}
+		}*/ //sod off
 
 		/*cross_.addData({ -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f }
 		, { 0,1,2,3,2,1 });*/
