@@ -66,20 +66,24 @@ int main()
 {
 	Context& context = Context::Instance();
 	Cube& cube = Cube();
-	Cube& cube2 = Cube();
+	//Cube& cube2 = Cube();
 	cube.init(1);
-	cube2.init(0); // color as i am sending 1 render target.
+	//cube2.init(0); // color as i am sending 1 render target.
 
+	wgfx::ColorTexture& color = wgfx::ColorTexture();
+	wgfx::DepthTexture& depth = wgfx::DepthTexture();
 
 
 	Red red;
 	Player player;
 
 	wgfx::RenderPass pass; // only need the one member
+	pass.addTarget(color);
+	pass.addTarget(depth);
 	//pass.prepareColor();
-	wgfx::initDepth();
+	//wgfx::initDepth();
 	
-	Crosshair crosshair;
+	//Crosshair crosshair;
 	
 	
 	pass.setClear({ 0.4, 0.7, 1, 1 });
@@ -109,46 +113,53 @@ int main()
 				//manager.updateChunks(player.getCamera().getPosition(), dt);
 
 		const Camera& cam = player.getCamera();
-		pass.touch();
+		//pass.touch();
+		wgfx::touch(color);
 		
-		
+
+		pass.prepare();
+		//pass.draw(red.shader.pipeline);
+
+		cube.drawLit(cam.getViewMatrix(), pass);
+		pass.end();
+
 		
 
 		// an interesting breakthrough, we do not need two renderpass member variables,
 		// apparently we only need two if we are maintaining two distint passes at the same time
 		// instead we end one and then begin a new one with the same member
 		// calling analagous to pass = encoder.beginRenderPass(newPassDesc); << so the member is the same but the desc is diff.
-		pass.scene(false);
-		cube.drawLit(cam.getViewMatrix(), pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
+		//pass.scene(false);
+		//cube.drawLit(cam.getViewMatrix(), pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
 		// the preferable way to do it is with clear definition and implementation.
 		// so you would declare your pipeline and your renderpass. for the pipeline you might say that you are going to 
 		// 
-		pass.end();
+		//pass.end();
 
 
 
 
 
-		pass.scene(true);
-		glm::mat4 rotDown = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::mat4 view = cam.getViewMatrix();
-		glm::mat4 rotatedView = rotDown * view;
+		//pass.scene(true);
+		//glm::mat4 rotDown = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		//glm::mat4 view = cam.getViewMatrix();
+		//glm::mat4 rotatedView = rotDown * view;
 
-		cube2.drawLit(rotatedView, pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
+		//cube2.drawLit(rotatedView, pass); // so here we are rendering depth to a texture. the texture is global, which is probably wrong.
 		// the preferable way to do it is with clear definition and implementation.
 		// so you would declare your pipeline and your renderpass. for the pipeline you might say that you are going to 
 		// 
-		pass.end();
+		//pass.end();
 
 
 
 
 
 		// render post-processing effects first
-		pass.post();
-			crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
-		pass.draw(crosshair.shader_.pipeline);
-		pass.end();
+		//pass.post();
+		//	crosshair.render(glm::vec2(1.f, cam.getAspect()) / 400.f);
+		//pass.draw(crosshair.shader_.pipeline);
+		//pass.end();
 
 		/*pass.post();
 			red.render(dt);

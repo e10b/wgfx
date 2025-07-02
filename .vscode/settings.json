@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "filesystem": "cpp",
+        "initializer_list": "cpp",
+        "xutility": "cpp"
     }
 }

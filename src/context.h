@@ -23,7 +23,9 @@ namespace wgfx
     inline BufferDescriptor bufferDesc;
     inline TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
     inline TextureView depthTextureView = nullptr; // Initialize to nullptr // why is this global? Feels wrong, feels like it oughn't be global, renderpass member? hmm
-
+    inline RenderPassEncoder renderPass = nullptr;
+    
+        
     inline TextureView depthView = nullptr; // i am making another one so it can be more static << for the purpose of rendering depth visually
 
     inline bool reset = false;

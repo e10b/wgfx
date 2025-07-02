@@ -4,7 +4,9 @@ namespace wgfx
 {
 	RenderPass::RenderPass()
 	{
-		// Get the next target texture view
+		// Initialize clear color to a sensible default
+		clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+		depth = nullptr;
 	}
 
 	void RenderPass::end()
@@ -30,6 +32,16 @@ namespace wgfx
 	}
 	void RenderPass::draw(Pipeline* pipeline)
 	{
+		// Safety checks
+		if (!renderPass) {
+			std::cerr << "Error: RenderPass not initialized! Call prepare() first." << std::endl;
+			return;
+		}
+		if (!pipeline) {
+			std::cerr << "Error: Pipeline is null!" << std::endl;
+			return;
+		}
+
 		// Reset uniforms at the start of each frame (only once per frame)
 		if (reset) {
 			pipeline->uniforms.clear();
@@ -43,34 +55,35 @@ namespace wgfx
 
 		renderPass.drawIndexed(pipeline->ibos.current->indexCount, 1, 0, 0, 0);
 	}
-	void RenderPass::touch()
-	{
-		// Get the next surface texture view
-		targetView = getNextSurfaceTextureView();
-		if (!targetView) return;
 
-		if (!updateMultiSampleView && multiSample)
-		{
-			multiSampleView = getMultiSampleView();
-			if (!multiSampleView) return;
-			updateMultiSampleView = true;
-		}
+	//void RenderPass::touch()
+	//{
+	//	// Get the next surface texture view
+	//	targetView = getNextSurfaceTextureView();
+	//	if (!targetView) return;
 
-		// Release previous command encoder if it exists
-		if (encoder) {
-			encoder.release();
-			encoder = nullptr;
-		}
+	//	if (!updateMultiSampleView && multiSample)
+	//	{
+	//		multiSampleView = getMultiSampleView();
+	//		if (!multiSampleView) return;
+	//		updateMultiSampleView = true;
+	//	}
 
-		// Create a command encoder for the draw calls
-		CommandEncoderDescriptor encoderDesc = {};
-		encoderDesc.label = "Frame command encoder";
-		encoder = device.createCommandEncoder();
-		
-		// Reset the global reset flag to ensure uniforms get reset
-		reset = true;
-	}
+	//	// Release previous command encoder if it exists
+	//	if (encoder) {
+	//		encoder.release();
+	//		encoder = nullptr;
+	//	}
 
+	//	// Create a command encoder for the draw calls
+	//	CommandEncoderDescriptor encoderDesc = {};
+	//	encoderDesc.label = "Frame command encoder";
+	//	encoder = device.createCommandEncoder();
+	//	
+	//	// Reset the global reset flag to ensure uniforms get reset
+	//	reset = true;
+	//}
+	/*
 	void RenderPass::post()
 	{
 		RenderPassDescriptor renderPassDesc{};
@@ -100,12 +113,13 @@ namespace wgfx
 		renderPassColorAttachment[0].resolveTarget = multiSample ? targetView : nullptr;
 		renderPassColorAttachment[0].loadOp = LoadOp::Clear;
 		renderPassColorAttachment[0].storeOp = StoreOp::Store;
-		renderPassColorAttachment[0].clearValue = clearValue;
+		renderPassColorAttachment[0].clearValue = clearValue;*/
 		/*
 #ifndef WEBGPU_BACKEND_WGPU
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif
 		*/
+	/*
 		renderPassColorAttachment[1].view = offscreenView;
 		renderPassColorAttachment[1].resolveTarget = nullptr;
 		renderPassColorAttachment[1].loadOp = LoadOp::Clear;
@@ -197,6 +211,7 @@ namespace wgfx
 		offscreenTexture = cachedOffscreenTexture;
 		offscreenView = cachedOffscreenView;
 	}
+	*/
 
 	TextureView getNextSurfaceTextureView()
 	{
