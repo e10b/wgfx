@@ -87,6 +87,7 @@ int main()
 
 	wgfx::RenderPass pass2; // only need the one member
 	pass2.addTarget(color);
+	pass2.setShouldClear(false); // Don't clear the color buffer - load existing content
 
 
 	Crosshair crosshair(depth);
