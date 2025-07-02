@@ -109,8 +109,14 @@ public:
 
 	void init(int targets)
 	{
-
+		if (doathing)
+		{
+			shader = Shader("cube.wgsl");
+		}
+		else
+		{
 		shader = Shader("cube2.wgsl");
+		}
 		mesh = Model(pointData, indexData);
 		texture = wgfx::loadTexture(RESOURCE_DIR "/crate.png");
 
