@@ -5,9 +5,9 @@ namespace wgfx
 	RenderPass::RenderPass()
 	{
 		// Initialize clear color to a sensible default
-		clearValue = { 0.0f, 0.0f, 0.0f, 0.0f };
+		clearValue = { 1.0f, 0.0f, 0.0f, 0.0f };
 		depth = nullptr;
-		shouldClear = true; // Initialize to clear by default
+		//shouldClear = true; // Initialize to clear by default
 	}
 
 	void RenderPass::end()

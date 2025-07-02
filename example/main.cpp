@@ -66,13 +66,14 @@ int main()
 {
 	Context& context = Context::Instance();
 	Cube& cube = Cube();
-	//Cube& cube2 = Cube();
+	Cube& cube2 = Cube();
 	cube.init(1);
-	//cube2.init(0); // color as i am sending 1 render target.
+	cube2.init(0); // color as i am sending 1 render target.
 
 	wgfx::ColorTexture* color = new wgfx::ColorTexture();
 	//wgfx::ColorTexture& color = wgfx::ColorTexture();
 	wgfx::DepthTexture* depth = new wgfx::DepthTexture();
+	wgfx::DepthTexture* depth1 = new wgfx::DepthTexture();
 	//wgfx::DepthTexture& depth = wgfx::DepthTexture();
 
 	Red red;
@@ -84,19 +85,20 @@ int main()
 
 
 
-
 	wgfx::RenderPass pass2; // only need the one member
 	pass2.addTarget(color);
-	pass2.setShouldClear(false); // Don't clear the color buffer - load existing content
 
 
-	Crosshair crosshair(depth);
+	wgfx::RenderPass p;
+	p.addTarget(depth1);
+
+
+	Crosshair crosshair(depth1);
 	//pass.prepareColor();
 	//wgfx::initDepth();
 	
 	
 	
-	pass.setClear({ 0.4, 0.7, 1, 1 });
 
 
 	//Cube test;
@@ -127,8 +129,16 @@ int main()
 		wgfx::touch(color);
 		
 
+		p.prepare();
+			//cube2.drawLit(cam.getViewMatrix(), p);
+			glm::mat4 rotDown = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			glm::mat4 view = cam.getViewMatrix();
+			glm::mat4 rotatedView = rotDown * view;
+			cube2.drawLit(rotatedView, p);
+
+		p.end();
+
 		pass.prepare();
-		//pass.draw(red.shader.pipeline);
 			cube.drawLit(cam.getViewMatrix(), pass);
 		pass.end();
 
