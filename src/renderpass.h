@@ -12,9 +12,20 @@ namespace wgfx
 	struct DepthTexture
 	{
 		TextureView depthView = nullptr;
+		wgpu::Texture depthTexture = nullptr; // Store the texture so we can release it
 
 		bool useDepth = false;
 		DepthTexture() { init(); }
+		~DepthTexture() {
+			if (depthView) {
+				depthView.release();
+				depthView = nullptr;
+			}
+			if (depthTexture) {
+				depthTexture.release();
+				depthTexture = nullptr;
+			}
+		}
 
 		void init()
 		{
@@ -27,7 +38,7 @@ namespace wgfx
 			depthTextureDesc.usage = TextureUsage::RenderAttachment | TextureUsage::TextureBinding;
 			depthTextureDesc.viewFormatCount = 1;
 			depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
-			wgpu::Texture depthTexture = device.createTexture(depthTextureDesc);
+			depthTexture = device.createTexture(depthTextureDesc);
 			//std::cout << "Depth texture: " << depthTexture << std::endl;
 
 			// Create the view of the depth texture manipulated by the rasterizer
@@ -51,8 +62,22 @@ namespace wgfx
 	{
 	public:
 		TextureView colorView = nullptr;
+		wgpu::Texture colorTexture = nullptr; // Store the texture so we can release it
+		bool isSurfaceTexture = false; // Flag to indicate if this is a surface texture
 
-		ColorTexture() { init(); }
+		ColorTexture(bool useSurface = true) : isSurfaceTexture(useSurface) { 
+			if (!useSurface) init(); 
+		}
+		~ColorTexture() {
+			if (colorView) {
+				colorView.release();
+				colorView = nullptr;
+			}
+			if (colorTexture) {
+				colorTexture.release();
+				colorTexture = nullptr;
+			}
+		}
 
 		void init()
 		{
@@ -68,7 +93,7 @@ namespace wgfx
 			colorDesc.mipLevelCount = 1;
 			colorDesc.dimension = wgpu::TextureDimension::_2D;
 
-			wgpu::Texture colorTexture = device.createTexture(colorDesc);
+			colorTexture = device.createTexture(colorDesc);
 			colorView = colorTexture.createView();
 
 			if (!colorView) { std::cerr << "Failed to create color texture!\n"; }
@@ -80,6 +105,18 @@ namespace wgfx
 	TextureView getNextSurfaceTextureView();
 	inline void touch(ColorTexture& colorTex)
 	{
+		// Only update surface textures
+		if (!colorTex.isSurfaceTexture) {
+			std::cerr << "Warning: touch() called on non-surface ColorTexture" << std::endl;
+			return;
+		}
+
+		// Release the previous color view if it exists
+		if (colorTex.colorView) {
+			colorTex.colorView.release();
+			colorTex.colorView = nullptr;
+		}
+		
 		colorTex.colorView = getNextSurfaceTextureView();
 		if (!colorTex.colorView) return;
 
@@ -104,11 +141,20 @@ namespace wgfx
 		WGPUColor clearValue;
 		std::vector<ColorTexture*> colors;
 		DepthTexture* depth = nullptr;
+		std::vector<RenderPassColorAttachment> colorAttachments; // Store attachments as member
 
 		void addTarget(ColorTexture& color) { colors.push_back(&color); }
 		void addTarget(DepthTexture& depth) { depth.useDepth = true; this->depth = &depth; }
 
 		RenderPass();
+		~RenderPass() {
+			if (renderPass) {
+				renderPass.end();
+				renderPass.release();
+				renderPass = nullptr;
+			}
+			colorAttachments.clear();
+		}
 
 		void end();
 		void setClear(WGPUColor color);
@@ -131,7 +177,7 @@ namespace wgfx
 			}
 			std::cout << "Preparing render pass with " << colors.size() << " color targets\n";
 			// Prepare color attachments
-			std::vector<RenderPassColorAttachment> colorAttachments;
+			colorAttachments.clear(); // Clear previous attachments
 			colorAttachments.reserve(colors.size());
 
 			for (size_t i = 0; i < colors.size(); ++i) {

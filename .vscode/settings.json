@@ -3,6 +3,7 @@
         "chrono": "cpp",
         "filesystem": "cpp",
         "initializer_list": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "xiosbase": "cpp"
     }
 }

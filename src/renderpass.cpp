@@ -22,6 +22,9 @@ namespace wgfx
 			renderPass = nullptr;
 		}
 		
+		// Clear the color attachments to free memory
+		colorAttachments.clear();
+		
 		// Don't release targetView here - it's needed until frame submission
 		// The surface texture view will be released automatically when the surface presents
 	}
