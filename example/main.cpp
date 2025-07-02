@@ -87,10 +87,11 @@ int main()
 
 	wgfx::RenderPass pass2; // only need the one member
 	pass2.addTarget(color);
+	pass2.shouldClear = false;
 
 
-	wgfx::RenderPass p;
-	p.addTarget(depth1);
+wgfx::RenderPass p;
+p.addTarget(depth1);
 
 
 	Crosshair crosshair(depth1);
@@ -103,7 +104,7 @@ int main()
 
 	//Cube test;
 	//wgfx::RenderPass pass;
-	//pass.setClear({ 0.4, 0.7, 1, 1 });
+pass.setClear({ 0.4, 0.7, 1, 1 });
 	//int boo = 0;
 	std::cout << "waaa\n";
 

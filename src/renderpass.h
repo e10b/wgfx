@@ -137,16 +137,16 @@ namespace wgfx
 
 	struct RenderPass
 	{
+	public:
 		RenderPassEncoder renderPass = nullptr;
 		WGPUColor clearValue;
 		std::vector<ColorTexture*> colors;
 		DepthTexture* depth = nullptr;
-		//bool shouldClear = true; // New member to control load operation
+		bool shouldClear = true; // New member to control load operation
 		//std::vector<RenderPassColorAttachment> colorAttachments; // Store attachments as member
 
 		void addTarget(ColorTexture* color) { colors.push_back(color); }
 		void addTarget(DepthTexture* depth) { depth->useDepth = true; this->depth = depth; }
-		//void setShouldClear(bool clear) { shouldClear = clear; } // New method to control clearing
 
 		RenderPass();
 		~RenderPass() {
@@ -191,8 +191,8 @@ namespace wgfx
 				//std::cout << "HOW MANY???: " << colors.size() << "\n";
 				attachment.view = colors[i]->colorView;
 				attachment.resolveTarget = nullptr;
-				//attachment.loadOp = shouldClear ? LoadOp::Clear : LoadOp::Load; // Use shouldClear flag
-				attachment.loadOp = LoadOp::Load; // Use shouldClear flag
+				attachment.loadOp = shouldClear ? LoadOp::Clear : LoadOp::Load; // Use shouldClear flag
+				//attachment.loadOp = LoadOp::Clear; // Always clear color attachment
 				attachment.storeOp = StoreOp::Store;
 				attachment.clearValue = clearValue;
 				colorAttachments.push_back(attachment);
