@@ -88,6 +88,21 @@ int main()
 	wgfx::RenderPass pass2; // only need the one member
 	pass2.addTarget(color);
 	pass2.shouldClear = false;
+	// we need some way to configure renderpasses. for tghat matter a process to
+	// configure all objects would be nice because the current system is a 
+	// little magic. aka obscure.
+	// so, let me think.
+	/*
+	pass.setClear
+	pass.config(
+	)
+	idk there are idfferent ways to do it
+	*/
+
+	// anyway let me figure out shadows real quick.....
+	// so we need to go toward the nikkel process
+
+	// hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm hmm
 
 
 wgfx::RenderPass p;
