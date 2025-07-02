@@ -78,7 +78,7 @@ public:
 	Shader shader;
 	Model mesh;
 	wgfx::Texture texture;
-
+	wgfx::Texture depth;
 
 	/*static Cube& Instance()
 	{
@@ -90,10 +90,27 @@ public:
 	void operator=(Cube const&) = delete;*/
 
 	Cube() {};
+
+	bool doathing = false;
+
+	void setDepthTexture(wgfx::DepthTexture* depthTex)
+	{
+		depth = wgfx::loadTexture(depthTex->depthView);
+		doathing = true;
+
+	}
+
+	glm::mat4 lightView;
+
+	void setLight(glm::mat4 view)
+	{
+		lightView = view;
+	}
+
 	void init(int targets)
 	{
 
-		shader = Shader("cube.wgsl");
+		shader = Shader("cube2.wgsl");
 		mesh = Model(pointData, indexData);
 		texture = wgfx::loadTexture(RESOURCE_DIR "/crate.png");
 
@@ -116,6 +133,18 @@ public:
 			shader.setUniform(2, proj); // proj
 			shader.setTexture(3, texture); // tex wgfx::Uniform* sampler = wgfx::createTexture(3, texture);
 			shader.setSampler(4, texture); //sampler  wgfx::Uniform* tex = wgfx::createSampler(4, texture);
+
+			if (doathing)
+			{
+			shader.setDepthTexture(5, depth);
+			shader.setSampler(6, depth);
+			shader.setUniform(7); // light view
+			}
+
+			//right
+			//shader.setDepthTexture(5, depth);
+			//shader.setSampler(6, depth);
+
 
 			shader.pipeline->init(vbo);
 		//shader.pipeline.setTexture(sampler);
@@ -143,6 +172,10 @@ public:
 
 		//shader.renderPass.touch();
 		shader.updateUniform(0, cameraMatrix);
+		if (doathing)
+		{
+			shader.updateUniform(7, lightView);
+		}
 		//shader.updateUniform(2, camera.getProjectionMatrix());
 
 		//for (uint32_t zz = 0; zz < 11; ++zz) {

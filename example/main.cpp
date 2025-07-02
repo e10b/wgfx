@@ -65,9 +65,7 @@ public:
 int main()
 {
 	Context& context = Context::Instance();
-	Cube& cube = Cube();
 	Cube& cube2 = Cube();
-	cube.init(1);
 	cube2.init(0); // color as i am sending 1 render target.
 
 	wgfx::ColorTexture* color = new wgfx::ColorTexture();
@@ -110,6 +108,10 @@ p.addTarget(depth1);
 
 
 	Crosshair crosshair(depth1);
+	Cube& cube = Cube();
+	cube.setDepthTexture(depth1);
+	cube.init(1);
+
 	//pass.prepareColor();
 	//wgfx::initDepth();
 	
@@ -155,6 +157,7 @@ pass.setClear({ 0.4, 0.7, 1, 1 });
 		p.end();
 
 		pass.prepare();
+			cube.setLight(rotatedView);
 			cube.drawLit(cam.getViewMatrix(), pass);
 		pass.end();
 
