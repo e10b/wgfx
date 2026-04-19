@@ -1,47 +1,17 @@
-cmake_minimum_required(VERSION 3.0...3.25)
-project(wegs VERSION 0.1.0 LANGUAGES CXX C)
+cmake_minimum_required(VERSION 3.16...3.25)
+project(wgfx VERSION 0.1.0 LANGUAGES CXX)
 
-#add_subdirectory(deps/sdl)
-#add_subdirectory(deps/webgpu)
-#add_subdirectory(deps/sdl2webgpu)
-#set(SHADERC_SKIP_TESTS ON CACHE INTERNAL "")
-#add_subdirectory(deps/shaderc)
-option(DEV_MODE "Set up development helper settings" ON)
+file(GLOB WGFX_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
-add_subdirectory(deps)
+add_library(wgfx STATIC ${WGFX_SOURCES})
+add_library(wgfx::wgfx ALIAS wgfx)
 
+target_include_directories(wgfx
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
-file(GLOB_RECURSE src "example/*.cpp")
-	list(FILTER src EXCLUDE REGEX "example/main.cpp")
-file(GLOB_RECURSE srcc "src/*.cpp") #intriguing..
-
-add_executable( App ${src} ${srcc} example/main.cpp )
- #"sdl2webgpu/sdl2webgpu.c" "sdl2webgpu/sdl2webgpu.h")
-
- if(DEV_MODE)
- # In dev mode, we load resources from the source tree, so that when we
- # dynamically edit resources (like shaders), these are correctly
- # versionned.
- target_compile_definitions(App PRIVATE
-	 RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/res"
- )
-else()
- # In release mode, we just load resources relatively to wherever the
- # executable is launched from, so that the binary is portable
- target_compile_definitions(App PRIVATE
-	 RESOURCE_DIR="./res"
- )
-endif()
-
-target_link_libraries(App PRIVATE webgpu sdl2webgpu SDL3-static glm::glm leveldb)
-target_include_directories(App PRIVATE src "deps/sdl3/include" "deps")
-
-target_copy_webgpu_binaries(App)
-
-
-set_target_properties(App PROPERTIES
-	CXX_STANDARD 17
-	CXX_STANDARD_REQUIRED ON
-	CXX_EXTENSIONS OFF
-#	COMPILE_WARNING_AS_ERROR ON
+target_compile_features(wgfx PUBLIC cxx_std_17)
+set_target_properties(wgfx PROPERTIES
+    CXX_EXTENSIONS OFF
 )
