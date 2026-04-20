@@ -55,7 +55,8 @@ namespace wgfx
 		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data());
 		renderPass.setPipeline(pipeline->pipeline);
 		renderPass.setVertexBuffer(0, pipeline->vbos.current->buffer, 0, pipeline->vbos.current->buffer.getSize());
-		renderPass.setIndexBuffer(pipeline->ibos.current->buffer, IndexFormat::Uint16, 0, pipeline->ibos.current->buffer.getSize());
+		const IndexFormat indexFormat = pipeline->ibos.current->is32Bit ? IndexFormat::Uint32 : IndexFormat::Uint16;
+		renderPass.setIndexBuffer(pipeline->ibos.current->buffer, indexFormat, 0, pipeline->ibos.current->buffer.getSize());
 
 		renderPass.drawIndexed(pipeline->ibos.current->indexCount, 1, 0, 0, 0);
 	}
