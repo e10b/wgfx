@@ -56,6 +56,19 @@ namespace wgfx
 			//updateMultiSampleView = false;
 			//resetDepth = true;
 		}
+
+		void recreate()
+		{
+			if (depthView) {
+				depthView.release();
+				depthView = nullptr;
+			}
+			if (depthTexture) {
+				depthTexture.release();
+				depthTexture = nullptr;
+			}
+			init();
+		}
 	};
 
 	struct ColorTexture

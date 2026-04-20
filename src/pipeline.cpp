@@ -53,7 +53,7 @@ namespace wgfx
 	{
 		for (auto* ibo : ibos.indexBuffers)
 		{
-			if (ibo->data == value)
+			if (!ibo->is32Bit && ibo->data16 == value)
 			{
 				// set current
 				ibos.current = ibo;
@@ -64,21 +64,6 @@ namespace wgfx
 		IndexBuffer* ibo = createIndexBuffer(value);
 		ibos.add(ibo);
 		ibos.current = ibo;
-
-		//IndexBuffer* ibo = ibos.get(value);
-		//if (ibo)
-		//{
-		//	// Set current
-		//	ibos.current = ibo;
-		//	return;
-		//}
-
-		//// None exists, make a new
-		//ibo = createIndexBuffer(value);
-		//ibos.add(ibo);
-		//ibos.current = ibo;
-		//std::cout << "ibos count: " << ibos.indexBuffers.size() << "\n";
-
 	}
 
 	void Pipeline::init(VertexBuffer* vertexBuffer)
