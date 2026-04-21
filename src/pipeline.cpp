@@ -253,4 +253,23 @@ namespace wgfx
 
 		return pipeline;
 	}
+
+	Compute* loadCompute(std::string source)
+	{
+		ShaderModuleDescriptor shaderDesc;
+#ifdef WEBGPU_BACKEND_WGPU
+		shaderDesc.hintCount = 0;
+		shaderDesc.hints = nullptr;
+#endif
+		ShaderModuleWGSLDescriptor shaderCodeDesc;
+		shaderCodeDesc.chain.next = nullptr;
+		shaderCodeDesc.chain.sType = SType::ShaderModuleWGSLDescriptor;
+		shaderDesc.nextInChain = &shaderCodeDesc.chain;
+		shaderCodeDesc.code = source.c_str();
+		ShaderModule shaderModule = device.createShaderModule(shaderDesc);
+
+		Compute* compute = new Compute();
+		compute->shaderModule = shaderModule;
+		return compute;
+	}
 }

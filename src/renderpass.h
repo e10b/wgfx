@@ -174,6 +174,14 @@ namespace wgfx
 		void end();
 		void setClear(WGPUColor color);
 		void draw(Pipeline* pipeline);
+		/// Same bind group / pipeline as `draw`, but uses the given buffers and indexed subrange (for extra draws in one pass).
+		void draw(
+			Pipeline* pipeline,
+			VertexBuffer* vbo,
+			IndexBuffer* ibo,
+			uint32_t indexCount,
+			uint32_t firstIndex,
+			int32_t baseVertex);
 
 
 		void prepare()
@@ -258,6 +266,32 @@ namespace wgfx
 
 		//void prepareColor();
 
+	};
+	struct ComputePass
+	{
+	public:
+		ComputePassEncoder computePass = nullptr;
+
+		void draw(Compute* compute, uint32_t sizeX, uint32_t sizeY = 1, uint32_t sizeZ = 1)
+		{
+			computePass.setPipeline(compute->pipeline);
+			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
+			computePass.dispatchWorkgroups(sizeX, sizeY, sizeZ);
+		}
+
+		void end()
+		{
+			if (computePass) {
+				computePass.end();
+				computePass.release();
+				computePass = nullptr;
+			}
+		}
+
+		void prepare()
+		{
+			computePass = encoder.beginComputePass();
+		}
 	};
 	inline TextureView multiSampleView = nullptr;
 	inline TextureView targetView = nullptr;

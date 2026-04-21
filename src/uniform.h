@@ -1,11 +1,14 @@
 #pragma once
 
 #include "texture.h"
+#include <stdexcept>
 
 namespace wgfx
 {	struct Uniform
 	{
 		bool isDepth = false;
+		bool isReadOnly = false;
+		bool ownsBuffer = true;
 
 		Buffer buffer;
 		//BindGroupEntry binding;
@@ -24,7 +27,7 @@ namespace wgfx
 
 		~Uniform()
 		{
-			if (buffer) {
+			if (ownsBuffer && buffer) {
 				buffer.destroy();
 				buffer.release();
 			}
@@ -34,6 +37,7 @@ namespace wgfx
 
 	Uniform* createUniform(int i, size_t size, float data);
 	Uniform* createUniform(int i, size_t size, const float* array);
+	Uniform* createStorage(int i, size_t size, const void* data = nullptr, bool readOnly = false);
 	Uniform* createTexture(int i, Texture texture);
 	Uniform* createSampler(int i, Texture texture);
 
@@ -77,6 +81,7 @@ namespace wgfx
 
 		std::vector<BindGroupLayoutEntry> layouts; // frmrly entries
 		std::vector<BindGroupEntry> entries; // frmrly bindings
+		WGPUShaderStageFlags visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
 
 		BindGroup bindGroup;
 		BindGroupLayout bindGroupLayout;
@@ -141,12 +146,21 @@ namespace wgfx
 			
 		}
 
+		void updateStorageBuffer(Uniform* storage, const void* data, size_t size, size_t offset = 0)
+		{
+			if (storage == nullptr) return;
+			if (size + offset > static_cast<size_t>(storage->minBindingSize)) {
+				throw std::runtime_error("updateStorageBuffer: write exceeds storage buffer capacity");
+			}
+			queue.writeBuffer(storage->buffer, offset, data, size);
+		}
+
 		//hmm
 			void setUniform(Uniform* uniform)
 			{
 				BindGroupLayoutEntry layout = {};
 					layout.binding = uniform->binding;
-					layout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
+					layout.visibility = visibility;
 					layout.buffer.type = BufferBindingType::Uniform;
 					layout.buffer.minBindingSize = uniform->minBindingSize;
 					layout.buffer.hasDynamicOffset = true; // dynamic
@@ -181,7 +195,7 @@ namespace wgfx
 			{
 				BindGroupLayoutEntry layout = {};							/// layout needs to be created in joint with the actual entry
 					layout.binding = uniform->binding;
-					layout.visibility = ShaderStage::Fragment;
+					layout.visibility = visibility;
 					//layout.texture.sampleType = TextureSampleType::Float;
 
 					if (uniform->isDepth) // Add a boolean flag in Uniform for this
@@ -204,11 +218,24 @@ namespace wgfx
 			{
 				BindGroupLayoutEntry layout = {};
 					layout.binding = uniform->binding;
-					layout.visibility = ShaderStage::Fragment;
+					layout.visibility = visibility;
 					layout.sampler.type = SamplerBindingType::Filtering;
 				uniforms.push_back(uniform);
 				layouts.push_back(layout);
 				entries.push_back(uniform->entry);
+			}
+
+			void setStorage(Uniform* storage)
+			{
+				BindGroupLayoutEntry layout = {};
+				layout.binding = storage->binding;
+				layout.visibility = visibility;
+				layout.buffer.type = storage->isReadOnly ? BufferBindingType::ReadOnlyStorage : BufferBindingType::Storage;
+				layout.buffer.minBindingSize = storage->minBindingSize;
+				layout.buffer.hasDynamicOffset = false;
+				uniforms.push_back(storage);
+				layouts.push_back(layout);
+				entries.push_back(storage->entry);
 			}
 
 		

@@ -6,6 +6,31 @@ namespace wgfx
 		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
 		return step * divide_and_ceil;
 	}
+	Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
+	{
+		Uniform* storage = new Uniform();
+		storage->binding = i;
+		storage->minBindingSize = static_cast<int>(size);
+		storage->isReadOnly = readOnly;
+		storage->stride = 0;
+		storage->offset = 0;
+
+		BufferDescriptor localBufferDesc{};
+		localBufferDesc.size = size;
+		localBufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Storage | BufferUsage::CopySrc;
+		localBufferDesc.mappedAtCreation = false;
+		storage->buffer = device.createBuffer(localBufferDesc);
+
+		if (data != nullptr && size > 0) {
+			queue.writeBuffer(storage->buffer, 0, data, size);
+		}
+
+		storage->entry.binding = i;
+		storage->entry.buffer = storage->buffer;
+		storage->entry.offset = 0;
+		storage->entry.size = size;
+		return storage;
+	}
 	Uniform* createUniform(int i, size_t size, float data)
 	{
 		// Debug: Log uniform buffer creation

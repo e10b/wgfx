@@ -9,6 +9,69 @@
 
 namespace wgfx
 {
+	struct Compute
+	{
+		ComputePipeline pipeline;
+		ComputePipelineDescriptor pipelineDesc;
+		ShaderModule shaderModule;
+		Uniforms uniforms;
+
+		Compute()
+		{
+			std::cout << "Create compute pipeline\n";
+			pipelineDesc = ComputePipelineDescriptor();
+		}
+
+		void setUniform(Uniform* uniform)
+		{
+			uniforms.visibility = WGPUShaderStage_Compute;
+			uniforms.setUniform(uniform);
+		}
+
+		void setStorage(Uniform* uniform)
+		{
+			uniforms.visibility = WGPUShaderStage_Compute;
+			uniforms.setStorage(uniform);
+		}
+
+		void setTexture(Uniform* uniform)
+		{
+			uniforms.visibility = WGPUShaderStage_Compute;
+			uniforms.setTexture(uniform);
+		}
+
+		void setSampler(Uniform* uniform)
+		{
+			uniforms.visibility = WGPUShaderStage_Compute;
+			uniforms.setSampler(uniform);
+		}
+
+		void updateUniform(Uniform* uniform, const float* array)
+		{
+			uniforms.updateUniform(uniform, array);
+		}
+
+		void updateStorageBuffer(Uniform* storage, const void* data, size_t size, size_t offset = 0)
+		{
+			uniforms.updateStorageBuffer(storage, data, size, offset);
+		}
+
+		void init()
+		{
+			uniforms.touch();
+			PipelineLayoutDescriptor layoutDesc{};
+			layoutDesc.bindGroupLayoutCount = 1;
+			layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&uniforms.bindGroupLayout;
+			PipelineLayout layout = device.createPipelineLayout(layoutDesc);
+			pipelineDesc.layout = layout;
+			pipelineDesc.compute.module = shaderModule;
+			pipelineDesc.compute.entryPoint = "main";
+			pipeline = device.createComputePipeline(pipelineDesc);
+			std::cout << "Compute pipeline: " << pipeline << "\n";
+			shaderModule.release();
+		}
+	};
+
 	
 	//todo
 	// need a pipeline config of some kind so that i can have useDepth etc, in the configuration for now see useDepth
@@ -130,6 +193,7 @@ namespace wgfx
 
 	inline std::vector<Pipeline*> pipelines;
 	Pipeline* loadPipeline(std::string source);
+	Compute* loadCompute(std::string source);
 	
 	static std::string loadFromFile(const std::filesystem::path& path) {
 		std::ifstream file(path, std::ios::binary);
