@@ -61,6 +61,33 @@ namespace wgfx
 		renderPass.drawIndexed(pipeline->ibos.current->indexCount, 1, 0, 0, 0);
 	}
 
+	void RenderPass::draw(
+		Pipeline* pipeline,
+		VertexBuffer* vbo,
+		IndexBuffer* ibo,
+		uint32_t indexCount,
+		uint32_t firstIndex,
+		int32_t baseVertex) {
+		if (!renderPass) {
+			std::cerr << "Error: RenderPass not initialized! Call prepare() first." << std::endl;
+			return;
+		}
+		if (!pipeline || !vbo || !ibo) {
+			std::cerr << "Error: draw(pipeline,vbo,ibo) null argument!" << std::endl;
+			return;
+		}
+		if (reset) {
+			pipeline->uniforms.clear();
+			reset = false;
+		}
+		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data());
+		renderPass.setPipeline(pipeline->pipeline);
+		renderPass.setVertexBuffer(0, vbo->buffer, 0, vbo->buffer.getSize());
+		const IndexFormat indexFormat = ibo->is32Bit ? IndexFormat::Uint32 : IndexFormat::Uint16;
+		renderPass.setIndexBuffer(ibo->buffer, indexFormat, 0, ibo->buffer.getSize());
+		renderPass.drawIndexed(indexCount, 1, firstIndex, baseVertex, 0);
+	}
+
 	//void RenderPass::touch()
 	//{
 	//	// Get the next surface texture view
