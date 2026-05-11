@@ -133,6 +133,13 @@ namespace wgfx
 		VertexBuffers vbos;
 		IndexBuffers ibos;
 
+		// Sub-objects referenced by pipelineDesc must outlive init() (no stack locals).
+		VertexBufferLayout vertexBufferLayout{};
+		FragmentState fragmentState{};
+		ColorTargetState colorTargets[10]{};
+		BlendState fragmentBlend{};
+		DepthStencilState depthStencilState{};
+
 		//std::vector<uint32_t> dynamicOffsets; // this also shouldn't be here.
 
 		/*std::vector<Uniform*> getUniforms()
@@ -290,7 +297,7 @@ namespace wgfx
 
 	static std::string loadFromFile(const std::filesystem::path& path) {
 		std::ifstream file(path);
-		if (!file.is_open()) { return nullptr; }
+		if (!file.is_open()) { return {}; }
 		file.seekg(0, std::ios::end);
 		size_t size = file.tellg();
 		std::string shaderSource(size, ' ');

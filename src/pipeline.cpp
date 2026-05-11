@@ -45,7 +45,7 @@ namespace wgfx
 		//}
 
 	}
-	VertexBufferLayout vertexBufferLayout;
+
 	void Pipeline::setIndexBuffer(const std::vector<uint16_t>& value)
 	{
 		for (auto* ibo : ibos.indexBuffers)
@@ -108,37 +108,24 @@ namespace wgfx
 		pipelineDesc.primitive.frontFace = FrontFace::CCW;
 		pipelineDesc.primitive.cullMode = CullMode::Back; // backface culling option, currently thinking about ways to expose this to the mid level wgfx::setState(wgfx::CullBack);
 
-		FragmentState fragmentState;
 		pipelineDesc.fragment = &fragmentState;
 		fragmentState.module = shaderModule;
 		fragmentState.entryPoint = "fs_main";
 		fragmentState.constantCount = 0;
 		fragmentState.constants = nullptr;
 
-		BlendState blendState{};
-		blendState.color.srcFactor = BlendFactor::SrcAlpha;
-		blendState.color.dstFactor = BlendFactor::OneMinusSrcAlpha;
-		blendState.color.operation = BlendOperation::Add;
-		blendState.alpha.srcFactor = BlendFactor::Zero;
-		blendState.alpha.dstFactor = BlendFactor::One;
-		blendState.alpha.operation = BlendOperation::Add;
+		fragmentBlend.color.srcFactor = BlendFactor::SrcAlpha;
+		fragmentBlend.color.dstFactor = BlendFactor::OneMinusSrcAlpha;
+		fragmentBlend.color.operation = BlendOperation::Add;
+		fragmentBlend.alpha.srcFactor = BlendFactor::Zero;
+		fragmentBlend.alpha.dstFactor = BlendFactor::One;
+		fragmentBlend.alpha.operation = BlendOperation::Add;
 
-		ColorTargetState colorTarget[10];
-		colorTarget[0].format = surfaceFormat;
-		colorTarget[0].blend = &blendState;
-		colorTarget[0].writeMask = ColorWriteMask::All;
-
-		colorTarget[1].format = surfaceFormat;
-		colorTarget[1].blend = &blendState;
-		colorTarget[1].writeMask = ColorWriteMask::All;
-
-		colorTarget[2].format = surfaceFormat;
-		colorTarget[2].blend = &blendState;
-		colorTarget[2].writeMask = ColorWriteMask::All;
-
-		colorTarget[3].format = surfaceFormat;
-		colorTarget[3].blend = &blendState;
-		colorTarget[3].writeMask = ColorWriteMask::All;
+		for (int ti = 0; ti < 10; ++ti) {
+			colorTargets[ti].format = surfaceFormat;
+			colorTargets[ti].blend = &fragmentBlend;
+			colorTargets[ti].writeMask = ColorWriteMask::All;
+		}
 
 		// ideally we product these based on the preset targets.... << ye
 		// ideally we product these based on the preset targets.... << ye
@@ -150,7 +137,7 @@ namespace wgfx
 		if (targets != 0)
 		{
 			fragmentState.targetCount = targets; // two targets
-			fragmentState.targets = colorTarget;
+			fragmentState.targets = colorTargets;
 		}
 		else
 		{
@@ -158,7 +145,7 @@ namespace wgfx
 			fragmentState.targets = nullptr; // two targets
 		}
 		// We setup a depth buffer state for the render pipeline
-		DepthStencilState depthStencilState = Default;
+		depthStencilState = Default;
 		// Keep a fragment only if its depth is lower than the previously blended one
 		depthStencilState.depthCompare = CompareFunction::Less;
 		// Each time a fragment is blended into the target, we update the value of the Z-buffer

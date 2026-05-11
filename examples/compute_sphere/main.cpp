@@ -5,7 +5,7 @@
 #include "helper/constants.h"
 #include "helper/context.h"
 #include "helper/quad.h"
-#include "helper/sphere_compute.h"
+#include "sphere_compute.hpp"
 
 int main()
 {

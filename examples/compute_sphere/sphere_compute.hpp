@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "constants.h"
+#include "helper/constants.h"
 #include "wgfx.h"
 
 class SphereCompute
@@ -44,7 +44,7 @@ private:
 	SphereCompute()
 	{
 		compute = wgfx::loadCompute(
-			wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/" + "sphere.wgsl").c_str()));
+			wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/" + "compute_sphere.wgsl").c_str()));
 
 		outputTexture = wgfx::loadTextureSrc(raytraceWidth, raytraceHeight);
 		compute->addUniform(0);

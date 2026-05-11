@@ -7,7 +7,6 @@ wgfx is a lightweight C++ WebGPU graphics framework focused on practical renderi
 It includes:
 - A small wrapper layer around WebGPU setup and pipeline primitives
 - Native wgfx examples for a rainbow quad, spinning cube, and compute sphere
-- A vendored copy of the upstream WebGPU Samples collection under `examples/webgpu-samples`
 - A CMake-first layout for straightforward cross-platform builds
 
 ## Build
@@ -24,8 +23,6 @@ cmake --build build
 ./build/ExampleSpinningCube
 ./build/ExampleComputeSphere
 ```
-
-The upstream sample collection keeps its own license at `examples/webgpu-samples/LICENSE.txt`.
 
 ## License
 

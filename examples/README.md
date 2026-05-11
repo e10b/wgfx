@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains the native wgfx examples plus a vendored copy of the upstream WebGPU Samples repository.
+This directory contains the native wgfx examples.
 
 Local wgfx examples:
 
@@ -13,5 +13,3 @@ Build the local targets directly from CMake:
 - `ExampleRainbowQuad`
 - `ExampleSpinningCube`
 - `ExampleComputeSphere`
-
-The upstream sample collection lives in `examples/webgpu-samples` and keeps its own `LICENSE.txt`.
