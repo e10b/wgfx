@@ -2,6 +2,8 @@
 
 This directory contains the native wgfx examples.
 
+On the `examples` branch, `vendor/wgfx` is a submodule pinned to the **`main`** branch of this repository (library-only default branch). After cloning, run `git submodule update --init vendor/wgfx` (or `git submodule update --init --recursive` from the repo root) so that path is populated.
+
 Local wgfx examples:
 
 1. `rainbow_quad` shows a colored quad with a vertex buffer and index buffer.
