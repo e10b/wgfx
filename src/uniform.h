@@ -11,6 +11,7 @@ namespace wgfx
 		bool isUint = false;
 		bool is3D = false;
 		bool isReadOnly = false;
+		bool ownsBuffer = true;
 
 		Buffer buffer;
 		//BindGroupEntry binding;

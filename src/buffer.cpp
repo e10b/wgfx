@@ -66,8 +66,9 @@ namespace wgfx
 	{
 		IndexBuffer* buffer = new IndexBuffer();
 		buffer->data = indices;
+		buffer->is32Bit = false;
 
-		buffer->indexCount = static_cast<uint16_t>(indices.size());
+		buffer->indexCount = static_cast<uint32_t>(indices.size());
 
 		bufferDesc.size = indices.size() * sizeof(uint16_t);
 		bufferDesc.size = (bufferDesc.size + 3) & ~3; // round up to the next multiple of 4
@@ -82,6 +83,7 @@ namespace wgfx
 	IndexBuffer* createIndexBufferU32(std::vector<uint32_t> indices)
 	{
 		IndexBuffer* buffer = new IndexBuffer();
+		buffer->data32 = indices;
 		buffer->is32Bit = true;
 		buffer->indexCount = static_cast<uint32_t>(indices.size());
 
@@ -93,5 +95,10 @@ namespace wgfx
 		queue.writeBuffer(buffer->buffer, 0, indices.data(), bufferDesc.size);
 
 		return buffer;
+	}
+
+	IndexBuffer* createIndexBuffer(std::vector<uint32_t> indices)
+	{
+		return createIndexBufferU32(std::move(indices));
 	}
 }

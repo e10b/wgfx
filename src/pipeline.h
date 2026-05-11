@@ -40,6 +40,17 @@ namespace wgfx
 			uniforms.updateUniform(uniforms.uniforms.at(index), data);
 		}
 
+		void updateUniform(Uniform* uniform, const float* data)
+		{
+			if (uniform == nullptr) return;
+			if (uniforms.dynamicOffsets.size() <= static_cast<size_t>(uniform->binding)) {
+				uniforms.dynamicOffsets.resize(static_cast<size_t>(uniform->binding) + 1, 0);
+			}
+			uniforms.dynamicOffsets.at(uniform->binding) = 0;
+			uniform->quantity = 0;
+			queue.writeBuffer(uniform->buffer, 0, data, uniform->minBindingSize);
+		}
+
 		Uniform* addUniform(int index)
 		{
 			wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(float) * 16, 1.0f);
@@ -48,12 +59,24 @@ namespace wgfx
 			return uniform;
 		}
 
+		void setUniform(Uniform* uniform)
+		{
+			uniforms.visibility = wgpu::ShaderStage::Compute;
+			uniforms.setUniform(uniform);
+		}
+
 		Uniform* addStorage(int index, size_t size, const void* data, bool readOnly = false)
 		{
 			wgfx::Uniform* uniform = wgfx::createStorage(index, size, data, readOnly);
 			uniforms.visibility = wgpu::ShaderStage::Compute;
 			uniforms.setStorage(uniform);
 			return uniform;
+		}
+
+		void setStorage(Uniform* storage)
+		{
+			uniforms.visibility = wgpu::ShaderStage::Compute;
+			uniforms.setStorage(storage);
 		}
 
 		Uniform* addTexture(int index, wgfx::Texture texture)
@@ -238,6 +261,12 @@ namespace wgfx
 			uniforms.setUniform(uniform);
 			return uniform;
 		}
+
+		void setUniform(Uniform* uniform)
+		{
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setUniform(uniform);
+		}
 		
 		Uniform* addStorage(int index, size_t size, const void* data)
 		{
@@ -245,6 +274,12 @@ namespace wgfx
 			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
 			uniforms.setStorage(uniform);
 			return uniform;
+		}
+
+		void setStorage(Uniform* storage)
+		{
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setStorage(storage);
 		}
 
 		//void touch();
@@ -255,6 +290,17 @@ namespace wgfx
 		void updateUniform(int index, const float* data)
 		{
 			uniforms.updateUniform(uniforms.uniforms.at(index), data);
+		}
+
+		void updateUniform(Uniform* uniform, const float* data)
+		{
+			if (uniform == nullptr) return;
+			if (uniforms.dynamicOffsets.size() <= static_cast<size_t>(uniform->binding)) {
+				uniforms.dynamicOffsets.resize(static_cast<size_t>(uniform->binding) + 1, 0);
+			}
+			uniforms.dynamicOffsets.at(uniform->binding) = 0;
+			uniform->quantity = 0;
+			queue.writeBuffer(uniform->buffer, 0, data, uniform->minBindingSize);
 		}
 
 

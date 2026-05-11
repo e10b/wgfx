@@ -72,6 +72,7 @@ namespace wgfx
 		bool is32Bit = false;
 
 		std::vector<uint16_t> data;
+		std::vector<uint32_t> data32;
 
 		IndexBuffer() : buffer(nullptr), indexCount(0) {} // allow for no index buff
 	};
@@ -90,6 +91,7 @@ namespace wgfx
 
 	IndexBuffer* createIndexBuffer(std::vector<uint16_t> indices = {0});
 	IndexBuffer* createIndexBufferU32(std::vector<uint32_t> indices);
+	IndexBuffer* createIndexBuffer(std::vector<uint32_t> indices);
 
 	
 }
