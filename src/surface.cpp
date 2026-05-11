@@ -1,6 +1,7 @@
 #include "surface.h"
 #include "renderpass.h"
 #include <cstring>
+#include <iostream>
 namespace wgfx
 {
 
@@ -107,6 +108,10 @@ namespace wgfx
 
 	void frame()
 	{
+		if (!encoder) {
+			std::cerr << "wgfx::frame: no command encoder (call wgfx::start() after touch and before encoding passes).\n";
+			return;
+		}
 		reset = true;
 		// nope you need a separate end
 		//program.framebuffers.at(0)->renderPass.end();

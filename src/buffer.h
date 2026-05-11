@@ -67,8 +67,9 @@ namespace wgfx
 	{
 	public:
 		Buffer buffer;
-		uint32_t indexCount;
+		uint32_t indexCount = 0;
 		int id = -1;
+		bool is32Bit = false;
 
 		std::vector<uint16_t> data;
 
@@ -88,6 +89,7 @@ namespace wgfx
 	};
 
 	IndexBuffer* createIndexBuffer(std::vector<uint16_t> indices = {0});
+	IndexBuffer* createIndexBufferU32(std::vector<uint32_t> indices);
 
 	
 }

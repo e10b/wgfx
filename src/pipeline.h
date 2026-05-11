@@ -164,6 +164,7 @@ namespace wgfx
 					// delete me and abstract the other
 					void setVertexBuffer(const std::vector<float>& value);
 					void setIndexBuffer(const std::vector<uint16_t>& value);
+					void setIndexBuffer(const std::vector<uint32_t>& value);
 
 			void setVertexBuffer(VertexBuffer* vbo)
 			{

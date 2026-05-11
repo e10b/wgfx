@@ -52,7 +52,7 @@ namespace wgfx
 	{
 		for (auto* ibo : ibos.indexBuffers)
 		{
-			if (ibo->data == value)
+			if (!ibo->is32Bit && ibo->data == value)
 			{
 				// set current
 				ibos.current = ibo;
@@ -77,6 +77,13 @@ namespace wgfx
 		//ibos.add(ibo);
 		//ibos.current = ibo;
 
+	}
+
+	void Pipeline::setIndexBuffer(const std::vector<uint32_t>& value)
+	{
+		IndexBuffer* ibo = createIndexBufferU32(value);
+		ibos.add(ibo);
+		ibos.current = ibo;
 	}
 
 	void Pipeline::init(VertexBuffer* vertexBuffer)
