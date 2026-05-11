@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include <glm/glm.hpp>
 
@@ -18,6 +19,7 @@ namespace wgfx
 		ComputePipelineDescriptor pipelineDesc;
 		ShaderModule shaderModule;
 		Uniforms uniforms;
+		std::string entryPoint = "main";
 
 		Compute()
 		{
@@ -102,8 +104,7 @@ namespace wgfx
 			
 			pipelineDesc.layout = pipelineLayout;
 			pipelineDesc.compute.module = shaderModule;
-			pipelineDesc.compute.entryPoint = "main";
-
+			pipelineDesc.compute.entryPoint = entryPoint.c_str();
 			pipeline = device.createComputePipeline(pipelineDesc);
 			std::cout << "Compute pipeline: " << pipeline << "\n";
 			shaderModule.release();
