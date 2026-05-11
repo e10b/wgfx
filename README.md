@@ -10,7 +10,7 @@ This branch holds the library (`src/`), dependencies (`deps/`), and CMake wiring
 
 ![wgfx screenshot 1](media/screenshot1.png)
 
-![wgfx screenshot 2](media/screenshot2.png)
+![wgfx screenshot 2](media/screenshot4.gif)
 
 ![wgfx screenshot 3](media/screenshot3.gif)
 
