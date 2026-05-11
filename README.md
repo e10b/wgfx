@@ -1,10 +1,18 @@
 # wgfx
 
-![wgfx logo](logo.png)
+![wgfx logo](media/logo.png)
 
 wgfx is a lightweight C++ WebGPU graphics framework focused on practical rendering and compute workflows.
 
 This branch holds the library (`src/`), dependencies (`deps/`), and CMake wiring. Runnable C++ samples are maintained on the **`examples`** branch so the default clone stays small.
+
+## Screenshots
+
+![wgfx screenshot 1](media/screenshot1.png)
+
+![wgfx screenshot 2](media/screenshot2.png)
+
+![wgfx screenshot 3](media/screenshot3.gif)
 
 ## Examples branch
 
