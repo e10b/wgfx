@@ -3,6 +3,7 @@
 #include <webgpu/webgpu.hpp>
 #include <sdl2webgpu.h>
 #include <SDL3/SDL.h>
+#include <cstdint>
 #include <memory> // For std::unique_ptr
 
 using namespace wgpu;
@@ -28,6 +29,7 @@ namespace wgfx
 
 
     inline bool reset = false;
+    inline uint64_t frameIndex = 0;
 
     inline int samples = 1;
     inline bool multiSample = false;

@@ -52,6 +52,7 @@ namespace wgfx
 		//	reset = false;
 		//}
 
+		pipeline->uniforms.clearForNewFrame();
 		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data());
 		renderPass.setPipeline(pipeline->pipeline);
 		renderPass.setVertexBuffer(0, pipeline->vbos.current->buffer, 0, pipeline->vbos.current->buffer.getSize());
