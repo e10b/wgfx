@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <filesystem>
 #include <string>
 
 #include "helper/constants.h"
@@ -44,7 +45,7 @@ private:
 	SphereCompute()
 	{
 		compute = wgfx::loadCompute(
-			wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/" + "compute_sphere.wgsl").c_str()));
+			wgfx::loadFromFile(std::filesystem::path(RESOURCE_DIR) / "compute_sphere.wgsl"));
 
 		outputTexture = wgfx::loadTextureSrc(raytraceWidth, raytraceHeight);
 		compute->addUniform(0);

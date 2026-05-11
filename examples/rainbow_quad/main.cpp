@@ -1,6 +1,7 @@
 #define WGPU_IMPLEMENTATION
 #include <wgfx.h>
 
+#include <filesystem>
 #include <vector>
 #include <string>
 
@@ -34,7 +35,8 @@ int main()
 	pass->addTarget(color);
 	pass->setClear({0.06, 0.07, 0.10, 1.0});
 
-	auto* pipeline = wgfx::loadPipeline(wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/rainbow_quad.wgsl").c_str()));
+	auto* pipeline = wgfx::loadPipeline(
+		wgfx::loadFromFile(std::filesystem::path(RESOURCE_DIR) / "rainbow_quad.wgsl"));
 	auto* vbo = wgfx::createVertexBuffer(makeRainbowQuadVertices());
 	vbo->setAttribute(0, wgfx::vec3f, 0);
 	vbo->setAttribute(1, wgfx::vec3f, 3);

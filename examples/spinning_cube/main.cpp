@@ -2,6 +2,7 @@
 #include <wgfx.h>
 
 #include <array>
+#include <filesystem>
 #include <vector>
 #include <string>
 
@@ -108,7 +109,8 @@ int main()
 	pass->addTarget(depth);
 	pass->setClear({0.02, 0.03, 0.05, 1.0});
 
-	auto* pipeline = wgfx::loadPipeline(wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/spinning_cube.wgsl").c_str()));
+	auto* pipeline = wgfx::loadPipeline(
+		wgfx::loadFromFile(std::filesystem::path(RESOURCE_DIR) / "spinning_cube.wgsl"));
 	auto* vbo = wgfx::createVertexBuffer(makeCubeVertices());
 	vbo->setAttribute(0, wgfx::vec3f, 0);
 	vbo->setAttribute(1, wgfx::vec3f, 3);
