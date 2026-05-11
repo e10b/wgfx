@@ -4,10 +4,16 @@
 
 wgfx is a lightweight C++ WebGPU graphics framework focused on practical rendering and compute workflows.
 
-It includes:
-- A small wrapper layer around WebGPU setup and pipeline primitives
-- Native wgfx examples for a rainbow quad, spinning cube, and compute sphere
-- A CMake-first layout for straightforward cross-platform builds
+This branch holds the library (`src/`), dependencies (`deps/`), and CMake wiring. Runnable C++ samples are maintained on the **`examples`** branch so the default clone stays small.
+
+## Examples branch
+
+```bash
+git fetch origin examples
+git checkout examples
+```
+
+There you will find `ExampleRainbowQuad`, `ExampleSpinningCube`, and `ExampleComputeSphere` plus their WGSL and small helpers under `examples/`.
 
 ## Build
 
@@ -16,13 +22,7 @@ cmake -S . -B build
 cmake --build build
 ```
 
-## Run Examples
-
-```bash
-./build/ExampleRainbowQuad
-./build/ExampleSpinningCube
-./build/ExampleComputeSphere
-```
+On this branch the configure step still pulls in `deps/` (SDL3, WebGPU, etc.). Sample executables are only added when the `examples/` tree is present.
 
 ## License
 

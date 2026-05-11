@@ -31,7 +31,8 @@ function(add_example_target target_name source_file resource_dir)
 	)
 endfunction()
 
-if(NOT EMSCRIPTEN)
+# Native C++ samples live on the `examples` branch (this function is unused on default main).
+if(NOT EMSCRIPTEN AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/rainbow_quad/main.cpp")
 	add_example_target(ExampleRainbowQuad ${CMAKE_CURRENT_SOURCE_DIR}/examples/rainbow_quad/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/rainbow_quad)
 	add_example_target(ExampleSpinningCube ${CMAKE_CURRENT_SOURCE_DIR}/examples/spinning_cube/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/spinning_cube)
 	add_example_target(ExampleComputeSphere ${CMAKE_CURRENT_SOURCE_DIR}/examples/compute_sphere/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/compute_sphere)
