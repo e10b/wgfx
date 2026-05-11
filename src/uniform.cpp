@@ -6,36 +6,44 @@ namespace wgfx
 		uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
 		return step * divide_and_ceil;
 	}
-	Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
-	{
-		Uniform* storage = new Uniform();
-		storage->binding = i;
-		storage->minBindingSize = static_cast<int>(size);
-		storage->isReadOnly = readOnly;
-		storage->stride = 0;
-		storage->offset = 0;
 
-		BufferDescriptor localBufferDesc{};
-		localBufferDesc.size = size;
-		localBufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Storage | BufferUsage::CopySrc;
-		localBufferDesc.mappedAtCreation = false;
-		storage->buffer = device.createBuffer(localBufferDesc);
+Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
+{
+    std::cout << "Creating storage buffer with binding " << i << " and size " << size << " bytes..." << std::endl;
+    
+    Uniform* storage = new Uniform();
+    storage->binding = i;
+    storage->minBindingSize = size;
+    storage->isReadOnly = readOnly;
 
-		if (data != nullptr && size > 0) {
-			queue.writeBuffer(storage->buffer, 0, data, size);
-		}
+    // For storage buffers, stride and offset are unused
+    storage->stride = 0;
+    storage->offset = 0;
 
-		storage->entry.binding = i;
-		storage->entry.buffer = storage->buffer;
-		storage->entry.offset = 0;
-		storage->entry.size = size;
-		return storage;
-	}
+    BufferDescriptor bufferDesc;
+    bufferDesc.size = size;
+    bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Storage | BufferUsage::CopySrc;  // Use CopySrc for copying to read buffer
+    bufferDesc.mappedAtCreation = false;
+
+    storage->buffer = device.createBuffer(bufferDesc);
+    std::cout << "Storage buffer created: " << storage->buffer << std::endl;
+
+    if (data != nullptr) {
+        queue.writeBuffer(storage->buffer, 0, data, size);
+        std::cout << "Data written to storage buffer" << std::endl;
+    }
+
+    storage->entry.binding = i;
+    storage->entry.buffer = storage->buffer;
+    storage->entry.offset = 0;
+    storage->entry.size = size;
+
+    return storage;
+}
+
+
 	Uniform* createUniform(int i, size_t size, float data)
 	{
-		// Debug: Log uniform buffer creation
-		std::cout << "Creating uniform buffer " << i << " with size " << size << std::endl;
-		
 		Uniform* uniform = new Uniform();
 		uniform->binding = i;
 		uniform->minBindingSize = size;
@@ -50,8 +58,6 @@ namespace wgfx
 		bufferDesc.mappedAtCreation = false;
 		uniform->buffer = device.createBuffer(bufferDesc);
 
-		std::cout << "Created uniform buffer with total size: " << bufferDesc.size << " bytes" << std::endl;
-
 		queue.writeBuffer(uniform->buffer, 0, &data, size);
 
 		uniform->entry.binding = i;
@@ -60,11 +66,9 @@ namespace wgfx
 		uniform->entry.size = size;
 
 		return uniform;
-	}	Uniform* createUniform(int i, size_t size, const float* array)
+	}
+	Uniform* createUniform(int i, size_t size, const float* array)
 	{
-		// Debug: Log uniform buffer creation
-		std::cout << "Creating uniform buffer " << i << " with size " << size << " (array)" << std::endl;
-		
 		Uniform* uniform = new Uniform();
 		uniform->binding = i;
 		uniform->minBindingSize = size;
@@ -78,8 +82,6 @@ namespace wgfx
 		bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
 		bufferDesc.mappedAtCreation = false;
 		uniform->buffer = device.createBuffer(bufferDesc);
-
-		std::cout << "Created uniform buffer with total size: " << bufferDesc.size << " bytes" << std::endl;
 
 		// Use writeBuffer with the pointer to float data
 		queue.writeBuffer(uniform->buffer, 0, array, size);
@@ -100,6 +102,20 @@ namespace wgfx
 
 		return uniform;
 	}
+
+	Uniform* createTexture3D_Uint(int i, Texture texture)
+	{
+		Uniform* uniform = new Uniform();
+		uniform->binding = i;
+		uniform->isUint = true;
+		uniform->is3D = true;
+
+		uniform->entry.binding = i;
+		uniform->entry.textureView = texture.textureView;
+
+		return uniform;
+	}
+
 	Uniform* createSampler(int i, Texture texture)
 	{
 		Uniform* uniform = new Uniform();

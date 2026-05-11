@@ -22,10 +22,10 @@ namespace wgfx
 			renderPass.release();
 			renderPass = nullptr;
 		}
-		
+
 		// Clear the color attachments to free memory
 		//colorAttachments.clear();
-		
+
 		// Don't release targetView here - it's needed until frame submission
 		// The surface texture view will be released automatically when the surface presents
 	}
@@ -37,55 +37,27 @@ namespace wgfx
 	void RenderPass::draw(Pipeline* pipeline)
 	{
 		// Safety checks
-		if (!renderPass) {
-			std::cerr << "Error: RenderPass not initialized! Call prepare() first." << std::endl;
-			return;
-		}
-		if (!pipeline) {
-			std::cerr << "Error: Pipeline is null!" << std::endl;
-			return;
-		}
+		//if (!renderPass) {
+		//	std::cerr << "Error: RenderPass not initialized! Call prepare() first." << std::endl;
+		//	return;
+		//}
+		//if (!pipeline) {
+		//	std::cerr << "Error: Pipeline is null!" << std::endl;
+		//	return;
+		//}
 
-		// Reset uniforms at the start of each frame (only once per frame)
-		if (reset) {
-			pipeline->uniforms.clear();
-			reset = false;
-		}
+		//// Reset uniforms at the start of each frame (only once per frame)
+		//if (reset) {
+		//	pipeline->uniforms.clear();
+		//	reset = false;
+		//}
 
 		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data());
 		renderPass.setPipeline(pipeline->pipeline);
 		renderPass.setVertexBuffer(0, pipeline->vbos.current->buffer, 0, pipeline->vbos.current->buffer.getSize());
-		const IndexFormat indexFormat = pipeline->ibos.current->is32Bit ? IndexFormat::Uint32 : IndexFormat::Uint16;
-		renderPass.setIndexBuffer(pipeline->ibos.current->buffer, indexFormat, 0, pipeline->ibos.current->buffer.getSize());
+		renderPass.setIndexBuffer(pipeline->ibos.current->buffer, IndexFormat::Uint16, 0, pipeline->ibos.current->buffer.getSize());
 
 		renderPass.drawIndexed(pipeline->ibos.current->indexCount, 1, 0, 0, 0);
-	}
-
-	void RenderPass::draw(
-		Pipeline* pipeline,
-		VertexBuffer* vbo,
-		IndexBuffer* ibo,
-		uint32_t indexCount,
-		uint32_t firstIndex,
-		int32_t baseVertex) {
-		if (!renderPass) {
-			std::cerr << "Error: RenderPass not initialized! Call prepare() first." << std::endl;
-			return;
-		}
-		if (!pipeline || !vbo || !ibo) {
-			std::cerr << "Error: draw(pipeline,vbo,ibo) null argument!" << std::endl;
-			return;
-		}
-		if (reset) {
-			pipeline->uniforms.clear();
-			reset = false;
-		}
-		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data());
-		renderPass.setPipeline(pipeline->pipeline);
-		renderPass.setVertexBuffer(0, vbo->buffer, 0, vbo->buffer.getSize());
-		const IndexFormat indexFormat = ibo->is32Bit ? IndexFormat::Uint32 : IndexFormat::Uint16;
-		renderPass.setIndexBuffer(ibo->buffer, indexFormat, 0, ibo->buffer.getSize());
-		renderPass.drawIndexed(indexCount, 1, firstIndex, baseVertex, 0);
 	}
 
 	//void RenderPass::touch()
@@ -151,99 +123,99 @@ namespace wgfx
 		renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 #endif
 		*/
-	/*
-		renderPassColorAttachment[1].view = offscreenView;
-		renderPassColorAttachment[1].resolveTarget = nullptr;
-		renderPassColorAttachment[1].loadOp = LoadOp::Clear;
-		renderPassColorAttachment[1].storeOp = StoreOp::Store;	
-		renderPassColorAttachment[1].clearValue = clearValue;
+		/*
+			renderPassColorAttachment[1].view = offscreenView;
+			renderPassColorAttachment[1].resolveTarget = nullptr;
+			renderPassColorAttachment[1].loadOp = LoadOp::Clear;
+			renderPassColorAttachment[1].storeOp = StoreOp::Store;
+			renderPassColorAttachment[1].clearValue = clearValue;
 
 
 
-		if (test)
+			if (test)
+			{
+			renderPassDesc.colorAttachmentCount = 0; /// two`
+			renderPassDesc.colorAttachments = nullptr;//renderPassColorAttachment;
+			}
+			else
+			{
+				renderPassDesc.colorAttachmentCount = 1; /// two`
+				renderPassDesc.colorAttachments = renderPassColorAttachment;
+			}
+
+			// Setup depth/stencil attachment
+			RenderPassDepthStencilAttachment depthStencilAttachment{};
+			depthStencilAttachment.view = depthTextureView;
+			depthStencilAttachment.depthClearValue = 1.0f;
+			depthStencilAttachment.depthLoadOp = LoadOp::Clear;
+			depthStencilAttachment.depthStoreOp = StoreOp::Store;
+			depthStencilAttachment.depthReadOnly = false;
+			depthStencilAttachment.stencilClearValue = 0;
+	#ifdef WEBGPU_BACKEND_WGPU
+			depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
+			depthStencilAttachment.stencilStoreOp = StoreOp::Store;
+	#else
+			depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
+			depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
+	#endif
+			depthStencilAttachment.stencilReadOnly = true;
+
+			renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
+			renderPassDesc.timestampWrites = nullptr;
+
+			renderPass = encoder.beginRenderPass(renderPassDesc);
+		}
+
+		void RenderPass::prepareColor()
 		{
-		renderPassDesc.colorAttachmentCount = 0; /// two`	
-		renderPassDesc.colorAttachments = nullptr;//renderPassColorAttachment;
-		}
-		else
-		{
-			renderPassDesc.colorAttachmentCount = 1; /// two`	
-			renderPassDesc.colorAttachments = renderPassColorAttachment;
-		}
+			std::cout << "you working?\n";
 
-		// Setup depth/stencil attachment
-		RenderPassDepthStencilAttachment depthStencilAttachment{};
-		depthStencilAttachment.view = depthTextureView;
-		depthStencilAttachment.depthClearValue = 1.0f;
-		depthStencilAttachment.depthLoadOp = LoadOp::Clear;
-		depthStencilAttachment.depthStoreOp = StoreOp::Store;
-		depthStencilAttachment.depthReadOnly = false;
-		depthStencilAttachment.stencilClearValue = 0;
-#ifdef WEBGPU_BACKEND_WGPU
-		depthStencilAttachment.stencilLoadOp = LoadOp::Clear;
-		depthStencilAttachment.stencilStoreOp = StoreOp::Store;
-#else
-		depthStencilAttachment.stencilLoadOp = LoadOp::Undefined;
-		depthStencilAttachment.stencilStoreOp = StoreOp::Undefined;
-#endif
-		depthStencilAttachment.stencilReadOnly = true;
+			// Use static variables to cache the offscreen texture and avoid recreating every call
+			static wgpu::Texture cachedOffscreenTexture = nullptr;
+			static wgpu::TextureView cachedOffscreenView = nullptr;
+			static uint32_t cachedWidth = 0;
+			static uint32_t cachedHeight = 0;
 
-		renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
-		renderPassDesc.timestampWrites = nullptr;
+			// Only recreate if size changed or texture doesn't exist
+			if (!cachedOffscreenTexture || cachedWidth != width || cachedHeight != height) {
+				// Release previous resources
+				if (cachedOffscreenView) {
+					cachedOffscreenView.release();
+					cachedOffscreenView = nullptr;
+				}
+				if (cachedOffscreenTexture) {
+					cachedOffscreenTexture.release();
+					cachedOffscreenTexture = nullptr;
+				}
 
-		renderPass = encoder.beginRenderPass(renderPassDesc);
-	}	
-	
-	void RenderPass::prepareColor()
-	{
-		std::cout << "you working?\n";
-		
-		// Use static variables to cache the offscreen texture and avoid recreating every call
-		static wgpu::Texture cachedOffscreenTexture = nullptr;
-		static wgpu::TextureView cachedOffscreenView = nullptr;
-		static uint32_t cachedWidth = 0;
-		static uint32_t cachedHeight = 0;
-		
-		// Only recreate if size changed or texture doesn't exist
-		if (!cachedOffscreenTexture || cachedWidth != width || cachedHeight != height) {
-			// Release previous resources
-			if (cachedOffscreenView) {
-				cachedOffscreenView.release();
-				cachedOffscreenView = nullptr;
+				// Create new texture
+				WGPUTextureDescriptor offscreenDesc = {};
+				offscreenDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
+				offscreenDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
+				offscreenDesc.format = wgpu::TextureFormat::BGRA8UnormSrgb;
+				offscreenDesc.sampleCount = 1;
+				offscreenDesc.mipLevelCount = 1;
+				offscreenDesc.dimension = wgpu::TextureDimension::_2D;
+
+				cachedOffscreenTexture = device.createTexture(offscreenDesc);
+				cachedOffscreenView = cachedOffscreenTexture.createView();
+
+				// Update cached values
+				cachedWidth = width;
+				cachedHeight = height;
+
+				if (!cachedOffscreenView) {
+					std::cerr << "Failed to create offscreenView!" << std::endl;
+				} else {
+					std::cout << "offscreenView successfully created." << std::endl;
+				}
 			}
-			if (cachedOffscreenTexture) {
-				cachedOffscreenTexture.release();
-				cachedOffscreenTexture = nullptr;
-			}
-			
-			// Create new texture
-			WGPUTextureDescriptor offscreenDesc = {};
-			offscreenDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
-			offscreenDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
-			offscreenDesc.format = wgpu::TextureFormat::BGRA8UnormSrgb;
-			offscreenDesc.sampleCount = 1;
-			offscreenDesc.mipLevelCount = 1;
-			offscreenDesc.dimension = wgpu::TextureDimension::_2D;
 
-			cachedOffscreenTexture = device.createTexture(offscreenDesc);
-			cachedOffscreenView = cachedOffscreenTexture.createView();
-			
-			// Update cached values
-			cachedWidth = width;
-			cachedHeight = height;
-			
-			if (!cachedOffscreenView) {
-				std::cerr << "Failed to create offscreenView!" << std::endl;
-			} else {
-				std::cout << "offscreenView successfully created." << std::endl;
-			}
+			// Update global references
+			offscreenTexture = cachedOffscreenTexture;
+			offscreenView = cachedOffscreenView;
 		}
-		
-		// Update global references
-		offscreenTexture = cachedOffscreenTexture;
-		offscreenView = cachedOffscreenView;
-	}
-	*/
+		*/
 
 	TextureView getNextSurfaceTextureView()
 	{
@@ -255,7 +227,7 @@ namespace wgfx
 		}
 		wgpu::Texture texture = surfaceTexture.texture;
 		format = texture.getFormat();
-		
+
 		// Create a view for this surface texture
 		TextureViewDescriptor viewDescriptor;
 		viewDescriptor.label = "Surface texture view";
@@ -283,12 +255,12 @@ namespace wgfx
 		static uint32_t cachedSamples = 0;
 
 		// Check if we need to recreate the texture (size, format, or sample count changed)
-		if (!multisampleTexture || 
-			cachedWidth != width || 
-			cachedHeight != height || 
-			cachedFormat != format || 
+		if (!multisampleTexture ||
+			cachedWidth != width ||
+			cachedHeight != height ||
+			cachedFormat != format ||
 			cachedSamples != samples) {
-			
+
 			// Release previous texture if it exists
 			if (multisampleTexture) {
 				multisampleTextureView.release();
@@ -305,14 +277,14 @@ namespace wgfx
 
 			multisampleTexture = device.createTexture(multisampleTextureDesc);
 			multisampleTextureView = multisampleTexture.createView();
-			
+
 			// Update cached values
 			cachedWidth = width;
 			cachedHeight = height;
 			cachedFormat = format;
 			cachedSamples = samples;
 		}
-		
+
 		return multisampleTextureView;
 	}
 
@@ -324,7 +296,7 @@ namespace wgfx
 		static wgpu::Texture* cachedOffscreenTexture = nullptr;
 		static wgpu::TextureView* cachedOffscreenView = nullptr;
 		static wgpu::Texture* previousDepthTexture = nullptr;
-		
+
 		// Get static variables from each function and clean them up
 		// This would normally require refactoring to make these accessible
 		// For now, we'll add cleanup in the destructor or app exit

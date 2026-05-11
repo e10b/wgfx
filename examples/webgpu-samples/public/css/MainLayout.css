@@ -1,0 +1,143 @@
+.container {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.wrapper {
+  display: flex;
+  height: 100%;
+}
+
+.panel {
+  flex: 1 0 auto;
+  max-width: 300px;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+  color: var(--panel-color);
+  background-color: var(--panel-background);
+}
+
+.exampleList {
+  padding: 0;
+  margin-block-start: 16px;
+  margin-block-end: 16px;
+}
+
+.exampleList h3 {
+  color: var(--panel-emphasis);
+}
+
+code {
+  background-color: var(--code-background);
+  border: 2px solid var(--code-background);
+  border-radius: 0.25em;
+}
+
+.exampleList li {
+  list-style: none;
+  padding: 0.3em 0;
+}
+
+.expand {
+  display: none;
+  position: absolute;
+  right: 1em;
+  top: 1em;
+  width: 36px;
+  height: 36px;
+  background-image: url(../menu.svg);
+  background-size: cover;
+}
+
+.panel .panelContents {
+  display: block;
+  transition: max-height 0s;
+  max-height: 100vh;
+}
+
+#menuToggle {
+  display: none;
+}
+
+main {
+  overflow: auto;
+}
+
+search {
+  inline-size: 100%;
+  margin-block-end: 20px;
+
+  & > hr {
+    border-color: var(--tooltip-border);
+    margin-block: 0;
+  }
+
+  & > label {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    inline-size: 100%;
+    block-size: 50px;
+
+    &:has(input:focus) > svg {
+      display: none;
+    }
+
+    & > svg {
+      margin-inline-start: 10px;
+    }
+
+    & > input {
+      opacity: 0;
+      border: none;
+      block-size: 100%;
+      flex: 1;
+      padding-inline: 20px;
+      background-color: var(--panel-background);
+      font-size: 1rem;
+
+      &:is(:focus) {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+  }
+
+  main {
+    overflow: visible;
+  }
+
+  #menuToggle ~ .panelContents {
+    max-height: 0;
+    overflow: hidden;
+  }
+
+  #menuToggle:checked ~ .panelContents {
+    max-height: 2000px;
+  }
+
+  .panel .panelContents {
+    display: block;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .panel {
+    flex: 0 0 fit-content;
+    max-width: 100%;
+    height: auto;
+    overflow: hidden;
+  }
+
+  .expand {
+    display: inline-block;
+  }
+
+}
+

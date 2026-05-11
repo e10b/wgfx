@@ -1,0 +1,56 @@
+@import url('HomePage.css');
+@import url('MainLayout.css');
+@import url('SampleLayout.css');
+
+* {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background-color: var(--background);
+}
+
+body {
+  font-family: 'Inconsolata', monospace;
+}
+
+a {
+  text-decoration: none;
+  color: var(--link);
+}
+a:not([href]), a[href=""] {
+  /* link is missing href */
+  text-decoration: wavy underline;
+  color: #f00;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex: 1;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.CodeMirror {
+  height: auto !important;
+  margin: 1em 0;
+}
+
+.CodeMirror-scroll {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.cm-editor {
+  max-height: 100vh;
+}

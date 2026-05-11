@@ -1,0 +1,628 @@
+#pragma once
+
+#include <glm/glm.hpp>
+#include <set>
+#include <map>
+
+#include "shader.h"
+#include "model.h"
+#include "objloader.h"
+#include "voxelizer.h"
+
+#include "wgfx.h"
+
+class Quad
+{
+public:
+
+	static Quad& Instance()
+	{
+		static Quad instance;
+		return instance;
+	}
+
+	//wgfx::Texture depth;
+
+
+	//void setDepthTexture()
+	//{
+	//	//depth = wgfx::loadTexture(wgfx::depthTextureView);
+	//	shader_.setDepthTexture(1, depth);
+	//	shader_.setSampler(2, depth);
+	//}
+	const int size = 1024; // 32x32x32 sectors (32 voxels per sector)
+	const int sizeX = size;
+	const int sizeY = size;
+	const int sizeZ = size;
+
+	// Hierarchy: Sector → Brick → Voxel
+	const int brickSize = 8; // 8x8x8 voxels per brick
+	const int bricksPerSector = 4; // 4x4x4 bricks per sector (32x32x32 voxels per sector)
+	
+	const int sectorSize = brickSize * bricksPerSector; // 32 voxels per sector side
+	const int sectorsX = sizeX / sectorSize; // 32 sectors
+	const int sectorsY = sizeY / sectorSize; // 32 sectors
+	const int sectorsZ = sizeZ / sectorSize; // 32 sectors
+	
+	const int bricksX = sizeX / brickSize; // 128 bricks
+	const int bricksY = sizeY / brickSize; // 128 bricks
+	const int bricksZ = sizeZ / brickSize; // 128 bricks
+
+	size_t voxelCount = sizeX * sizeY * sizeZ;
+	size_t brickCount = bricksX * bricksY * bricksZ;
+	size_t sectorCount = sectorsX * sectorsY * sectorsZ;
+	size_t quarterVoxelCount = voxelCount / 4;
+
+	// Voxel palette system: each voxel stores an 8-bit index into the palette
+	static constexpr size_t PALETTE_SIZE = 256;
+	uint32_t palette[PALETTE_SIZE]; // 256 RGBA8 color entries
+	size_t paletteCount = 0; // Number of colors currently in palette
+	std::map<uint32_t, uint8_t> colorToIndex; // Map packed color to palette index for fast lookup
+
+	uint8_t* voxelData = new uint8_t[voxelCount]; // For voxelizer (full array) - 4x smaller than before!
+	uint8_t* voxelData0 = nullptr; // First quarter (0 to quarterVoxelCount-1)
+	uint8_t* voxelData1 = nullptr; // Second quarter
+	uint8_t* voxelData2 = nullptr; // Third quarter
+	uint8_t* voxelData3 = nullptr; // Fourth quarter
+	uint32_t* brickMap = new uint32_t[brickCount]; // 1 if brick contains any solid voxels, 0 if empty
+	uint32_t* sectorMap = new uint32_t[sectorCount]; // 1 if sector contains any solid voxels, 0 if empty
+	
+	// Constructor: zero-initialize maps and palette after allocation
+	void initializeMaps() {
+		memset(brickMap, 0, brickCount * sizeof(uint32_t));
+		memset(sectorMap, 0, sectorCount * sizeof(uint32_t));
+		memset(palette, 0, PALETTE_SIZE * sizeof(uint32_t));
+		paletteCount = 0;
+		colorToIndex.clear();
+		// Reserve index 0 for empty/transparent
+		palette[0] = 0x00000000; // Fully transparent black
+		paletteCount = 1;
+	}
+
+	// Find the nearest color in the palette using Euclidean distance in RGB space
+	uint8_t findNearestPaletteColor(uint32_t packedColor) {
+		uint8_t r = (packedColor >> 0) & 0xFF;
+		uint8_t g = (packedColor >> 8) & 0xFF;
+		uint8_t b = (packedColor >> 16) & 0xFF;
+		
+		uint8_t bestIndex = 1; // Start with index 1 (skip transparent 0)
+		uint32_t bestDistance = 0xFFFFFFFF;
+		
+		// Search through existing palette
+		for (size_t i = 1; i < paletteCount; ++i) {
+			uint32_t paletteColor = palette[i];
+			uint8_t pr = (paletteColor >> 0) & 0xFF;
+			uint8_t pg = (paletteColor >> 8) & 0xFF;
+			uint8_t pb = (paletteColor >> 16) & 0xFF;
+			
+			// Euclidean distance in RGB space
+			int dr = (int)r - (int)pr;
+			int dg = (int)g - (int)pg;
+			int db = (int)b - (int)pb;
+			uint32_t distance = dr*dr + dg*dg + db*db;
+			
+			if (distance < bestDistance) {
+				bestDistance = distance;
+				bestIndex = i;
+				if (distance == 0) break; // Exact match found
+			}
+		}
+		
+		return bestIndex;
+	}
+
+	// Add a color to the palette and return its index
+	// If palette is full, finds the nearest existing color instead
+	uint8_t addColorToPalette(uint32_t packedColor) {
+		// Check if color already exists in palette
+		auto it = colorToIndex.find(packedColor);
+		if (it != colorToIndex.end()) {
+			return it->second;
+		}
+
+		// Add new color to palette if there's space (indices 1-255)
+		if (paletteCount < PALETTE_SIZE) {
+			uint8_t index = static_cast<uint8_t>(paletteCount);
+			palette[index] = packedColor;
+			colorToIndex[packedColor] = index;
+			paletteCount++;
+			return index;
+		}
+
+		// Palette full - find and return nearest color
+		printf("Palette full (%zu colors), using nearest neighbor matching\n", paletteCount);
+		return findNearestPaletteColor(packedColor);
+	}
+
+	// Get color from palette by index (uint8_t is always valid since max 255 < 256)
+	uint32_t getPaletteColor(uint8_t index) const {
+		return palette[index];
+	}
+
+	// Pack color (RGBA8) and add to palette, returning palette index
+	uint8_t packColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
+		uint32_t packedColor = (uint32_t(a) << 24) | (uint32_t(b) << 16) | (uint32_t(g) << 8) | uint32_t(r);
+		return addColorToPalette(packedColor);
+	}
+
+	// Update voxel in the correct storage buffer quarter
+	void updateVoxelBuffer(size_t voxelIndex, bool updateSingleVoxel = false) {
+		if (updateSingleVoxel) {
+			// WebGPU requires 4-byte aligned writes. Update entire u32 (4 voxels)
+			size_t quarterSize = quarterVoxelCount;
+			int bufferBinding;
+			size_t u32Index = voxelIndex / 4;  // Which u32 contains this voxel
+			size_t localIndex;
+			
+			if (u32Index < quarterSize / 4) {
+				bufferBinding = 3;
+				localIndex = u32Index * 4;  // Byte offset
+			} else if (u32Index < 2 * quarterSize / 4) {
+				bufferBinding = 5;
+				localIndex = (u32Index - quarterSize / 4) * 4;
+			} else if (u32Index < 3 * quarterSize / 4) {
+				bufferBinding = 6;
+				localIndex = (u32Index - 2 * quarterSize / 4) * 4;
+			} else {
+				bufferBinding = 7;
+				localIndex = (u32Index - 3 * quarterSize / 4) * 4;
+			}
+			
+			// Read the u32 containing this voxel and update it
+			uint32_t u32Value = *(uint32_t*)&voxelData[u32Index * 4];
+			shader_.updateStorageBuffer(bufferBinding, &u32Value, sizeof(uint32_t), localIndex);
+		} else {
+			// Update entire voxel data across all 4 buffers
+			size_t quarterSize = quarterVoxelCount;
+			shader_.updateStorageBuffer(3, (uint32_t*)voxelData0, quarterSize, 0);
+			shader_.updateStorageBuffer(5, (uint32_t*)voxelData1, quarterSize, 0);
+			shader_.updateStorageBuffer(6, (uint32_t*)voxelData2, quarterSize, 0);
+			shader_.updateStorageBuffer(7, (uint32_t*)voxelData3, quarterSize, 0);
+		}
+	}
+
+	// Update palette buffer on GPU
+	void updatePaletteBuffer() {
+		// Binding 9 will be used for palette (after voxels and maps)
+		shader_.updateStorageBuffer(9, palette, PALETTE_SIZE * sizeof(uint32_t), 0);
+	}
+
+	// Update a single brick's occupancy status
+	size_t updateBrick(int brickX, int brickY, int brickZ) {
+		bool hasVoxel = false;
+
+		// Check all voxels in this brick
+		for (int z = 0; z < brickSize && !hasVoxel; ++z) {
+			for (int y = 0; y < brickSize && !hasVoxel; ++y) {
+				for (int x = 0; x < brickSize && !hasVoxel; ++x) {
+					int voxelX = brickX * brickSize + x;
+					int voxelY = brickY * brickSize + y;
+					int voxelZ = brickZ * brickSize + z;
+
+					if (voxelX < sizeX && voxelY < sizeY && voxelZ < sizeZ) {
+						size_t voxelIdx = voxelX + voxelY * sizeX + voxelZ * sizeX * sizeY;
+						if (voxelData[voxelIdx] != 0) {
+							hasVoxel = true;
+						}
+					}
+				}
+			}
+		}
+		size_t brickIndex = brickX + brickY * bricksX + brickZ * bricksX * bricksY;
+		brickMap[brickIndex] = hasVoxel ? 1 : 0;
+		return brickIndex;
+	}
+
+
+
+	// Update all bricks (call after bulk voxel changes)
+	void updateAllBricks() {
+		for (int bz = 0; bz < bricksZ; ++bz) {
+			for (int by = 0; by < bricksY; ++by) {
+				for (int bx = 0; bx < bricksX; ++bx) {
+					updateBrick(bx, by, bz);
+				}
+			}
+		}
+	}
+
+	// Update a single sector's occupancy status
+	size_t updateSector(int sectorX, int sectorY, int sectorZ) {
+		bool hasBrick = false;
+
+		// Check all bricks in this sector
+		for (int bz = 0; bz < bricksPerSector && !hasBrick; ++bz) {
+			for (int by = 0; by < bricksPerSector && !hasBrick; ++by) {
+				for (int bx = 0; bx < bricksPerSector && !hasBrick; ++bx) {
+					int brickX = sectorX * bricksPerSector + bx;
+					int brickY = sectorY * bricksPerSector + by;
+					int brickZ = sectorZ * bricksPerSector + bz;
+
+					if (brickX < bricksX && brickY < bricksY && brickZ < bricksZ) {
+						size_t brickIndex = brickX + brickY * bricksX + brickZ * bricksX * bricksY;
+						if (brickMap[brickIndex] != 0) {
+							hasBrick = true;
+						}
+					}
+				}
+			}
+		}
+		size_t sectorIndex = sectorX + sectorY * sectorsX + sectorZ * sectorsX * sectorsY;
+		sectorMap[sectorIndex] = hasBrick ? 1 : 0;
+		return sectorIndex;
+	}
+
+	// Update all sectors (call after updateAllBricks)
+	void updateAllSectors() {
+		for (int sz = 0; sz < sectorsZ; ++sz) {
+			for (int sy = 0; sy < sectorsY; ++sy) {
+				for (int sx = 0; sx < sectorsX; ++sx) {
+					updateSector(sx, sy, sz);
+				}
+			}
+		}
+	}
+
+	bool raycast(const glm::vec3& origin, const glm::vec3& direction, float length, bool add)
+	{
+		glm::vec3 pos = origin;
+		glm::vec3 dir = glm::normalize(direction);
+
+		// Compute starting voxel � fix edge case if exactly on voxel boundary
+		glm::ivec3 voxel = glm::floor(pos);
+		if (dir.x < 0 && pos.x == voxel.x) voxel.x -= 1;
+		if (dir.y < 0 && pos.y == voxel.y) voxel.y -= 1;
+		if (dir.z < 0 && pos.z == voxel.z) voxel.z -= 1;
+
+		glm::ivec3 step = glm::ivec3(
+			dir.x > 0 ? 1 : -1,
+			dir.y > 0 ? 1 : -1,
+			dir.z > 0 ? 1 : -1
+		);
+
+		glm::vec3 deltaDist = glm::vec3(
+			dir.x == 0.0f ? FLT_MAX : glm::abs(1.0f / dir.x),
+			dir.y == 0.0f ? FLT_MAX : glm::abs(1.0f / dir.y),
+			dir.z == 0.0f ? FLT_MAX : glm::abs(1.0f / dir.z)
+		);
+
+		glm::vec3 nextBoundary = glm::vec3(voxel);
+		nextBoundary += glm::vec3(
+			step.x > 0 ? 1.0f : 0.0f,
+			step.y > 0 ? 1.0f : 0.0f,
+			step.z > 0 ? 1.0f : 0.0f
+		);
+
+		glm::vec3 tMax = (nextBoundary - pos) * deltaDist;
+
+		float traveled = 0.0f;
+		glm::ivec3 lastEmpty = voxel;
+
+		while (traveled < length) {
+			// Bounds check
+			if (voxel.x < 0 || voxel.x >= sizeX ||
+				voxel.y < 0 || voxel.y >= sizeY ||
+				voxel.z < 0 || voxel.z >= sizeZ) {
+				break;
+			}
+
+			size_t i = voxel.x + voxel.y * sizeX + voxel.z * sizeX * sizeY;
+			bool isSolid = voxelData[i] != 0;
+
+			if (add) {
+				if (isSolid) {
+					if (lastEmpty.x >= 0 && lastEmpty.x < sizeX &&
+						lastEmpty.y >= 0 && lastEmpty.y < sizeY &&
+						lastEmpty.z >= 0 && lastEmpty.z < sizeZ) {
+						
+						// Place a 16x16x16 block aligned to grid sections
+						const int blockSize = 16;
+						
+						// Find which 16x16x16 grid block the hit position falls into
+						int blockX = (lastEmpty.x / blockSize) * blockSize;
+						int blockY = (lastEmpty.y / blockSize) * blockSize;
+						int blockZ = (lastEmpty.z / blockSize) * blockSize;
+						
+						// Track which bricks need updating
+						std::set<size_t> affectedBricks;
+						
+						// Fill the entire 16x16x16 block
+						for (int dz = 0; dz < blockSize; ++dz) {
+							for (int dy = 0; dy < blockSize; ++dy) {
+								for (int dx = 0; dx < blockSize; ++dx) {
+									int voxX = blockX + dx;
+									int voxY = blockY + dy;
+									int voxZ = blockZ + dz;
+									
+									// Bounds check for the block
+									if (voxX >= 0 && voxX < sizeX &&
+										voxY >= 0 && voxY < sizeY &&
+										voxZ >= 0 && voxZ < sizeZ) {
+										
+										size_t voxelIndex = voxX + voxY * sizeX + voxZ * sizeX * sizeY;
+										voxelData[voxelIndex] = packColor(216, 240, 240); // Red voxel
+										
+										// Track which brick this voxel belongs to
+										int brickX = voxX / brickSize;
+										int brickY = voxY / brickSize;
+										int brickZ = voxZ / brickSize;
+										size_t brickIndex = brickX + brickY * bricksX + brickZ * bricksX * bricksY;
+										affectedBricks.insert(brickIndex);
+									}
+								}
+							}
+						}
+						
+						// Update all affected bricks and their GPU buffers
+						for (size_t brickIndex : affectedBricks) {
+							int brickZ = brickIndex / (bricksX * bricksY);
+							int brickY = (brickIndex % (bricksX * bricksY)) / bricksX;
+							int brickX = brickIndex % bricksX;
+							
+							updateBrick(brickX, brickY, brickZ);
+							shader_.updateStorageBuffer(4, &brickMap[brickIndex], sizeof(uint32_t), brickIndex * sizeof(uint32_t));
+						}
+						
+						// Collect affected sectors from affected bricks
+						std::set<size_t> affectedSectors;
+						for (size_t brickIndex : affectedBricks) {
+							int brickZ = brickIndex / (bricksX * bricksY);
+							int brickY = (brickIndex % (bricksX * bricksY)) / bricksX;
+							int brickX = brickIndex % bricksX;
+							
+							int sectorX = brickX / bricksPerSector;
+							int sectorY = brickY / bricksPerSector;
+							int sectorZ = brickZ / bricksPerSector;
+							size_t sectorIndex = sectorX + sectorY * sectorsX + sectorZ * sectorsX * sectorsY;
+							affectedSectors.insert(sectorIndex);
+						}
+						
+						// Update all affected sectors and their GPU buffers
+						for (size_t sectorIndex : affectedSectors) {
+							int sectorZ = sectorIndex / (sectorsX * sectorsY);
+							int sectorY = (sectorIndex % (sectorsX * sectorsY)) / sectorsX;
+							int sectorX = sectorIndex % sectorsX;
+							
+							updateSector(sectorX, sectorY, sectorZ);
+							shader_.updateStorageBuffer(8, &sectorMap[sectorIndex], sizeof(uint32_t), sectorIndex * sizeof(uint32_t));
+						}
+						
+						// Update all voxel buffers (all 4 quarters)
+						updateVoxelBuffer(0, false);
+
+						return true;
+					}
+					return false;
+				}
+			}
+			else {
+				if (isSolid) {
+					voxelData[i] = 0;
+
+					// Update the affected brick
+					int brickX = voxel.x / brickSize;
+					int brickY = voxel.y / brickSize;
+					int brickZ = voxel.z / brickSize;
+					size_t brickIndex = updateBrick(brickX, brickY, brickZ);
+					shader_.updateStorageBuffer(4, &brickMap[brickIndex], sizeof(uint32_t), brickIndex * sizeof(uint32_t));
+					
+					// Update the affected sector
+					int sectorX = brickX / bricksPerSector;
+					int sectorY = brickY / bricksPerSector;
+					int sectorZ = brickZ / bricksPerSector;
+					size_t sectorIndex = updateSector(sectorX, sectorY, sectorZ);
+					shader_.updateStorageBuffer(8, &sectorMap[sectorIndex], sizeof(uint32_t), sectorIndex * sizeof(uint32_t));
+					
+					updateVoxelBuffer(i, true); // Update single voxel in correct buffer quarter
+
+					return true;
+				}
+			}
+
+			lastEmpty = voxel;
+
+			if (tMax.x < tMax.y && tMax.x < tMax.z) {
+				voxel.x += step.x;
+				traveled = tMax.x;
+				tMax.x += deltaDist.x;
+			}
+			else if (tMax.y < tMax.z) {
+				voxel.y += step.y;
+				traveled = tMax.y;
+				tMax.y += deltaDist.y;
+			}
+			else {
+				voxel.z += step.z;
+				traveled = tMax.z;
+				tMax.z += deltaDist.z;
+			}
+		}
+
+		return false;
+	}
+
+	Quad()
+		:shader_("quad.wgsl")
+	{
+
+
+		float quadWidth = 1.0f;//0.3f;
+		float quadHeight = 1.0f;//0.3f;
+
+		// Offset from center to bottom-right
+		float x = 0.0f;// -quadWidth;
+		float y = 0.0f;// +quadHeight;
+
+		quad_.addData({
+			//   x,             y,            z,      u,    v
+			-quadWidth + x, -quadHeight + y, 0.0f,  // 0.0f, 1.0f, // bottom-left
+			 quadWidth + x, -quadHeight + y, 0.0f,  // 1.0f, 1.0f, // bottom-right
+			 quadWidth + x,  quadHeight + y, 0.0f,  // 1.0f, 0.0f, // top-right
+			-quadWidth + x,  quadHeight + y, 0.0f, //  0.0f, 0.0f  // top-left
+			}, {
+				0, 1, 2,
+				0, 2, 3
+			});
+
+			wgfx::VertexBuffer* vbo = wgfx::createVertexBuffer();
+			vbo->setAttribute(0, wgfx::vec3f, 0); // pos
+			//vbo->setAttribute(1, wgfx::vec2f, 3); // uv
+			shader_.setVertexBuffer({ 0.0 });
+			shader_.setIndexBuffer({ 0 });
+
+			//shader_.setUniform(0); // size
+			//shader_.setUniform(1); // size
+
+			shader_.setUniform(0); // camera position
+			shader_.setUniform(1); // invViewProj
+
+			shader_.setUniform(2); // resolution
+
+
+
+
+
+
+
+
+
+
+			//exemple
+
+			/*const int sizeX = 32;
+			const int sizeY = 32;
+			const int sizeZ = 32;
+
+			size_t voxelCount = sizeX * sizeY * sizeZ;*/
+
+			// Allocate on heap
+			// Create temporary uint32_t buffer for voxelization (will convert to palette indices after)
+			uint32_t* tempVoxelData32 = new uint32_t[voxelCount];
+			
+			// Load and voxelize the dragon model
+			std::string dragonPath = std::string(RESOURCE_DIR) + "/owl.obj";
+			std::vector<Triangle> triangles = ObjLoader::loadOBJ(dragonPath);
+
+			if (triangles.empty()) {
+				printf("Failed to load dragon.obj, falling back to sphere\n");
+				// Fallback to sphere generation
+				float centerX = sizeX * 0.5f;
+				float centerY = sizeY * 0.5f;
+				float centerZ = sizeZ * 0.5f;
+				float radius = sizeX * 0.1f;
+
+				for (int z = 0; z < sizeZ; ++z) {
+					for (int y = 0; y < sizeY; ++y) {
+						for (int x = 0; x < sizeX; ++x) {
+							size_t i = x + y * sizeX + z * sizeX * sizeY;
+
+							float dx = x - centerX;
+							float dy = y - centerY;
+							float dz = z - centerZ;
+							float distSq = dx * dx + dy * dy + dz * dz;
+
+							if (distSq <= radius * radius) {
+								// Pack color into uint32, then convert to palette index
+								uint32_t packedColor = Voxelizer::packColor(255, 0, 0); // Red sphere
+								tempVoxelData32[i] = packedColor;
+							}
+							else {
+								tempVoxelData32[i] = 0; // empty
+							}
+						}
+					}
+				}
+			}
+			else {
+				// Voxelize the dragon model (uses uint32_t for colors)
+				printf("Voxelizing dragon model with %zu triangles...\n", triangles.size());
+				Voxelizer::voxelizeModel(triangles, tempVoxelData32, sizeX, sizeY, sizeZ);
+			}
+
+			// Convert from uint32_t packed colors to uint8_t palette indices
+			printf("Converting voxel data to palette indices...\n");
+			for (size_t i = 0; i < voxelCount; ++i) {
+				uint32_t packedColor = tempVoxelData32[i];
+				voxelData[i] = packedColor == 0 ? 0 : addColorToPalette(packedColor);
+			}
+			delete[] tempVoxelData32; // Free temporary buffer
+			printf("Palette contains %zu colors\n", paletteCount);
+
+			// Initialize brick and sector maps (palette already initialized in voxelization loop)
+			memset(brickMap, 0, brickCount * sizeof(uint32_t));
+			memset(sectorMap, 0, sectorCount * sizeof(uint32_t));
+			
+			// Initialize brickmap after creating voxel data
+			updateAllBricks();
+			
+			// Initialize sectormap after brickmap
+			updateAllSectors();
+
+			// Split voxel data into 4 buffers (now 32 MB each with uint8_t) to stay within binding size limit
+			voxelData0 = voxelData;
+			voxelData1 = voxelData + quarterVoxelCount;
+			voxelData2 = voxelData + 2 * quarterVoxelCount;
+			voxelData3 = voxelData + 3 * quarterVoxelCount;
+
+			// Set storage buffers: voxels_0,1,2,3 at bindings 3,5,6,7; brickMap at 4; sectorMap at 8; palette at 9
+			shader_.setStorageBuffer(3, voxelData0, quarterVoxelCount);
+			shader_.setStorageBuffer(4, brickMap, brickCount);
+			shader_.setStorageBuffer(5, voxelData1, quarterVoxelCount);
+			shader_.setStorageBuffer(6, voxelData2, quarterVoxelCount);
+			shader_.setStorageBuffer(7, voxelData3, quarterVoxelCount);
+			shader_.setStorageBuffer(8, sectorMap, sectorCount);
+			shader_.setStorageBuffer(9, palette, PALETTE_SIZE);
+
+			shader_.pipeline->targets = 1;
+			shader_.pipeline->useDepth = false;
+
+			//shader_.pipeline->multiTarget = false;
+
+			//depth = wgfx::loadTexture(RESOURCE_DIR "/crate.png");
+
+			//depth = wgfx::loadTexture(wgfx::offscreenView);
+			//shader_.setDepthTexture(1, depth);
+			//shader_.setSampler(2, depth);
+
+
+			//shader_.setDepthTexture(1, depth);
+			//shader_.setTexture();
+
+			shader_.pipeline->init(vbo);
+	}
+
+	void render()
+	{
+		//shader_.touch();
+		//shader_.updateUniform(0, size); // size
+		shader_.end();
+
+
+		//shader_.updateUniform(0, size);
+
+		/*if (wgfx::resetDepth)
+		{
+			std::cout << "UPDATATING DEPTH!\n";
+			depth = wgfx::loadTexture(wgfx::depthTextureView);
+			shader_.updateTexture(1, depth);
+		}*/ //sod off
+
+		/*cross_.addData({ -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f }
+		, { 0,1,2,3,2,1 });*/
+
+
+
+		quad_.bind(shader_.pipeline);
+		//shader_.use();
+	}
+
+	Shader shader_;
+private:
+	Model quad_;
+
+
+public:
+	Quad(Quad const&) = delete;
+	void operator=(Quad const&) = delete;
+
+};

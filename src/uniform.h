@@ -1,14 +1,15 @@
 #pragma once
 
 #include "texture.h"
-#include <stdexcept>
 
 namespace wgfx
-{	struct Uniform
+{
+	struct Uniform
 	{
 		bool isDepth = false;
+		bool isUint = false;
+		bool is3D = false;
 		bool isReadOnly = false;
-		bool ownsBuffer = true;
 
 		Buffer buffer;
 		//BindGroupEntry binding;
@@ -25,43 +26,41 @@ namespace wgfx
 
 		Uniform() = default;
 
-		~Uniform()
-		{
-			if (ownsBuffer && buffer) {
-				buffer.destroy();
-				buffer.release();
-			}
-		}
-
 	};
 
+	Uniform* createStorage(int i, size_t size, const void* data, bool readOnly = false);
 	Uniform* createUniform(int i, size_t size, float data);
 	Uniform* createUniform(int i, size_t size, const float* array);
-	Uniform* createStorage(int i, size_t size, const void* data = nullptr, bool readOnly = false);
 	Uniform* createTexture(int i, Texture texture);
+	Uniform* createTexture3D_Uint(int i, Texture texture);
 	Uniform* createSampler(int i, Texture texture);
 
-
-	inline Uniform* createTexture2(int i, wgpu::TextureView t)
+	inline void copyUniformToUniform(Uniform* first, Uniform* second)
 	{
-		Uniform* uniform = new Uniform();
-		uniform->binding = i;
-
-		uniform->entry.binding = i;
-		uniform->entry.textureView = t;
-
-		return uniform;
+		encoder.copyBufferToBuffer(first->buffer, 0, second->buffer, 0, sizeof(float) * 4);
+		//hardcoded quantity for now
 	}
 
-	inline Uniform* createSampler2(int i, wgpu::Sampler s)
+	inline void copyTextureToTexture(Texture* first, Texture* second)
 	{
-		Uniform* uniform = new Uniform();
-		uniform->binding = i;
+		wgpu::ImageCopyTexture src = {};
+		src.texture = first->texture;
+		src.mipLevel = 0;
+		src.origin = { 0, 0, 0 };
+		src.aspect = wgpu::TextureAspect::All;
 
-		uniform->entry.binding = i;
-		uniform->entry.sampler = s;
+		wgpu::ImageCopyTexture dst = {};
+		dst.texture = second->texture;
+		dst.mipLevel = 0;
+		dst.origin = { 0, 0, 0 };
+		dst.aspect = wgpu::TextureAspect::All;
 
-		return uniform;
+
+		wgpu::Extent3D extent = {};
+		extent.width = first->width;
+		extent.height = first->height;
+		extent.depthOrArrayLayers = 1;
+		encoder.copyTextureToTexture(src, dst, extent);
 	}
 
 	// right, so we have a << hmm, a container.
@@ -81,84 +80,69 @@ namespace wgfx
 
 		std::vector<BindGroupLayoutEntry> layouts; // frmrly entries
 		std::vector<BindGroupEntry> entries; // frmrly bindings
-		WGPUShaderStageFlags visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
 
 		BindGroup bindGroup;
 		BindGroupLayout bindGroupLayout;
 		BindGroupLayoutDescriptor bindGroupLayoutDesc;
 
-		// Destructor to clean up WebGPU resources
-		~Uniforms()
-		{
-			if (bindGroup) {
-				bindGroup.release();
-				bindGroup = nullptr;
-			}
-			if (bindGroupLayout) {
-				bindGroupLayout.release();
-				bindGroupLayout = nullptr;
-			}
-		}
+		ShaderStageFlags visibility;
+
 		void clear()
 		{
-			// Always reset uniform quantities to prevent buffer overflow
-			for (auto uniform : uniforms)
-			{
-				uniform->quantity = 0;
-			}
+			//if (reset) {
+				for (auto uniform : uniforms)
+				{
+					uniform->quantity = 0;
+				}
+			//}
+			//reset = false;
 		}
+
 		void touch()
 		{
-			// Release previous bind group and layout if they exist
-			if (bindGroup) {
-				bindGroup.release();
-				bindGroup = nullptr;
-			}
-			if (bindGroupLayout) {
-				bindGroupLayout.release();
-				bindGroupLayout = nullptr;
-			}
-
+			std::cout << "Creating bind group layout with " << layouts.size() << " entries..." << std::endl;
 			bindGroupLayoutDesc.entryCount = layouts.size();
 			bindGroupLayoutDesc.entries = layouts.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
+			std::cout << "Bind group layout created: " << bindGroupLayout << std::endl;
 
+			std::cout << "Creating bind group with " << entries.size() << " entries..." << std::endl;
 			BindGroupDescriptor bindGroupDesc;
 			bindGroupDesc.layout = bindGroupLayout;
 			bindGroupDesc.entryCount = entries.size();
 			bindGroupDesc.entries = entries.data();
 			bindGroup = device.createBindGroup(bindGroupDesc);
+			std::cout << "Bind group created: " << bindGroup << std::endl;
 		}
 
 		void updateUniform(Uniform* uniform, const float* array)
 		{
-			auto& current = *uniforms.at(uniform->binding);
+			Uniform* current = uniforms.at(uniform->binding);
 
-			const uint32_t offset = current.quantity * current.stride;
-
-			if (dynamicOffsets.size() <= uniform->binding) {
-				dynamicOffsets.resize(uniform->binding + 1, 0);
-			}
-			dynamicOffsets[uniform->binding] = offset;
-
-			queue.writeBuffer(current.buffer, offset, array, current.minBindingSize);
-			current.quantity++;
+			int dynamicOffset = current->quantity * current->stride;
 			
+			if (dynamicOffsets.size() <= uniform->binding) { dynamicOffsets.resize(uniform->binding + 1, 0); }
+			dynamicOffsets.at(uniform->binding) = dynamicOffset;
+
+			queue.writeBuffer(current->buffer, dynamicOffset, array, uniform->minBindingSize);
+
+			current->quantity++;
 		}
 
 		void updateStorageBuffer(Uniform* storage, const void* data, size_t size, size_t offset = 0)
 		{
 			if (storage == nullptr) return;
-			if (size + offset > static_cast<size_t>(storage->minBindingSize)) {
-				throw std::runtime_error("updateStorageBuffer: write exceeds storage buffer capacity");
+			if (size + offset > storage->minBindingSize) {
+				throw std::runtime_error("updateStorage: Write exceeds storage buffer capacity.");
 			}
+
 			queue.writeBuffer(storage->buffer, offset, data, size);
 		}
 
 		//hmm
 			void setUniform(Uniform* uniform)
 			{
-				BindGroupLayoutEntry layout = {};
+				BindGroupLayoutEntry layout = Default;
 					layout.binding = uniform->binding;
 					layout.visibility = visibility;
 					layout.buffer.type = BufferBindingType::Uniform;
@@ -171,44 +155,62 @@ namespace wgfx
 				entries.push_back(uniform->entry);
 			}
 
-			void updateTexture(Uniform* uniform, wgpu::TextureView newView)
+
+			void setStorageTexture(Uniform* uniform)
 			{
-				uniform->entry.textureView = newView;
+				BindGroupLayoutEntry layout = Default;							/// layout needs to be created in joint with the actual entry
+				layout.binding = uniform->binding;
+				layout.visibility = visibility;
 
-				// Also update the entry in the master entry list
-				for (auto& entry : entries)
-				{
-					if (entry.binding == uniform->binding)
-					{
-						entry.textureView = newView;
-						break;
+				layout.storageTexture.access = StorageTextureAccess::WriteOnly;
+				layout.storageTexture.format = TextureFormat::RGBA8Unorm;
+				layout.storageTexture.viewDimension = TextureViewDimension::_2D;
+
+				//layout.texture.viewDimension = TextureViewDimension::_2D;
+				uniforms.push_back(uniform);
+				layouts.push_back(layout);
+				entries.push_back(uniform->entry);
+			}
+
+			void setTexture(Uniform* uniform)
+			{
+				BindGroupLayoutEntry layout = Default;							/// layout needs to be created in joint with the actual entry
+					layout.binding = uniform->binding;
+					layout.visibility = visibility;
+					
+					// Set sample type based on texture format
+					if (uniform->isDepth) {
+						layout.texture.sampleType = TextureSampleType::Depth;
 					}
-				}
-
-				// Recreate the bind group with the updated texture view
-				touch();
+					else if (uniform->isUint) {
+						layout.texture.sampleType = TextureSampleType::Uint;
+					}
+					else {
+						layout.texture.sampleType = TextureSampleType::Float;
+					}
+					
+					// Set view dimension based on texture type
+					if (uniform->is3D) {
+						layout.texture.viewDimension = TextureViewDimension::_3D;
+					}
+					else {
+						layout.texture.viewDimension = TextureViewDimension::_2D;
+					}
+					
+				uniforms.push_back(uniform);
+				layouts.push_back(layout);
+				entries.push_back(uniform->entry);
 			}
 
 
 
-			void setTexture(Uniform* uniform)
+			void setTextureArray(Uniform* uniform)
 			{
-				BindGroupLayoutEntry layout = {};							/// layout needs to be created in joint with the actual entry
+				BindGroupLayoutEntry layout = Default;
 					layout.binding = uniform->binding;
-					layout.visibility = visibility;
-					//layout.texture.sampleType = TextureSampleType::Float;
-
-					if (uniform->isDepth) // Add a boolean flag in Uniform for this
-					{
-						layout.texture.sampleType = TextureSampleType::Depth;
-					}
-					else
-					{
-						layout.texture.sampleType = TextureSampleType::Float;
-					}
-
-
-					layout.texture.viewDimension = TextureViewDimension::_2D;
+					layout.visibility = ShaderStage::Fragment;
+					layout.texture.sampleType = TextureSampleType::Float;
+					layout.texture.viewDimension = TextureViewDimension::_2DArray;
 				uniforms.push_back(uniform);
 				layouts.push_back(layout);
 				entries.push_back(uniform->entry);
@@ -216,7 +218,7 @@ namespace wgfx
 
 			void setSampler(Uniform* uniform)
 			{
-				BindGroupLayoutEntry layout = {};
+				BindGroupLayoutEntry layout = Default;
 					layout.binding = uniform->binding;
 					layout.visibility = visibility;
 					layout.sampler.type = SamplerBindingType::Filtering;
@@ -225,19 +227,23 @@ namespace wgfx
 				entries.push_back(uniform->entry);
 			}
 
+
 			void setStorage(Uniform* storage)
 			{
-				BindGroupLayoutEntry layout = {};
+				BindGroupLayoutEntry layout = Default;
 				layout.binding = storage->binding;
-				layout.visibility = visibility;
-				layout.buffer.type = storage->isReadOnly ? BufferBindingType::ReadOnlyStorage : BufferBindingType::Storage;
+				layout.visibility = visibility; // Compute shader visibility
+				if (storage->isReadOnly) {
+					layout.buffer.type = BufferBindingType::ReadOnlyStorage;
+				} else {
+					layout.buffer.type = BufferBindingType::Storage;
+				}
 				layout.buffer.minBindingSize = storage->minBindingSize;
 				layout.buffer.hasDynamicOffset = false;
 				uniforms.push_back(storage);
 				layouts.push_back(layout);
 				entries.push_back(storage->entry);
 			}
-
 		
 		//set in the pipe should be quite simple really just a call to the container.
 		// 

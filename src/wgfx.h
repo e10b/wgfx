@@ -8,7 +8,6 @@
 #include <sdl2webgpu.h>
 #include <SDL3/SDL.h>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #endif
 
@@ -16,5 +15,3 @@
 #include <pipeline.h>
 #include <renderpass.h>
 #include <texture.h>
-
-#include <context.h>

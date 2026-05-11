@@ -1,13 +1,33 @@
 # wgfx
 
-Minimal WebGPU graphics library.
+![wgfx logo](logo.png)
 
-This repository intentionally contains only the reusable graphics layer under `src/`.
-Application/game code and third-party dependency orchestration belong in consumer repositories (for example `voxel`).
+wgfx is a lightweight C++ WebGPU graphics framework focused on practical rendering and compute workflows.
 
-## CMake
+It includes:
+- A small wrapper layer around WebGPU setup and pipeline primitives
+- Native wgfx examples for a rainbow quad, spinning cube, and compute sphere
+- A vendored copy of the upstream WebGPU Samples collection under `examples/webgpu-samples`
+- A CMake-first layout for straightforward cross-platform builds
 
-```cmake
-add_subdirectory(deps/wgfx)
-target_link_libraries(your_target PRIVATE wgfx::wgfx)
+## Build
+
+```bash
+cmake -S . -B build
+cmake --build build
 ```
+
+## Run Examples
+
+```bash
+./build/ExampleRainbowQuad
+./build/ExampleSpinningCube
+./build/ExampleComputeSphere
+```
+
+The upstream sample collection keeps its own license at `examples/webgpu-samples/LICENSE.txt`.
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0.
+See LICENSE for details.

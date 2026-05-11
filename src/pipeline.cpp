@@ -44,16 +44,13 @@ namespace wgfx
 			vbos.current = newVBO;
 		//}
 
-		// little check
-			//std::cout << "vbos count: " << vbos.vertexBuffers.size() << "\n";
-
 	}
 	VertexBufferLayout vertexBufferLayout;
 	void Pipeline::setIndexBuffer(const std::vector<uint16_t>& value)
 	{
 		for (auto* ibo : ibos.indexBuffers)
 		{
-			if (!ibo->is32Bit && ibo->data16 == value)
+			if (ibo->data == value)
 			{
 				// set current
 				ibos.current = ibo;
@@ -64,6 +61,20 @@ namespace wgfx
 		IndexBuffer* ibo = createIndexBuffer(value);
 		ibos.add(ibo);
 		ibos.current = ibo;
+
+		//IndexBuffer* ibo = ibos.get(value);
+		//if (ibo)
+		//{
+		//	// Set current
+		//	ibos.current = ibo;
+		//	return;
+		//}
+
+		//// None exists, make a new
+		//ibo = createIndexBuffer(value);
+		//ibos.add(ibo);
+		//ibos.current = ibo;
+
 	}
 
 	void Pipeline::init(VertexBuffer* vertexBuffer)
@@ -113,8 +124,6 @@ namespace wgfx
 		blendState.alpha.operation = BlendOperation::Add;
 
 		ColorTargetState colorTarget[10];
-		//if (multiTarget)
-		//{
 		colorTarget[0].format = surfaceFormat;
 		colorTarget[0].blend = &blendState;
 		colorTarget[0].writeMask = ColorWriteMask::All;
@@ -130,6 +139,7 @@ namespace wgfx
 		colorTarget[3].format = surfaceFormat;
 		colorTarget[3].blend = &blendState;
 		colorTarget[3].writeMask = ColorWriteMask::All;
+
 		// ideally we product these based on the preset targets.... << ye
 		// ideally we product these based on the preset targets.... << ye
 		// ideally we product these based on the preset targets.... << ye
@@ -137,29 +147,16 @@ namespace wgfx
 		// ideally we product these based on the preset targets.... << ye
 
 
-
-		//fragmentState.targetCount = 1; // two targets
-		//fragmentState.targets = colorTarget;
-		//}
-		//else
-		//{
-			//ColorTargetState colorTarget;
-			//colorTarget[0].format = surfaceFormat;
-			//colorTarget[0].blend = &blendState;
-			//colorTarget[0].writeMask = ColorWriteMask::All;
-
-		//}
 		if (targets != 0)
 		{
 			fragmentState.targetCount = targets; // two targets
 			fragmentState.targets = colorTarget;
-		} 
+		}
 		else
 		{
 			fragmentState.targetCount = 0; // two targets
 			fragmentState.targets = nullptr; // two targets
 		}
-
 		// We setup a depth buffer state for the render pipeline
 		DepthStencilState depthStencilState = Default;
 		// Keep a fragment only if its depth is lower than the previously blended one
@@ -176,8 +173,8 @@ namespace wgfx
 
 		if (useDepth)
 		{
-		pipelineDesc.depthStencil = &depthStencilState; // keep in mind that the depthStencil is only when you want to create a depth for the pass.
-		// don't need it for shadow pass or post processing pass in general. Unless you want a depth texture of a quad. etc.
+			pipelineDesc.depthStencil = &depthStencilState; // keep in mind that the depthStencil is only when you want to create a depth for the pass.
+			// don't need it for shadow pass or post processing pass in general. Unless you want a depth texture of a quad. etc.
 		}
 		else
 		{
@@ -252,24 +249,5 @@ namespace wgfx
 		pipelines.push_back(pipeline);  // Move to avoid copying
 
 		return pipeline;
-	}
-
-	Compute* loadCompute(std::string source)
-	{
-		ShaderModuleDescriptor shaderDesc;
-#ifdef WEBGPU_BACKEND_WGPU
-		shaderDesc.hintCount = 0;
-		shaderDesc.hints = nullptr;
-#endif
-		ShaderModuleWGSLDescriptor shaderCodeDesc;
-		shaderCodeDesc.chain.next = nullptr;
-		shaderCodeDesc.chain.sType = SType::ShaderModuleWGSLDescriptor;
-		shaderDesc.nextInChain = &shaderCodeDesc.chain;
-		shaderCodeDesc.code = source.c_str();
-		ShaderModule shaderModule = device.createShaderModule(shaderDesc);
-
-		Compute* compute = new Compute();
-		compute->shaderModule = shaderModule;
-		return compute;
 	}
 }

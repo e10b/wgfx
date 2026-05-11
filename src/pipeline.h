@@ -3,9 +3,10 @@
 #include <filesystem>
 #include <fstream>
 
+#include <glm/glm.hpp>
+
 #include "uniform.h"
 #include "buffer.h"
-#include <cstdlib> // for std::exit
 
 namespace wgfx
 {
@@ -22,69 +23,97 @@ namespace wgfx
 			pipelineDesc = ComputePipelineDescriptor();
 		}
 
-		void setUniform(Uniform* uniform)
+		Uniform* addSampler(int index, wgfx::Texture texture)
 		{
-			uniforms.visibility = WGPUShaderStage_Compute;
-			uniforms.setUniform(uniform);
-		}
-
-		void setStorage(Uniform* uniform)
-		{
-			uniforms.visibility = WGPUShaderStage_Compute;
-			uniforms.setStorage(uniform);
-		}
-
-		void setTexture(Uniform* uniform)
-		{
-			uniforms.visibility = WGPUShaderStage_Compute;
-			uniforms.setTexture(uniform);
-		}
-
-		void setSampler(Uniform* uniform)
-		{
-			uniforms.visibility = WGPUShaderStage_Compute;
+			wgfx::Uniform* uniform = wgfx::createSampler(index, texture);
+			uniforms.visibility = wgpu::ShaderStage::Compute;
 			uniforms.setSampler(uniform);
+			return uniform;
 		}
 
-		void updateUniform(Uniform* uniform, const float* array)
+		void updateUniform(int index, const float* data)
 		{
-			uniforms.updateUniform(uniform, array);
+			uniforms.updateUniform(uniforms.uniforms.at(index), data);
 		}
 
-		void updateStorageBuffer(Uniform* storage, const void* data, size_t size, size_t offset = 0)
+		Uniform* addUniform(int index)
 		{
-			uniforms.updateStorageBuffer(storage, data, size, offset);
+			wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(float) * 16, 1.0f);
+			uniforms.visibility = wgpu::ShaderStage::Compute;
+			uniforms.setUniform(uniform);
+			return uniform;
 		}
 
-		void init()
+		Uniform* addStorage(int index, size_t size, const void* data, bool readOnly = false)
 		{
+			wgfx::Uniform* uniform = wgfx::createStorage(index, size, data, readOnly);
+			uniforms.visibility = wgpu::ShaderStage::Compute;
+			uniforms.setStorage(uniform);
+			return uniform;
+		}
+
+		Uniform* addTexture(int index, wgfx::Texture texture)
+		{
+			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
+			uniforms.visibility = wgpu::ShaderStage::Compute;
+			uniforms.setTexture(uniform);
+			return uniform;
+		}
+
+		Uniform* addTexture3D_Uint(int index, wgfx::Texture texture)
+		{
+			wgfx::Uniform* uniform = wgfx::createTexture3D_Uint(index, texture);
+			uniforms.visibility = wgpu::ShaderStage::Compute;
+			uniforms.setTexture(uniform);
+			return uniform;
+		}
+
+		Uniform* addStorageTexture(int index, wgfx::Texture texture)
+		{
+			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
+			uniforms.visibility = wgpu::ShaderStage::Compute;
+			uniforms.setStorageTexture(uniform);
+			return uniform;
+		}
+
+		void updateStorageBuffer(Uniform* storage, const void* data)
+		{
+			queue.writeBuffer(storage->buffer, 0, data, storage->minBindingSize);
+		}
+
+		void updateStorageBuffer(Uniform* storage, const void* data, size_t size, uint32_t offset)
+		{
+			queue.writeBuffer(storage->buffer, offset, data, size);
+		}
+
+
+		void init() // use me
+		{
+			// Create the bind group layout first
 			uniforms.touch();
-			PipelineLayoutDescriptor layoutDesc{};
+			
+			// Create pipeline layout using the bind group layout
+			PipelineLayoutDescriptor layoutDesc = {};
 			layoutDesc.bindGroupLayoutCount = 1;
 			layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&uniforms.bindGroupLayout;
-			PipelineLayout layout = device.createPipelineLayout(layoutDesc);
-			pipelineDesc.layout = layout;
+			PipelineLayout pipelineLayout = device.createPipelineLayout(layoutDesc);
+			
+			pipelineDesc.layout = pipelineLayout;
 			pipelineDesc.compute.module = shaderModule;
 			pipelineDesc.compute.entryPoint = "main";
+
 			pipeline = device.createComputePipeline(pipelineDesc);
 			std::cout << "Compute pipeline: " << pipeline << "\n";
 			shaderModule.release();
 		}
+
+
 	};
-
-	
-	//todo
-	// need a pipeline config of some kind so that i can have useDepth etc, in the configuration for now see useDepth
-	// e.g. we need a multisample value in the config
-	// then get rid of the auto msample in the renderpass for post proces.
-
-
 
 	struct Pipeline
 	{
 		bool useDepth = true;
 		int targets = 1;
-		//bool multiTarget = true;
 
 		//std::vector<Uniform*> uniforms; // this is the issue
 		//int dynamicUniformCount = 0; // likewise
@@ -105,6 +134,19 @@ namespace wgfx
 		IndexBuffers ibos;
 
 		//std::vector<uint32_t> dynamicOffsets; // this also shouldn't be here.
+
+		/*std::vector<Uniform*> getUniforms()
+		{
+			return uniforms.uniforms;
+		}*/
+
+		Uniform* getUniform(int index)
+		{
+			return uniforms.uniforms.at(index);
+		}
+
+
+
 
 		Pipeline();
 								//BindGroup bindGroup;
@@ -130,8 +172,6 @@ namespace wgfx
 				}
 				//vbos.vertexBuffers.push_back(vbo);
 				vbos.current = vbo;
-				//std::cout << "vbos count a : " << vbos.vertexBuffers.size() << "\n";
-
 			}
 
 			void setIndexBuffer(IndexBuffer* ibo)
@@ -149,8 +189,6 @@ namespace wgfx
 					ibos.indexBuffers.at(ibo->id) = ibo;
 				}
 				ibos.current = ibo;
-				//std::cout << "ibos count a : " << ibos.indexBuffers.size() << "\n";
-
 			}
 
 		void init(VertexBuffer* vertexBuffer);
@@ -159,51 +197,100 @@ namespace wgfx
 			//std::vector<BindGroupLayoutEntry> entries;
 			//std::vector<BindGroupEntry> bindings;
 			
-			
-			//void setUniform(Uniform* uniform, bool dynamic);
-			void setUniform(Uniform* uniform)
-			{
-				uniforms.setUniform(uniform);
-				//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
-			}
+		// should put in a size of allocation
+		// addUniform(int index, size_t size);
 
-
-			void setTexture(Uniform* uniform)
-			{
-				uniforms.setTexture(uniform);
-				//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
-
-			}
-			void setSampler(Uniform* uniform)
-			{
-				uniforms.setSampler(uniform);
-				//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
-
-			}
-		void touch();
-		//void updateUniform(Uniform* uniform, const float* array);
-		void updateUniform(Uniform* uniform, const float* array)
+		/*
+		ex:
+		addUniform(5, sizeof(float) * 4)
+		*/
+		Uniform* addSampler(int index, wgfx::Texture texture)
 		{
-			uniforms.updateUniform(uniform, array);
-			//std::cout << "uniform count: " << uniforms.uniforms.size() << "\n";
-
+			wgfx::Uniform* uniform = wgfx::createSampler(index, texture);
+			uniforms.visibility = wgpu::ShaderStage::Fragment;
+			uniforms.setSampler(uniform);
+			return uniform;
 		}
+
+		Uniform* addTexture(int index, wgfx::Texture texture)
+		{
+			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setTexture(uniform);
+			return uniform;
+		}
+
+		Uniform* addUniform(int index)
+		{
+			wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(float) * 16, 1.0f);
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setUniform(uniform);
+			return uniform;
+		}
+		
+		Uniform* addStorage(int index, size_t size, const void* data)
+		{
+			wgfx::Uniform* uniform = wgfx::createStorage(index, size, data);
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setStorage(uniform);
+			return uniform;
+		}
+
+		//void touch();
+
+
+		// so here we update, but
+
+		void updateUniform(int index, const float* data)
+		{
+			uniforms.updateUniform(uniforms.uniforms.at(index), data);
+		}
+
+
+		void updateStorageBuffer(Uniform* storage, const void* data)
+		{
+			queue.writeBuffer(storage->buffer, 0, data, storage->minBindingSize);
+		}
+
+		void updateStorageBuffer(Uniform* storage, const void* data, size_t size, uint32_t offset)
+		{
+			queue.writeBuffer(storage->buffer, offset, data, size);
+		}
+
 
 	};
 
 	inline std::vector<Pipeline*> pipelines;
 	Pipeline* loadPipeline(std::string source);
-	Compute* loadCompute(std::string source);
 	
-	static std::string loadFromFile(const std::filesystem::path& path) {
-		std::ifstream file(path, std::ios::binary);
-		if (!file.is_open()) {
-			if (!file.is_open()) {
-				std::cerr << "ERROR: Couldn't open file at path '" << path << "'\n";
-				throw std::runtime_error("Failed to open file: " + path.string());
-			}
-		}
+	inline Compute* loadCompute(std::string source)
+	{
+		// Load the shader module
+		ShaderModuleDescriptor shaderDesc;
+#ifdef WEBGPU_BACKEND_WGPU
+		shaderDesc.hintCount = 0;
+		shaderDesc.hints = nullptr;
+#endif
 
+		// We use the extension mechanism to specify the WGSL part of the shader module descriptor
+		ShaderModuleWGSLDescriptor shaderCodeDesc;
+		// Set the chained struct's header
+		shaderCodeDesc.chain.next = nullptr;
+		shaderCodeDesc.chain.sType = SType::ShaderModuleWGSLDescriptor;
+		// Connect the chain
+		shaderDesc.nextInChain = &shaderCodeDesc.chain;
+		shaderCodeDesc.code = source.c_str();
+		ShaderModule shaderModule = device.createShaderModule(shaderDesc);
+
+		Compute* pipeline = new Compute();
+		pipeline->shaderModule = shaderModule;
+
+		return pipeline;
+	}
+
+	static std::string loadFromFile(const std::filesystem::path& path) {
+		std::ifstream file(path);
+		if (!file.is_open()) { return nullptr; }
 		file.seekg(0, std::ios::end);
 		size_t size = file.tellg();
 		std::string shaderSource(size, ' ');

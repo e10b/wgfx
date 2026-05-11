@@ -1,0 +1,744 @@
+@group(0) @binding(0) var<uniform> position: vec3<f32>;
+@group(0) @binding(1) var<uniform> invViewProj: mat4x4<f32>;
+@group(0) @binding(2) var<uniform> res: vec2<f32>;
+@group(0) @binding(3) var<storage, read> voxels0: array<u32>; // Now stores u8 values (packed 4 per u32)
+@group(0) @binding(4) var<storage, read> brickMap: array<u32>;
+@group(0) @binding(5) var<storage, read> voxels1: array<u32>; // Now stores u8 values
+@group(0) @binding(6) var<storage, read> voxels2: array<u32>; // Now stores u8 values
+@group(0) @binding(7) var<storage, read> voxels3: array<u32>; // Now stores u8 values
+@group(0) @binding(8) var<storage, read> sectorMap: array<u32>;
+@group(0) @binding(9) var<storage, read> palette: array<u32>; // 256-entry color palette
+
+struct VertexInput {
+    @location(0) position: vec3f,
+};
+
+struct VertexOutput {
+    @builtin(position) position: vec4f,
+};
+
+@vertex 
+fn vs_main(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+    output.position = vec4f(input.position, 1.0);
+    return output;
+}
+
+// Hierarchy: Sector → Brick → Voxel
+const BRICK_SIZE = 8u;
+const BRICKS_PER_SECTOR = 4u; // 4x4x4 bricks per sector
+const SECTOR_SIZE = BRICK_SIZE * BRICKS_PER_SECTOR; // 32 voxels per sector
+	const GRID_SIZE = 1024u; // 32x32x32 sectors
+const NUM_SECTORS_X = i32(GRID_SIZE / SECTOR_SIZE);
+const NUM_SECTORS_Y = i32(GRID_SIZE / SECTOR_SIZE);
+const NUM_SECTORS_Z = i32(GRID_SIZE / SECTOR_SIZE);
+const BRICKS_X = i32(GRID_SIZE / BRICK_SIZE); // 128 bricks
+const BRICKS_Y = i32(GRID_SIZE / BRICK_SIZE); // 128 bricks
+const BRICKS_Z = i32(GRID_SIZE / BRICK_SIZE); // 128 bricks
+
+// Helper function to read voxel palette index from split buffers (4 u8 indices packed per u32)
+fn getVoxelFromBuffers(index: u32) -> u32 {
+    let quarterCount = (GRID_SIZE * GRID_SIZE * GRID_SIZE) / 4u;
+    
+    // Determine which buffer to read from and adjust index
+    var bufferVal: u32 = 0u;
+    var adjustedIndex: u32 = index;
+    
+    if (index < quarterCount) {
+        bufferVal = voxels0[index / 4u];
+    } else if (index < 2u * quarterCount) {
+        adjustedIndex = index - quarterCount;
+        bufferVal = voxels1[adjustedIndex / 4u];
+    } else if (index < 3u * quarterCount) {
+        adjustedIndex = index - 2u * quarterCount;
+        bufferVal = voxels2[adjustedIndex / 4u];
+    } else {
+        adjustedIndex = index - 3u * quarterCount;
+        bufferVal = voxels3[adjustedIndex / 4u];
+    }
+    
+    // Unpack the u8 palette index from the u32 (4 u8 values packed as AABBCCDD)
+    let byteOffset = (adjustedIndex % 4u) * 8u;
+    let paletteIndex = (bufferVal >> byteOffset) & 0xFFu;
+    
+    return paletteIndex;
+}
+
+// Convert voxel coordinates to sector coordinates
+fn getVoxelSector(voxelPos: vec3<i32>) -> vec3<i32> {
+    return voxelPos / i32(SECTOR_SIZE);
+}
+
+// Convert voxel coordinates to brick coordinates
+fn getVoxelBrick(voxelPos: vec3<i32>) -> vec3<i32> {
+    return voxelPos / i32(BRICK_SIZE);
+}
+
+// Convert voxel coordinates to local brick coordinates (0-7 within brick)
+fn getVoxelLocalCoord(voxelPos: vec3<i32>) -> vec3<i32> {
+    return voxelPos % i32(BRICK_SIZE);
+}
+
+// Convert voxel coordinates to local sector coordinates (0-15 within sector)
+fn getVoxelLocalSectorCoord(voxelPos: vec3<i32>) -> vec3<i32> {
+    return voxelPos % i32(SECTOR_SIZE);
+}
+
+// Check if a brick contains any solid voxels
+fn isBrickOccupied(brickPos: vec3<i32>) -> bool {
+    // Check bounds
+    if (brickPos.x < 0 || brickPos.x >= BRICKS_X ||
+        brickPos.y < 0 || brickPos.y >= BRICKS_Y ||
+        brickPos.z < 0 || brickPos.z >= BRICKS_Z) {
+        return false;
+    }
+    
+    // Calculate 1D index for brick
+    let brickIndex = u32(brickPos.x + brickPos.y * BRICKS_X + brickPos.z * BRICKS_X * BRICKS_Y);
+    
+    return brickMap[brickIndex] != 0u;
+}
+
+// Get brick coordinates from voxel coordinates
+fn getBrickCoords(voxelPos: vec3<i32>) -> vec3<i32> {
+    return vec3<i32>(
+        voxelPos.x / i32(BRICK_SIZE),
+        voxelPos.y / i32(BRICK_SIZE),
+        voxelPos.z / i32(BRICK_SIZE)
+    );
+}
+
+// Check if a sector contains any solid voxels
+fn isSectorOccupied(sectorPos: vec3<i32>) -> bool {
+    // Check bounds
+    if (sectorPos.x < 0 || sectorPos.x >= NUM_SECTORS_X ||
+        sectorPos.y < 0 || sectorPos.y >= NUM_SECTORS_Y ||
+        sectorPos.z < 0 || sectorPos.z >= NUM_SECTORS_Z) {
+        return false;
+    }
+    
+    // Calculate 1D index for sector
+    let sectorIndex = u32(sectorPos.x + sectorPos.y * NUM_SECTORS_X + sectorPos.z * NUM_SECTORS_X * NUM_SECTORS_Y);
+    
+    return sectorMap[sectorIndex] != 0u;
+}
+
+// Get sector coordinates from voxel coordinates
+fn getSectorCoords(voxelPos: vec3<i32>) -> vec3<i32> {
+    return voxelPos / i32(SECTOR_SIZE);
+}
+
+struct DDAHit {
+    t: f32,
+    voxel: vec3<i32>,
+    normal: vec3<f32>,
+    steps: i32,
+};
+
+// Hierarchical DDA that uses brickmap to skip empty regions
+fn hierarchicalVoxelDDA(
+    rayOrigin: vec3<f32>,
+    rayDir: vec3<f32>,
+    gridMin: vec3<i32>,
+    gridMax: vec3<i32>
+) -> DDAHit {
+    let gridMinF = vec3<f32>(f32(gridMin.x), f32(gridMin.y), f32(gridMin.z));
+    let gridMaxF = vec3<f32>(f32(gridMax.x + 1), f32(gridMax.y + 1), f32(gridMax.z + 1));
+
+    // === 1. Intersect the grid bounding box ===
+    var tMin = -1e10;
+    var tMax = 1e10;
+
+    for (var i = 0u; i < 3u; i = i + 1u) {
+        let epsilon = 1e-8;
+        let safeRayDir = select(rayDir[i], epsilon, abs(rayDir[i]) < epsilon);
+        let invD = 1.0 / safeRayDir;
+        
+        var t0 = (gridMinF[i] - rayOrigin[i]) * invD;
+        var t1 = (gridMaxF[i] - rayOrigin[i]) * invD;
+        if (invD < 0.0) {
+            let tmp = t0;
+            t0 = t1;
+            t1 = tmp;
+        }
+        tMin = max(tMin, t0);
+        tMax = min(tMax, t1);
+    }
+
+    if (tMax < tMin) {
+        return DDAHit(-1.0, vec3<i32>(0), vec3<f32>(0), -1);
+    }
+
+    // === 2. Start at entry point ===
+    var t = max(tMin, 0.0);
+    if (t == tMin) {
+        t += 1e-4; // Larger epsilon for better precision
+    }
+    var p = rayOrigin + t * rayDir;
+    
+    // Use double precision for voxel calculation to reduce jitter
+    var voxel = vec3<i32>(
+        clamp(i32(floor(p.x + 0.5 * sign(rayDir.x) * 1e-6)), gridMin.x, gridMax.x),
+        clamp(i32(floor(p.y + 0.5 * sign(rayDir.y) * 1e-6)), gridMin.y, gridMax.y),
+        clamp(i32(floor(p.z + 0.5 * sign(rayDir.z) * 1e-6)), gridMin.z, gridMax.z)
+    );
+
+    let step = vec3<i32>(
+        select(-1, 1, rayDir.x >= 0.0),
+        select(-1, 1, rayDir.y >= 0.0),
+        select(-1, 1, rayDir.z >= 0.0)
+    );
+
+    let epsilon = 1e-6; // Reduced epsilon for better precision
+    let safeRayDir = vec3<f32>(
+        select(rayDir.x, epsilon, abs(rayDir.x) < epsilon),
+        select(rayDir.y, epsilon, abs(rayDir.y) < epsilon),
+        select(rayDir.z, epsilon, abs(rayDir.z) < epsilon)
+    );
+    let invDir = 1.0 / safeRayDir;
+
+    // Pre-calculate DDA increments for efficiency with better precision
+    var next = vec3<f32>(0.0);
+    var delta = vec3<f32>(0.0);
+    for (var i = 0u; i < 3u; i = i + 1u) {
+        let b = f32(voxel[i]) + select(0.0, 1.0, step[i] > 0);
+        next[i] = (b - rayOrigin[i]) * invDir[i];
+        delta[i] = abs(invDir[i]);
+    }
+
+    var normal = vec3<f32>(0.0);
+    let maxSteps = 512;
+    var stepCount = 0;
+    var currentSector = getSectorCoords(voxel);
+    var currentBrick = getBrickCoords(voxel);
+
+    for (var i = 0; i < maxSteps; i = i + 1) {
+        stepCount = i;
+        
+        // Check if we're still in bounds
+        if (all(voxel >= gridMin) && all(voxel <= gridMax)) {
+            let newSector = getSectorCoords(voxel);
+            
+            // If we've moved to a new sector, check if it's occupied
+            if (any(newSector != currentSector)) {
+                currentSector = newSector;
+                
+                // If sector is not occupied, skip directly to sector boundary
+                if (!isSectorOccupied(currentSector)) {
+                    // Calculate the sector boundaries
+                    let sectorMin = vec3<f32>(f32(currentSector.x * i32(SECTOR_SIZE)), 
+                                             f32(currentSector.y * i32(SECTOR_SIZE)), 
+                                             f32(currentSector.z * i32(SECTOR_SIZE)));
+                    let sectorMax = vec3<f32>(f32((currentSector.x + 1) * i32(SECTOR_SIZE)), 
+                                             f32((currentSector.y + 1) * i32(SECTOR_SIZE)), 
+                                             f32((currentSector.z + 1) * i32(SECTOR_SIZE)));
+                    
+                    // Calculate intersection with sector boundaries
+                    var sectorExit = vec3<f32>(1e10);
+                    for (var j = 0u; j < 3u; j = j + 1u) {
+                        if (abs(rayDir[j]) > 1e-8) {
+                            let boundary = select(sectorMin[j], sectorMax[j], rayDir[j] > 0.0);
+                            sectorExit[j] = (boundary - rayOrigin[j]) / rayDir[j];
+                        }
+                    }
+                    
+                    // Find the nearest exit point
+                    let exitT = min(sectorExit.x, min(sectorExit.y, sectorExit.z));
+                    
+                    if (exitT > t && exitT <= tMax) {
+                        // Jump to sector exit with proper epsilon handling
+                        t = exitT + 1e-5;
+                        p = rayOrigin + t * rayDir;
+                        
+                        // Clamp to ensure we stay within bounds with directional bias
+                        voxel = vec3<i32>(
+                            clamp(i32(floor(p.x + 0.5 * sign(rayDir.x) * 1e-5)), gridMin.x, gridMax.x),
+                            clamp(i32(floor(p.y + 0.5 * sign(rayDir.y) * 1e-5)), gridMin.y, gridMax.y),
+                            clamp(i32(floor(p.z + 0.5 * sign(rayDir.z) * 1e-5)), gridMin.z, gridMax.z)
+                        );
+                        
+                        // Recalculate DDA state with better precision
+                        for (var j = 0u; j < 3u; j = j + 1u) {
+                            let b = f32(voxel[j]) + select(0.0, 1.0, step[j] > 0);
+                            next[j] = (b - rayOrigin[j]) * invDir[j];
+                        }
+                        
+                        // Reset normal - it will be recalculated on next actual voxel step
+                        normal = vec3<f32>(0.0);
+                        
+                        continue;
+                    }
+                }
+            }
+            
+            let newBrick = getBrickCoords(voxel);
+            
+            // If we've moved to a new brick, check if it's occupied
+            if (any(newBrick != currentBrick)) {
+                currentBrick = newBrick;
+                
+                // If brick is not occupied, skip directly to brick boundary
+                if (!isBrickOccupied(currentBrick)) {
+                    // Calculate the brick boundaries
+                    let brickMin = vec3<f32>(f32(currentBrick.x * i32(BRICK_SIZE)), 
+                                            f32(currentBrick.y * i32(BRICK_SIZE)), 
+                                            f32(currentBrick.z * i32(BRICK_SIZE)));
+                    let brickMax = vec3<f32>(f32((currentBrick.x + 1) * i32(BRICK_SIZE)), 
+                                            f32((currentBrick.y + 1) * i32(BRICK_SIZE)), 
+                                            f32((currentBrick.z + 1) * i32(BRICK_SIZE)));
+                    
+                    // Calculate intersection with brick boundaries
+                    var brickExit = vec3<f32>(1e10);
+                    for (var j = 0u; j < 3u; j = j + 1u) {
+                        if (abs(rayDir[j]) > 1e-8) {
+                            let boundary = select(brickMin[j], brickMax[j], rayDir[j] > 0.0);
+                            brickExit[j] = (boundary - rayOrigin[j]) / rayDir[j];
+                        }
+                    }
+                    
+                    // Find the nearest exit point
+                    let exitT = min(brickExit.x, min(brickExit.y, brickExit.z));
+                    
+                    if (exitT > t && exitT <= tMax) {
+                        // Jump to brick exit with proper epsilon handling
+                        t = exitT + 1e-5; // Add small offset to ensure we cross the boundary
+                        p = rayOrigin + t * rayDir;
+                        
+                        // Clamp to ensure we stay within bounds with directional bias
+                        voxel = vec3<i32>(
+                            clamp(i32(floor(p.x + 0.5 * sign(rayDir.x) * 1e-5)), gridMin.x, gridMax.x),
+                            clamp(i32(floor(p.y + 0.5 * sign(rayDir.y) * 1e-5)), gridMin.y, gridMax.y),
+                            clamp(i32(floor(p.z + 0.5 * sign(rayDir.z) * 1e-5)), gridMin.z, gridMax.z)
+                        );
+                        
+                        // Recalculate DDA state with better precision
+                        for (var j = 0u; j < 3u; j = j + 1u) {
+                            let b = f32(voxel[j]) + select(0.0, 1.0, step[j] > 0);
+                            next[j] = (b - rayOrigin[j]) * invDir[j];
+                        }
+                        
+                        // Reset normal - it will be recalculated on next actual voxel step
+                        normal = vec3<f32>(0.0);
+                        
+                        continue; // Skip to next iteration
+                    }
+                }
+            }
+            
+            // If we're in an occupied brick, check the actual voxel
+            if (isVoxelSolid(voxel)) {
+                return DDAHit(t, voxel, normal, i);
+            }
+        }
+
+        // Standard DDA step - use consistent epsilon to prevent jitter
+        let eps = 1e-5; // Larger epsilon for better stability
+        if (next.x <= next.y + eps && next.x <= next.z + eps) {
+            voxel.x += step.x;
+            t = next.x;
+            next.x += delta.x;
+            normal = vec3<f32>(-f32(step.x), 0.0, 0.0);
+        } else if (next.y <= next.z + eps) {
+            voxel.y += step.y;
+            t = next.y;
+            next.y += delta.y;
+            normal = vec3<f32>(0.0, -f32(step.y), 0.0);
+        } else {
+            voxel.z += step.z;
+            t = next.z;
+            next.z += delta.z;
+            normal = vec3<f32>(0.0, 0.0, -f32(step.z));
+        }
+
+        if (t > tMax) {
+            break;
+        }
+    }
+
+    return DDAHit(-1.0, vec3<i32>(0), vec3<f32>(0), stepCount);
+}
+
+// Function to check if a voxel is solid based on the storage array
+fn isVoxelSolid(voxelPos: vec3<i32>) -> bool {
+    let size = i32(GRID_SIZE);
+    
+    // Check bounds
+    if (voxelPos.x < 0 || voxelPos.x >= size ||
+        voxelPos.y < 0 || voxelPos.y >= size ||
+        voxelPos.z < 0 || voxelPos.z >= size) {
+        return false;
+    }
+    
+    // Calculate 1D index: x + y * sizeX + z * sizeX * sizeY
+    let index = u32(voxelPos.x + voxelPos.y * size + voxelPos.z * size * size);
+    
+    // Check if voxel is solid (non-zero value) - read from split buffers
+    return getVoxelFromBuffers(index) != 0u;
+}
+
+// Unpack color from uint32 (RGBA8 format)
+fn unpackColor(packedColor: u32) -> vec4<f32> {
+    let r = f32(packedColor & 0xFFu) / 255.0;
+    let g = f32((packedColor >> 8u) & 0xFFu) / 255.0;
+    let b = f32((packedColor >> 16u) & 0xFFu) / 255.0;
+    let a = f32((packedColor >> 24u) & 0xFFu) / 255.0;
+    return vec4<f32>(r, g, b, a);
+}
+
+// Get voxel color using palette lookup
+fn getVoxelColor(voxelPos: vec3<i32>) -> vec4<f32> {
+    let size = i32(GRID_SIZE);
+    
+    // Check bounds
+    if (voxelPos.x < 0 || voxelPos.x >= size ||
+        voxelPos.y < 0 || voxelPos.y >= size ||
+        voxelPos.z < 0 || voxelPos.z >= size) {
+        return vec4<f32>(1.0, 0.0, 1.0, 1.0); // Magenta for out of bounds
+    }
+    
+    // Calculate 1D index
+    let index = u32(voxelPos.x + voxelPos.y * size + voxelPos.z * size * size);
+    let paletteIndex = getVoxelFromBuffers(index); // Read palette index from split buffers
+    
+    if (paletteIndex == 0u) {
+        return vec4<f32>(0.0, 0.0, 0.0, 0.0); // Transparent for empty/index 0
+    }
+    
+    // Clamp palette index to valid range
+    let idx = min(paletteIndex, 255u);
+    let packedColor = palette[idx]; // Look up color in palette
+    
+    return unpackColor(packedColor);
+}
+
+// Visualize ray steps with clear contrast - less foggy
+fn visualizeRaySteps(steps: i32, maxSteps: i32) -> vec4<f32> {
+    if (steps <= 0) {
+        return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    }
+    
+    // Simple linear scaling with better contrast
+    let normalizedSteps = f32(steps) / f32(maxSteps);
+    
+    // Apply a power curve to increase contrast (less than gamma correction)
+    let intensity = pow(normalizedSteps, 0.6);
+    
+    // Create grayscale color
+    let color = vec3<f32>(intensity);
+    
+    return vec4<f32>(color, 1.0);
+}
+
+// Simple random number generator using hash function
+var<private> rng_state: u32;
+
+fn hash(state: u32) -> u32 {
+    var x = state;
+    x = x ^ (x >> 16u);
+    x = x * 0x45d9f3bu;
+    x = x ^ (x >> 16u);
+    x = x * 0x45d9f3bu;
+    x = x ^ (x >> 16u);
+    return x;
+}
+
+fn random() -> f32 {
+    rng_state = hash(rng_state);
+    return f32(rng_state) / 4294967296.0; // 2^32
+}
+
+fn random_vec3() -> vec3<f32> {
+    return vec3<f32>(random(), random(), random());
+}
+
+// Generate random direction in hemisphere oriented by normal
+fn random_hemisphere_direction(normal: vec3<f32>) -> vec3<f32> {
+    // Generate random point in unit sphere
+    var dir = vec3<f32>(0.0);
+    loop {
+        dir = random_vec3() * 2.0 - vec3<f32>(1.0);
+        if (dot(dir, dir) <= 1.0) {
+            break;
+        }
+    }
+    dir = normalize(dir);
+    
+    // Flip to hemisphere if needed
+    if (dot(dir, normal) < 0.0) {
+        dir = -dir;
+    }
+    
+    return dir;
+}
+
+// Cosine-weighted hemisphere sampling for better importance sampling
+fn cosine_weighted_hemisphere(normal: vec3<f32>) -> vec3<f32> {
+    let r1 = random();
+    let r2 = random();
+    
+    let cos_theta = sqrt(r1);
+    let sin_theta = sqrt(1.0 - r1);
+    let phi = 2.0 * 3.14159265359 * r2;
+    
+    let x = sin_theta * cos(phi);
+    let y = sin_theta * sin(phi);
+    let z = cos_theta;
+    
+    // Create orthonormal basis from normal
+    var up = vec3<f32>(0.0, 1.0, 0.0);
+    if (abs(normal.y) > 0.9) {
+        up = vec3<f32>(1.0, 0.0, 0.0);
+    }
+    
+    let tangent = normalize(cross(up, normal));
+    let bitangent = cross(normal, tangent);
+    
+    return x * tangent + y * bitangent + z * normal;
+}
+
+struct PathTraceResult {
+    color: vec3<f32>,
+    hit: bool,
+};
+
+// Environment/sky color
+fn get_sky_color(direction: vec3<f32>) -> vec3<f32> {
+    let t = 0.5 * (direction.y + 1.0);
+    return mix(vec3<f32>(1.0, 1.0, 1.0), vec3<f32>(0.5, 0.7, 1.0), t);
+}
+
+// Path trace function with multiple bounces
+fn path_trace(rayOrigin: vec3<f32>, rayDir: vec3<f32>, gridMin: vec3<i32>, gridMax: vec3<i32>) -> PathTraceResult {
+    var color = vec3<f32>(0.0);
+    var throughput = vec3<f32>(1.0); // How much light can pass through
+    var origin = rayOrigin;
+    var direction = rayDir;
+    
+    let maxBounces = 3;
+    var hit_anything = false;
+    
+    for (var bounce = 0; bounce < maxBounces; bounce = bounce + 1) {
+        let hit = hierarchicalVoxelDDA(origin, direction, gridMin, gridMax);
+        
+        if (hit.t > 0.0 && isVoxelSolid(hit.voxel)) {
+            hit_anything = true;
+            
+            // Get surface properties
+            let hitPos = origin + hit.t * direction;
+            let normal = hit.normal;
+            let voxelColor = getVoxelColor(hit.voxel);
+            
+            // Material properties (you can modify these for different materials)
+            let albedo = voxelColor.rgb;
+            let emissive = vec3<f32>(0.0); // No emission for now
+            
+            // Add emissive contribution
+            color = color + throughput * emissive;
+            
+            // Russian roulette for early termination (optional optimization)
+            let maxComponent = max(throughput.r, max(throughput.g, throughput.b));
+            if (maxComponent < 0.1 && bounce > 0) {
+                if (random() > maxComponent) {
+                    break;
+                }
+                throughput = throughput / maxComponent;
+            }
+            
+            // Sample new direction using cosine-weighted hemisphere sampling
+            let newDirection = cosine_weighted_hemisphere(normal);
+            
+            // Update throughput (BRDF * cosine / PDF)
+            // For Lambertian BRDF: albedo/π * cos(θ) / (cos(θ)/π) = albedo
+            throughput = throughput * albedo;
+            
+            // Prepare for next bounce
+            origin = hitPos + normal * 0.001; // Offset to avoid self-intersection
+            direction = newDirection;
+            
+        } else {
+            // Hit sky/environment
+            color = color + throughput * get_sky_color(direction);
+            break;
+        }
+    }
+    
+    return PathTraceResult(color, hit_anything);
+}
+
+fn voxelDDA(
+    rayOrigin: vec3<f32>,
+    rayDir: vec3<f32>,
+    gridMin: vec3<i32>,
+    gridMax: vec3<i32>
+) -> DDAHit {
+    let gridMinF = vec3<f32>(f32(gridMin.x), f32(gridMin.y), f32(gridMin.z));
+    let gridMaxF = vec3<f32>(f32(gridMax.x + 1), f32(gridMax.y + 1), f32(gridMax.z + 1));
+
+    // === 1. Intersect the grid bounding box ===
+    var tMin = -1e10;
+    var tMax = 1e10;
+
+    for (var i = 0u; i < 3u; i = i + 1u) {
+        // Add epsilon to prevent division by zero
+        let epsilon = 1e-8;
+        let safeRayDir = select(rayDir[i], epsilon, abs(rayDir[i]) < epsilon);
+        let invD = 1.0 / safeRayDir;
+        
+        var t0 = (gridMinF[i] - rayOrigin[i]) * invD;
+        var t1 = (gridMaxF[i] - rayOrigin[i]) * invD;
+        if (invD < 0.0) {
+            let tmp = t0;
+            t0 = t1;
+            t1 = tmp;
+        }
+        tMin = max(tMin, t0);
+        tMax = min(tMax, t1);
+    }
+
+    if (tMax < tMin) {
+        return DDAHit(-1.0, vec3<i32>(0), vec3<f32>(0), -1);
+    }
+
+    // === 2. Start at entry point ===
+    var t = max(tMin, 0.0001); // Improved epsilon for better precision at distance
+    var p = rayOrigin + t * rayDir;
+    // Add directional bias to prevent floating point errors
+    var voxel = vec3<i32>(
+        i32(floor(p.x + sign(rayDir.x) * 1e-6)), 
+        i32(floor(p.y + sign(rayDir.y) * 1e-6)), 
+        i32(floor(p.z + sign(rayDir.z) * 1e-6))
+    );
+
+    let step = vec3<i32>(
+        select(-1, 1, rayDir.x >= 0.0),
+        select(-1, 1, rayDir.y >= 0.0),
+        select(-1, 1, rayDir.z >= 0.0)
+    );
+
+    // Safe inverse direction calculation
+    let epsilon = 1e-8;
+    let safeRayDir = vec3<f32>(
+        select(rayDir.x, epsilon, abs(rayDir.x) < epsilon),
+        select(rayDir.y, epsilon, abs(rayDir.y) < epsilon),
+        select(rayDir.z, epsilon, abs(rayDir.z) < epsilon)
+    );
+    let invDir = 1.0 / safeRayDir;
+
+    var next = vec3<f32>(0.0);
+    var delta = vec3<f32>(0.0);
+
+    for (var i = 0u; i < 3u; i = i + 1u) {
+        let b = f32(voxel[i]) + select(0.0, 1.0, step[i] > 0);
+        next[i] = (b - rayOrigin[i]) * invDir[i];
+        delta[i] = abs(invDir[i]);
+    }
+
+    var normal = vec3<f32>(0.0);
+
+    let maxSteps = 512;
+    var stepCount = 0;
+
+    for (var i = 0; i < maxSteps; i = i + 1) {
+        stepCount = i;
+        if (all(voxel >= gridMin) && all(voxel <= gridMax)) {
+            // Check if current voxel is solid using the storage array
+            if (isVoxelSolid(voxel)) {
+                return DDAHit(t, voxel, normal, i);
+            }
+        }
+
+        // === Find smallest next crossing with consistent epsilon comparison ===
+        let eps = 1e-5; // Larger epsilon for better stability at distance
+        if (next.x <= next.y + eps && next.x <= next.z + eps) {
+            voxel.x += step.x;
+            t = next.x;
+            next.x += delta.x;
+            normal = vec3<f32>(-f32(step.x), 0.0, 0.0);
+        } else if (next.y <= next.z + eps) {
+            voxel.y += step.y;
+            t = next.y;
+            next.y += delta.y;
+            normal = vec3<f32>(0.0, -f32(step.y), 0.0);
+        } else {
+            voxel.z += step.z;
+            t = next.z;
+            next.z += delta.z;
+            normal = vec3<f32>(0.0, 0.0, -f32(step.z));
+        }
+
+        if (t > tMax) {
+            break; // Exceeded grid box exit point
+        }
+    }
+
+    return DDAHit(-1.0, vec3<i32>(0), vec3<f32>(0), stepCount);
+}
+
+@fragment
+fn fs_main(@builtin(position) fragCoord: vec4<f32>) -> @location(0) vec4<f32> {
+    let resolution = res;
+    // Use pixel center for ray generation with improved precision
+    let pixelCenter = fragCoord.xy;
+    let uv = (pixelCenter / resolution) * 2.0 - vec2<f32>(1.0, 1.0);
+    let ndc = vec4<f32>(uv.x, -uv.y, 1.0, 1.0);
+
+    let rayOrigin = position;
+    let worldPos = invViewProj * ndc;
+    let rayDir = normalize(worldPos.xyz / worldPos.w - rayOrigin);
+
+    let gridMin = vec3<i32>(0, 0, 0);
+    let gridMax = vec3<i32>(i32(GRID_SIZE) - 1, i32(GRID_SIZE) - 1, i32(GRID_SIZE) - 1);
+
+    let hit = hierarchicalVoxelDDA(rayOrigin, rayDir, gridMin, gridMax);
+    //let hit = voxelDDA(rayOrigin, rayDir, gridMin, gridMax);
+
+    // If we hit a voxel, return its color with basic lighting
+    if (hit.t > 0.0) {
+        let voxelColor = getVoxelColor(hit.voxel);
+        if (voxelColor.a > 0.0) {
+            // Calculate hit position in world space
+            let hitPos = rayOrigin + hit.t * rayDir;
+            
+            // Apply basic lighting based on normal
+            let lightDir = normalize(vec3<f32>(1.0, 1.0, 1.0));
+            let diffuse = max(0.3, dot(hit.normal, lightDir));
+            
+            // Simple shaded color
+            let finalColor = voxelColor.rgb * diffuse;
+            
+            return vec4<f32>(finalColor, 1.0);
+        }
+    }
+    
+    // Show step visualization if ray entered the voxel grid but didn't hit anything
+    if (hit.steps >= 0) {
+        let maxSteps = 512;
+        return visualizeRaySteps(hit.steps, maxSteps);
+    } else {
+        // Ray missed the voxel grid - show blue sky
+        return vec4<f32>(0.5, 0.7, 1.0, 1.0);
+    }
+
+    // COMMENTED OUT: Path tracing approach
+    /*
+    // Initialize random seed based on pixel position and time-like value
+    // You could pass a frame counter as uniform for temporal variation
+    rng_state = u32(fragCoord.x) * 1973u + u32(fragCoord.y) * 9277u + u32(fragCoord.x * fragCoord.y) * 26699u;
+    
+    // Path trace with 1 sample (you could add more samples and average them)
+    let result = path_trace(rayOrigin, rayDir, gridMin, gridMax);
+    
+    if (result.hit) {
+        // Apply simple tone mapping to prevent overexposure
+        let toneMapped = result.color / (result.color + vec3<f32>(1.0));
+        
+        // Apply gamma correction
+        let gammaCorrected = pow(toneMapped, vec3<f32>(1.0 / 2.2));
+        
+        return vec4<f32>(gammaCorrected, 1.0);
+    } else {
+        // Show sky color if no hit
+        return vec4<f32>(get_sky_color(rayDir), 1.0);
+    }
+    */
+}

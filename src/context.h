@@ -22,23 +22,22 @@ namespace wgfx
     inline SDL_Window* window = nullptr; // Initialize to nullptr
     inline BufferDescriptor bufferDesc;
     inline TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
-    inline TextureView depthTextureView = nullptr; // Initialize to nullptr // why is this global? Feels wrong, feels like it oughn't be global, renderpass member? hmm
+    //inline TextureView depthTextureView = nullptr; // Initialize to nullptr
+
     inline RenderPassEncoder renderPass = nullptr;
-    
-        
-    inline TextureView depthView = nullptr; // i am making another one so it can be more static << for the purpose of rendering depth visually
+
 
     inline bool reset = false;
 
-    inline int samples = 1; // doesn't work for depth sampling rn
+    inline int samples = 1;
     inline bool multiSample = false;
 
     inline int width = 0;
     inline int height = 0;
 
-    inline bool resetDepth = true;
-
     // Inline type definitions
+    inline wgpu::VertexFormat vec1f = VertexFormat::Float32;
     inline wgpu::VertexFormat vec2f = VertexFormat::Float32x2;
     inline wgpu::VertexFormat vec3f = VertexFormat::Float32x3;
+    inline wgpu::VertexFormat u32 = VertexFormat::Uint32;
 }

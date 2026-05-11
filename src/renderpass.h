@@ -56,19 +56,6 @@ namespace wgfx
 			//updateMultiSampleView = false;
 			//resetDepth = true;
 		}
-
-		void recreate()
-		{
-			if (depthView) {
-				depthView.release();
-				depthView = nullptr;
-			}
-			if (depthTexture) {
-				depthTexture.release();
-				depthTexture = nullptr;
-			}
-			init();
-		}
 	};
 
 	struct ColorTexture
@@ -78,8 +65,8 @@ namespace wgfx
 		wgpu::Texture colorTexture = nullptr; // Store the texture so we can release it
 		bool isSurfaceTexture = false; // Flag to indicate if this is a surface texture
 
-		ColorTexture(bool useSurface = true) : isSurfaceTexture(useSurface) { 
-			if (!useSurface) init(); 
+		ColorTexture(bool useSurface = true) : isSurfaceTexture(useSurface) {
+			if (!useSurface) init();
 		}
 		~ColorTexture() {
 			if (colorView) {
@@ -129,10 +116,15 @@ namespace wgfx
 			colorTex->colorView.release();
 			colorTex->colorView = nullptr;
 		}
-		
+
 		colorTex->colorView = getNextSurfaceTextureView();
 		if (!colorTex->colorView) return;
 
+		
+	}
+
+	inline void start()
+	{
 		if (encoder)
 		{
 			encoder.release();
@@ -147,6 +139,49 @@ namespace wgfx
 		// Reset the global reset flag to ensure uniforms get reset
 		reset = true;
 	}
+
+	struct ComputePass
+	{
+	public:
+		ComputePassEncoder computePass = nullptr;
+
+		void draw(Compute* compute, size_t size)
+		{
+			computePass.setPipeline(compute->pipeline);
+			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
+			computePass.dispatchWorkgroups(static_cast<uint32_t>(size), 1, 1);
+		}
+
+		void drawXY(Compute* compute, uint32_t sizeX, uint32_t sizeY)
+		{
+			computePass.setPipeline(compute->pipeline);
+			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
+			computePass.dispatchWorkgroups(sizeX, sizeY, 1);
+		}
+
+		void drawXYZ(Compute* compute, uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ)
+		{
+			computePass.setPipeline(compute->pipeline);
+			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
+			computePass.dispatchWorkgroups(sizeX, sizeY, sizeZ);
+		}
+
+		void end()
+		{
+			if (computePass)
+			{
+				computePass.end();
+				computePass.release();
+				computePass = nullptr;
+			}
+		}
+
+		void prepare()
+		{
+			computePass = encoder.beginComputePass();
+		}
+		
+	};
 
 	struct RenderPass
 	{
@@ -174,14 +209,6 @@ namespace wgfx
 		void end();
 		void setClear(WGPUColor color);
 		void draw(Pipeline* pipeline);
-		/// Same bind group / pipeline as `draw`, but uses the given buffers and indexed subrange (for extra draws in one pass).
-		void draw(
-			Pipeline* pipeline,
-			VertexBuffer* vbo,
-			IndexBuffer* ibo,
-			uint32_t indexCount,
-			uint32_t firstIndex,
-			int32_t baseVertex);
 
 
 		void prepare()
@@ -216,6 +243,9 @@ namespace wgfx
 				//attachment.loadOp = LoadOp::Clear; // Always clear color attachment
 				attachment.storeOp = StoreOp::Store;
 				attachment.clearValue = clearValue;
+#ifdef __EMSCRIPTEN__
+				attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif
 				colorAttachments.push_back(attachment);
 			}
 
@@ -266,32 +296,6 @@ namespace wgfx
 
 		//void prepareColor();
 
-	};
-	struct ComputePass
-	{
-	public:
-		ComputePassEncoder computePass = nullptr;
-
-		void draw(Compute* compute, uint32_t sizeX, uint32_t sizeY = 1, uint32_t sizeZ = 1)
-		{
-			computePass.setPipeline(compute->pipeline);
-			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
-			computePass.dispatchWorkgroups(sizeX, sizeY, sizeZ);
-		}
-
-		void end()
-		{
-			if (computePass) {
-				computePass.end();
-				computePass.release();
-				computePass = nullptr;
-			}
-		}
-
-		void prepare()
-		{
-			computePass = encoder.beginComputePass();
-		}
 	};
 	inline TextureView multiSampleView = nullptr;
 	inline TextureView targetView = nullptr;
