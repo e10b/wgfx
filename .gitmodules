@@ -1,16 +1,4 @@
-[submodule "deps/glm"]
-	path = deps/glm
-	url = https://github.com/g-truc/glm/
-[submodule "deps/webgpu"]
-	path = deps/webgpu
-	url = https://github.com/eliemichel/WebGPU-distribution
-[submodule "deps/sdl3"]
-	path = deps/sdl3
-	url = https://github.com/libsdl-org/SDL
-[submodule "deps/fastgltf"]
-	path = deps/fastgltf
-	url = https://github.com/spnda/fastgltf.git
-[submodule "vendor/wgfx"]
-	path = vendor/wgfx
-	url = git@github.com:Vyscosity/wgfx.git
+[submodule "deps/wgfx"]
+	path = deps/wgfx
+	url = git@github.com:e10b/wgfx
 	branch = main
