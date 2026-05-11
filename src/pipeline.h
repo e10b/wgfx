@@ -2,6 +2,8 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include <glm/glm.hpp>
 
@@ -272,6 +274,9 @@ namespace wgfx
 	
 	inline Compute* loadCompute(std::string source)
 	{
+		if (source.empty()) {
+			std::cerr << "wgfx::loadCompute: empty shader source (WGSL file missing or unreadable)\n";
+		}
 		// Load the shader module
 		ShaderModuleDescriptor shaderDesc;
 #ifdef WEBGPU_BACKEND_WGPU
@@ -296,14 +301,19 @@ namespace wgfx
 	}
 
 	static std::string loadFromFile(const std::filesystem::path& path) {
-		std::ifstream file(path);
-		if (!file.is_open()) { return {}; }
-		file.seekg(0, std::ios::end);
-		size_t size = file.tellg();
-		std::string shaderSource(size, ' ');
-		file.seekg(0);
-		file.read(shaderSource.data(), size);
-		return shaderSource;
+		std::error_code ec;
+		std::filesystem::path absPath = std::filesystem::absolute(path, ec);
+		if (ec) {
+			absPath = path;
+		}
+		std::ifstream file(absPath, std::ios::binary);
+		if (!file) {
+			std::cerr << "wgfx::loadFromFile: cannot open \"" << absPath.string() << "\"\n";
+			return {};
+		}
+		std::ostringstream ss;
+		ss << file.rdbuf();
+		return ss.str();
 	}
 
 	

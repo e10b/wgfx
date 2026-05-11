@@ -19,8 +19,9 @@ set(helper_support_src
 )
 
 function(add_example_target target_name source_file resource_dir)
+	get_filename_component(_wgfx_example_res "${resource_dir}" ABSOLUTE)
 	add_executable(${target_name} ${helper_support_src} ${srcc} ${source_file})
-	target_compile_definitions(${target_name} PRIVATE RESOURCE_DIR="${resource_dir}")
+	target_compile_definitions(${target_name} PRIVATE RESOURCE_DIR="${_wgfx_example_res}")
 	target_include_directories(${target_name} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${resource_dir}" src "deps/sdl3/include" "deps")
 	target_link_libraries(${target_name} PRIVATE webgpu sdl2webgpu SDL3-static glm::glm fastgltf::fastgltf)
 	target_copy_webgpu_binaries(${target_name})

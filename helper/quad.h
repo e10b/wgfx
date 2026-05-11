@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -23,7 +24,8 @@ public:
 
 	Quad()
 	{
-		pipeline = wgfx::loadPipeline(wgfx::loadFromFile((std::string(RESOURCE_DIR) + "/" + "quad.wgsl").c_str()));
+		pipeline = wgfx::loadPipeline(
+			wgfx::loadFromFile(std::filesystem::path(RESOURCE_DIR) / "quad.wgsl"));
 
 		vertices = {
 			-1.0f, -1.0f, 0.0f,

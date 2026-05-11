@@ -1,5 +1,7 @@
 #include "pipeline.h"
 
+#include <iostream>
+
 namespace wgfx
 {
 	Pipeline::Pipeline()
@@ -213,6 +215,9 @@ namespace wgfx
 
 	Pipeline* loadPipeline(std::string source)
 	{
+		if (source.empty()) {
+			std::cerr << "wgfx::loadPipeline: empty shader source (WGSL file missing or unreadable)\n";
+		}
 		// Load the shader module
 		ShaderModuleDescriptor shaderDesc;
 #ifdef WEBGPU_BACKEND_WGPU
