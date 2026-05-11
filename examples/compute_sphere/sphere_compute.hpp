@@ -31,7 +31,6 @@ public:
 
 		glm::vec4 resData(resolution.x, resolution.y, 0.0f, 0.0f);
 		compute->updateUniform(3, glm::value_ptr(resData));
-		compute->uniforms.clear();
 
 		uint32_t workgroupsX = (uint32_t(resolution.x) + 7u) / 8u;
 		uint32_t workgroupsY = (uint32_t(resolution.y) + 7u) / 8u;

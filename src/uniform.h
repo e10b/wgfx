@@ -1,6 +1,7 @@
 #pragma once
 
 #include "texture.h"
+#include <algorithm>
 
 namespace wgfx
 {
@@ -23,6 +24,7 @@ namespace wgfx
 
 		int stride;
 		int quantity = 0; // uncrease when hmm, 
+		int dynamicOffsetIndex = -1;
 
 		Uniform() = default;
 
@@ -86,16 +88,23 @@ namespace wgfx
 		BindGroupLayoutDescriptor bindGroupLayoutDesc;
 
 		ShaderStageFlags visibility;
+		uint64_t lastUpdateFrame = 0;
 
 		void clear()
 		{
-			//if (reset) {
-				for (auto uniform : uniforms)
-				{
-					uniform->quantity = 0;
-				}
-			//}
-			//reset = false;
+			for (auto uniform : uniforms)
+			{
+				uniform->quantity = 0;
+			}
+			std::fill(dynamicOffsets.begin(), dynamicOffsets.end(), 0);
+		}
+
+		void clearForNewFrame()
+		{
+			if (lastUpdateFrame != frameIndex) {
+				clear();
+				lastUpdateFrame = frameIndex;
+			}
 		}
 
 		void touch()
@@ -117,12 +126,15 @@ namespace wgfx
 
 		void updateUniform(Uniform* uniform, const float* array)
 		{
+			clearForNewFrame();
+
 			Uniform* current = uniforms.at(uniform->binding);
 
 			int dynamicOffset = current->quantity * current->stride;
 			
-			if (dynamicOffsets.size() <= uniform->binding) { dynamicOffsets.resize(uniform->binding + 1, 0); }
-			dynamicOffsets.at(uniform->binding) = dynamicOffset;
+			if (uniform->dynamicOffsetIndex < 0) return;
+			if (dynamicOffsets.size() <= static_cast<size_t>(uniform->dynamicOffsetIndex)) { dynamicOffsets.resize(uniform->dynamicOffsetIndex + 1, 0); }
+			dynamicOffsets.at(uniform->dynamicOffsetIndex) = dynamicOffset;
 
 			queue.writeBuffer(current->buffer, dynamicOffset, array, uniform->minBindingSize);
 
@@ -148,6 +160,7 @@ namespace wgfx
 					layout.buffer.type = BufferBindingType::Uniform;
 					layout.buffer.minBindingSize = uniform->minBindingSize;
 					layout.buffer.hasDynamicOffset = true; // dynamic
+					uniform->dynamicOffsetIndex = dynamicUniformCount;
 					dynamicUniformCount++;
 					dynamicOffsets.push_back(0); // default value
 				uniforms.push_back(uniform);

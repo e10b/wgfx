@@ -13,6 +13,9 @@ namespace wgfx
 	{
 		TextureView depthView = nullptr;
 		wgpu::Texture depthTexture = nullptr; // Store the texture so we can release it
+		uint32_t textureWidth = 0;
+		uint32_t textureHeight = 0;
+		uint32_t textureSamples = 0;
 
 		bool useDepth = false;
 		DepthTexture() { init(); }
@@ -29,12 +32,25 @@ namespace wgfx
 
 		void init()
 		{
-			TextureDescriptor depthTextureDesc;
+			if (depthView) {
+				depthView.release();
+				depthView = nullptr;
+			}
+			if (depthTexture) {
+				depthTexture.release();
+				depthTexture = nullptr;
+			}
+
+			textureWidth = static_cast<uint32_t>(width);
+			textureHeight = static_cast<uint32_t>(height);
+			textureSamples = samples;
+
+			TextureDescriptor depthTextureDesc{};
 			depthTextureDesc.dimension = TextureDimension::_2D;
 			depthTextureDesc.format = depthTextureFormat;
 			depthTextureDesc.mipLevelCount = 1;
-			depthTextureDesc.sampleCount = samples;
-			depthTextureDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
+			depthTextureDesc.sampleCount = textureSamples;
+			depthTextureDesc.size = { textureWidth, textureHeight, 1 };
 			depthTextureDesc.usage = TextureUsage::RenderAttachment | TextureUsage::TextureBinding;
 			depthTextureDesc.viewFormatCount = 1;
 			depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
@@ -55,6 +71,15 @@ namespace wgfx
 			std::cout << "Depth texture: " << depthView << std::endl;
 			//updateMultiSampleView = false;
 			//resetDepth = true;
+		}
+
+		void ensureCurrentSize()
+		{
+			if (textureWidth != static_cast<uint32_t>(width) ||
+				textureHeight != static_cast<uint32_t>(height) ||
+				textureSamples != samples) {
+				init();
+			}
 		}
 	};
 
@@ -138,6 +163,7 @@ namespace wgfx
 
 		// Reset the global reset flag to ensure uniforms get reset
 		reset = true;
+		frameIndex++;
 	}
 
 	struct ComputePass
@@ -148,6 +174,7 @@ namespace wgfx
 		void draw(Compute* compute, size_t size)
 		{
 			computePass.setPipeline(compute->pipeline);
+			compute->uniforms.clearForNewFrame();
 			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
 			computePass.dispatchWorkgroups(static_cast<uint32_t>(size), 1, 1);
 		}
@@ -155,6 +182,7 @@ namespace wgfx
 		void drawXY(Compute* compute, uint32_t sizeX, uint32_t sizeY)
 		{
 			computePass.setPipeline(compute->pipeline);
+			compute->uniforms.clearForNewFrame();
 			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
 			computePass.dispatchWorkgroups(sizeX, sizeY, 1);
 		}
@@ -162,6 +190,7 @@ namespace wgfx
 		void drawXYZ(Compute* compute, uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ)
 		{
 			computePass.setPipeline(compute->pipeline);
+			compute->uniforms.clearForNewFrame();
 			computePass.setBindGroup(0, compute->uniforms.bindGroup, compute->uniforms.dynamicUniformCount, compute->uniforms.dynamicOffsets.data());
 			computePass.dispatchWorkgroups(sizeX, sizeY, sizeZ);
 		}
@@ -258,6 +287,7 @@ namespace wgfx
 			// Setup depth-stencil if needed
 			RenderPassDepthStencilAttachment depthStencilAttachment{};
 			if (depth && depth->depthView && depth->useDepth) {
+				depth->ensureCurrentSize();
 				depthStencilAttachment.view = depth->depthView;
 				depthStencilAttachment.depthClearValue = 1.0f;
 				depthStencilAttachment.depthLoadOp = LoadOp::Clear;
