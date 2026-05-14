@@ -222,7 +222,7 @@ namespace wgfx
 			{
 				BindGroupLayoutEntry layout = Default;
 					layout.binding = uniform->binding;
-					layout.visibility = ShaderStage::Fragment;
+					layout.visibility = visibility;
 					layout.texture.sampleType = TextureSampleType::Float;
 					layout.texture.viewDimension = TextureViewDimension::_2DArray;
 				uniforms.push_back(uniform);

@@ -1,6 +1,7 @@
 #include "texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
+#include <algorithm>
 #include <stb_image.h>
 
 namespace wgfx
@@ -337,6 +338,114 @@ namespace wgfx
 		texture.textureView = wgpuTexture.createView(textureViewDesc);
 
 		std::cout << "Texture array created with " << paths.size() << " layers" << std::endl;
+		return texture;
+	}
+
+	Texture loadTexture2DArrayFromRgba8(int width, int height, const std::vector<std::vector<unsigned char>>& layersRgba,
+	    bool srgbEncoded)
+	{
+		Texture texture;
+		if (width < 1 || height < 1) {
+			std::cerr << "loadTexture2DArrayFromRgba8: invalid dimensions\n";
+			return texture;
+		}
+
+		const size_t expected = static_cast<size_t>(width) * static_cast<size_t>(height) * 4u;
+		const uint32_t layerCountU = static_cast<uint32_t>(std::max<size_t>(1, layersRgba.size()));
+
+		SamplerDescriptor samplerDesc;
+		samplerDesc.addressModeU = AddressMode::Repeat;
+		samplerDesc.addressModeV = AddressMode::Repeat;
+		samplerDesc.addressModeW = AddressMode::Repeat;
+		samplerDesc.magFilter = FilterMode::Linear;
+		samplerDesc.minFilter = FilterMode::Linear;
+		samplerDesc.mipmapFilter = MipmapFilterMode::Linear;
+		samplerDesc.lodMinClamp = 0.0f;
+		samplerDesc.lodMaxClamp = 12.0f;
+		samplerDesc.compare = CompareFunction::Undefined;
+		samplerDesc.maxAnisotropy = 1;
+		texture.sampler = device.createSampler(samplerDesc);
+
+		TextureDescriptor textureDesc;
+		textureDesc.dimension = TextureDimension::_2D;
+		textureDesc.format = srgbEncoded ? TextureFormat::RGBA8UnormSrgb : TextureFormat::RGBA8Unorm;
+		textureDesc.size = { (unsigned int)width, (unsigned int)height, layerCountU };
+		textureDesc.mipLevelCount = bit_width(std::max(textureDesc.size.width, textureDesc.size.height));
+		textureDesc.sampleCount = 1;
+		textureDesc.usage = TextureUsage::TextureBinding | TextureUsage::CopyDst;
+		textureDesc.viewFormatCount = 0;
+		textureDesc.viewFormats = nullptr;
+		wgpu::Texture wgpuTexture = device.createTexture(textureDesc);
+		texture.texture = wgpuTexture;
+		texture.width = width;
+		texture.height = height;
+
+		Queue queue = device.getQueue();
+
+		for (uint32_t i = 0; i < layerCountU; ++i) {
+			std::vector<unsigned char> whiteFallback(expected, 255u);
+			const unsigned char* pixelData = whiteFallback.data();
+			if (!layersRgba.empty() && i < layersRgba.size() && layersRgba[i].size() >= expected) {
+				pixelData = layersRgba[i].data();
+			}
+
+			ImageCopyTexture destination;
+			destination.texture = wgpuTexture;
+			destination.origin = { 0, 0, i };
+			destination.aspect = TextureAspect::All;
+
+			TextureDataLayout source;
+			source.offset = 0;
+
+			Extent3D mipLevelSize = { (uint32_t)width, (uint32_t)height, 1 };
+			std::vector<unsigned char> previousLevelPixels;
+			Extent3D previousMipLevelSize;
+
+			for (uint32_t level = 0; level < textureDesc.mipLevelCount; ++level) {
+				std::vector<unsigned char> pixels(4 * mipLevelSize.width * mipLevelSize.height);
+				if (level == 0) {
+					memcpy(pixels.data(), pixelData, pixels.size());
+				} else {
+					for (uint32_t x = 0; x < mipLevelSize.width; ++x) {
+						for (uint32_t y = 0; y < mipLevelSize.height; ++y) {
+							unsigned char* p = &pixels[4 * (y * mipLevelSize.width + x)];
+							unsigned char* p00 = &previousLevelPixels[4 * ((2 * y + 0) * previousMipLevelSize.width + (2 * x + 0))];
+							unsigned char* p01 = &previousLevelPixels[4 * ((2 * y + 0) * previousMipLevelSize.width + (2 * x + 1))];
+							unsigned char* p10 = &previousLevelPixels[4 * ((2 * y + 1) * previousMipLevelSize.width + (2 * x + 0))];
+							unsigned char* p11 = &previousLevelPixels[4 * ((2 * y + 1) * previousMipLevelSize.width + (2 * x + 1))];
+							p[0] = (p00[0] + p01[0] + p10[0] + p11[0]) / 4;
+							p[1] = (p00[1] + p01[1] + p10[1] + p11[1]) / 4;
+							p[2] = (p00[2] + p01[2] + p10[2] + p11[2]) / 4;
+							p[3] = (p00[3] + p01[3] + p10[3] + p11[3]) / 4;
+						}
+					}
+				}
+
+				destination.mipLevel = level;
+				source.bytesPerRow = 4 * mipLevelSize.width;
+				source.rowsPerImage = mipLevelSize.height;
+				queue.writeTexture(destination, pixels.data(), pixels.size(), source, mipLevelSize);
+
+				previousLevelPixels = std::move(pixels);
+				previousMipLevelSize = mipLevelSize;
+				mipLevelSize.width /= 2;
+				mipLevelSize.height /= 2;
+			}
+		}
+
+		queue.release();
+
+		TextureViewDescriptor textureViewDesc;
+		textureViewDesc.aspect = TextureAspect::All;
+		textureViewDesc.baseArrayLayer = 0;
+		textureViewDesc.arrayLayerCount = layerCountU;
+		textureViewDesc.baseMipLevel = 0;
+		textureViewDesc.mipLevelCount = textureDesc.mipLevelCount;
+		textureViewDesc.dimension = TextureViewDimension::_2DArray;
+		textureViewDesc.format = textureDesc.format;
+		texture.textureView = wgpuTexture.createView(textureViewDesc);
+
+		std::cout << "Texture 2D array (" << (srgbEncoded ? "RGBA8 sRGB" : "RGBA8 unorm") << ") created: " << width << "x" << height << " x " << layerCountU << " layers\n";
 		return texture;
 	}
 

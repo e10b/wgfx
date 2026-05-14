@@ -254,6 +254,14 @@ namespace wgfx
 			return uniform;
 		}
 
+		Uniform* addTextureArray(int index, wgfx::Texture texture)
+		{
+			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setTextureArray(uniform);
+			return uniform;
+		}
+
 		Uniform* addUniform(int index)
 		{
 			wgfx::Uniform* uniform = wgfx::createUniform(index, sizeof(float) * 16, 1.0f);
