@@ -34,9 +34,9 @@ namespace wgfx
 	Uniform* createStorage(int i, size_t size, const void* data, bool readOnly = false);
 	Uniform* createUniform(int i, size_t size, float data);
 	Uniform* createUniform(int i, size_t size, const float* array);
-	Uniform* createTexture(int i, Texture texture);
-	Uniform* createTexture3D_Uint(int i, Texture texture);
-	Uniform* createSampler(int i, Texture texture);
+	Uniform* createTexture(int i, const Texture& texture);
+	Uniform* createTexture3D_Uint(int i, const Texture& texture);
+	Uniform* createSampler(int i, const Texture& texture);
 
 	inline void copyUniformToUniform(Uniform* first, Uniform* second)
 	{

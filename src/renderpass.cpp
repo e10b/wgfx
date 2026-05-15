@@ -240,10 +240,9 @@ namespace wgfx
 		viewDescriptor.baseArrayLayer = 0;
 		viewDescriptor.arrayLayerCount = 1;
 		viewDescriptor.aspect = TextureAspect::All;
-		TextureView targetView = texture.createView(viewDescriptor);
-		texture.release();
+		TextureView view = texture.createView(viewDescriptor);
 
-		return targetView;
+		return view;
 	}
 
 

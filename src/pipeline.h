@@ -27,7 +27,7 @@ namespace wgfx
 			pipelineDesc = ComputePipelineDescriptor();
 		}
 
-		Uniform* addSampler(int index, wgfx::Texture texture)
+		Uniform* addSampler(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createSampler(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Compute;
@@ -79,7 +79,7 @@ namespace wgfx
 			uniforms.setStorage(storage);
 		}
 
-		Uniform* addTexture(int index, wgfx::Texture texture)
+		Uniform* addTexture(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Compute;
@@ -87,7 +87,7 @@ namespace wgfx
 			return uniform;
 		}
 
-		Uniform* addTexture3D_Uint(int index, wgfx::Texture texture)
+		Uniform* addTexture3D_Uint(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createTexture3D_Uint(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Compute;
@@ -95,7 +95,7 @@ namespace wgfx
 			return uniform;
 		}
 
-		Uniform* addStorageTexture(int index, wgfx::Texture texture)
+		Uniform* addStorageTexture(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Compute;
@@ -238,7 +238,7 @@ namespace wgfx
 		ex:
 		addUniform(5, sizeof(float) * 4)
 		*/
-		Uniform* addSampler(int index, wgfx::Texture texture)
+		Uniform* addSampler(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createSampler(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Fragment;
@@ -246,7 +246,7 @@ namespace wgfx
 			return uniform;
 		}
 
-		Uniform* addTexture(int index, wgfx::Texture texture)
+		Uniform* addTexture(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
@@ -254,7 +254,7 @@ namespace wgfx
 			return uniform;
 		}
 
-		Uniform* addTextureArray(int index, wgfx::Texture texture)
+		Uniform* addTextureArray(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;

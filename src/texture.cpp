@@ -1,6 +1,5 @@
 #include "texture.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <algorithm>
 #include <stb_image.h>
 
@@ -81,8 +80,8 @@ namespace wgfx
 		samplerDesc.addressModeU = AddressMode::Repeat;
 		samplerDesc.addressModeV = AddressMode::Repeat;
 		samplerDesc.addressModeW = AddressMode::Repeat;
-		samplerDesc.magFilter = FilterMode::Nearest;//FilterMode::Linear;
-		samplerDesc.minFilter = FilterMode::Nearest;//FilterMode::Linear;
+		samplerDesc.magFilter = FilterMode::Linear;
+		samplerDesc.minFilter = FilterMode::Linear;
 		samplerDesc.mipmapFilter = MipmapFilterMode::Linear;
 		samplerDesc.lodMinClamp = 0.0f;
 		samplerDesc.lodMaxClamp = 8.0f;
@@ -450,28 +449,44 @@ namespace wgfx
 	}
 
 	wgpu::Texture makeTexture(const std::filesystem::path& path, Device device, TextureView* pTextureView) {
-		int width, height, channels;
-		unsigned char* pixelData = stbi_load(path.string().c_str(), &width, &height, &channels, 4 /* force 4 channels */);
-		// If data is null, loading failed.
-		if (nullptr == pixelData) return nullptr;
+		int width = 0, height = 0, channels = 0;
+		const std::string filePath = path.string();
+		const bool isHdr = stbi_is_hdr(filePath.c_str()) != 0;
 
-		// Use the width, height, channels and data variables here
 		TextureDescriptor textureDesc;
 		textureDesc.dimension = TextureDimension::_2D;
-		textureDesc.format = TextureFormat::RGBA8Unorm; // by convention for bmp, png and jpg file. Be careful with other formats.
-		textureDesc.size = { (unsigned int)width, (unsigned int)height, 1 };
-		textureDesc.mipLevelCount = bit_width(std::max(textureDesc.size.width, textureDesc.size.height));
 		textureDesc.sampleCount = 1;
 		textureDesc.usage = TextureUsage::TextureBinding | TextureUsage::CopyDst;
 		textureDesc.viewFormatCount = 0;
 		textureDesc.viewFormats = nullptr;
-		wgpu::Texture texture = device.createTexture(textureDesc);
 
-		// Upload data to the GPU texture
-		writeMipMaps(device, texture, textureDesc.size, textureDesc.mipLevelCount, pixelData);
+		wgpu::Texture texture;
 
-		stbi_image_free(pixelData);
-		// (Do not use data after this)
+		if (isHdr) {
+			// Keep the path robust and filterable across backends by converting HDR input to RGBA8.
+			// Dynamic range is reduced, but this avoids half-float packing bugs/format mismatch artifacts.
+			unsigned char* pixelData = stbi_load(filePath.c_str(), &width, &height, &channels, 4 /* force RGBA */);
+			if (pixelData == nullptr) return nullptr;
+
+			textureDesc.format = TextureFormat::RGBA8Unorm;
+			textureDesc.size = { static_cast<unsigned int>(width), static_cast<unsigned int>(height), 1 };
+			textureDesc.mipLevelCount = bit_width(std::max(textureDesc.size.width, textureDesc.size.height));
+			texture = device.createTexture(textureDesc);
+
+			writeMipMaps(device, texture, textureDesc.size, textureDesc.mipLevelCount, pixelData);
+			stbi_image_free(pixelData);
+		} else {
+			unsigned char* pixelData = stbi_load(filePath.c_str(), &width, &height, &channels, 4 /* force 4 channels */);
+			if (pixelData == nullptr) return nullptr;
+
+			textureDesc.format = TextureFormat::RGBA8Unorm;
+			textureDesc.size = { static_cast<unsigned int>(width), static_cast<unsigned int>(height), 1 };
+			textureDesc.mipLevelCount = bit_width(std::max(textureDesc.size.width, textureDesc.size.height));
+			texture = device.createTexture(textureDesc);
+
+			writeMipMaps(device, texture, textureDesc.size, textureDesc.mipLevelCount, pixelData);
+			stbi_image_free(pixelData);
+		}
 
 		if (pTextureView) {
 			TextureViewDescriptor textureViewDesc;

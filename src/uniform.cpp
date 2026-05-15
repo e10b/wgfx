@@ -92,7 +92,7 @@ Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
 		uniform->entry.size = size;
 		return uniform;
 	}
-	Uniform* createTexture(int i, Texture texture)
+	Uniform* createTexture(int i, const Texture& texture)
 	{
 		Uniform* uniform = new Uniform();
 		uniform->binding = i;
@@ -103,7 +103,7 @@ Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
 		return uniform;
 	}
 
-	Uniform* createTexture3D_Uint(int i, Texture texture)
+	Uniform* createTexture3D_Uint(int i, const Texture& texture)
 	{
 		Uniform* uniform = new Uniform();
 		uniform->binding = i;
@@ -116,7 +116,7 @@ Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
 		return uniform;
 	}
 
-	Uniform* createSampler(int i, Texture texture)
+	Uniform* createSampler(int i, const Texture& texture)
 	{
 		Uniform* uniform = new Uniform();
 		uniform->binding = i;
