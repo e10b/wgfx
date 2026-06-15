@@ -38,4 +38,22 @@ if(NOT EMSCRIPTEN)
 	add_example_target(ExampleRainbowQuad ${CMAKE_CURRENT_SOURCE_DIR}/examples/rainbow_quad/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/rainbow_quad)
 	add_example_target(ExampleSpinningCube ${CMAKE_CURRENT_SOURCE_DIR}/examples/spinning_cube/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/spinning_cube)
 	add_example_target(ExampleComputeSphere ${CMAKE_CURRENT_SOURCE_DIR}/examples/compute_sphere/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/compute_sphere)
+	add_example_target(ExampleRotatingCube ${CMAKE_CURRENT_SOURCE_DIR}/examples/rotatingCube/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/rotatingCube)
+	add_example_target(ExampleTexturedCube ${CMAKE_CURRENT_SOURCE_DIR}/examples/texturedCube/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/texturedCube)
+	add_example_target(ExampleComputeBoids ${CMAKE_CURRENT_SOURCE_DIR}/examples/computeBoids/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/computeBoids)
+	add_example_target(ExampleShadowMapping ${CMAKE_CURRENT_SOURCE_DIR}/examples/shadowMapping/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/shadowMapping)
+	add_example_target(ExampleDeferredRendering ${CMAKE_CURRENT_SOURCE_DIR}/examples/deferredRendering/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/examples/deferredRendering)
+	target_sources(ExampleDeferredRendering PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui/imgui.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui/imgui_draw.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui/imgui_tables.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui/imgui_widgets.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui/backends/imgui_impl_sdl3.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui/backends/imgui_impl_wgpu.cpp
+	)
+	target_include_directories(ExampleDeferredRendering PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui
+		${CMAKE_CURRENT_SOURCE_DIR}/deps/imgui/backends
+	)
+	target_compile_definitions(ExampleDeferredRendering PRIVATE IMGUI_IMPL_WEBGPU_BACKEND_WGPU SDL_ENABLE_OLD_NAMES)
 endif()

@@ -2,3 +2,6 @@
 	path = deps/wgfx
 	url = git@github.com:e10b/wgfx
 	branch = main
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = https://github.com/ocornut/imgui.git

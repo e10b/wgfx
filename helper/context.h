@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wgfx.h>
+#include <functional>
 #include <string>
 
 class Context
@@ -22,6 +23,7 @@ public:
 
 	void update();
 	void draw();
+	std::function<void(const SDL_Event&)> eventCallback;
 
 	bool close = false;
 	SDL_Window* window;
