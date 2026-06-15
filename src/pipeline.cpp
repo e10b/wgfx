@@ -91,31 +91,29 @@ namespace wgfx
 		samples = (multiSample) ? 4 : 1;
 
 		//initDepth();
-		vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer->vertexAttribs.size();
-		vertexBufferLayout.attributes = vertexBuffer->vertexAttribs.data();
-		vertexBufferLayout.arrayStride = (vertexBuffer->fields) * sizeof(float);
-		vertexBufferLayout.stepMode = VertexStepMode::Vertex;
+		if (vertexBuffer) {
+			vertexBufferLayout.attributeCount = (uint32_t)vertexBuffer->vertexAttribs.size();
+			vertexBufferLayout.attributes = vertexBuffer->vertexAttribs.data();
+			vertexBufferLayout.arrayStride = (vertexBuffer->fields) * sizeof(float);
+			vertexBufferLayout.stepMode = VertexStepMode::Vertex;
 
-		wgpu::MultisampleState multisampleState = {};
-		multisampleState.count = samples;                  // Number of samples (e.g., 4x MSAA)
-		multisampleState.mask = ~0;                 // Sample mask (default enables all samples)
-		multisampleState.alphaToCoverageEnabled = false; // Optional: Enable alpha-to-coverage
+			pipelineDesc.vertex.bufferCount = 1;
+			pipelineDesc.vertex.buffers = &vertexBufferLayout;
 
-
-		//pipelineDesc.multisample = multisampleState;
-
-		pipelineDesc.vertex.bufferCount = 1;
-		pipelineDesc.vertex.buffers = &vertexBufferLayout;
+			pipelineDesc.primitive.topology = vertexBuffer->topology;
+		} else {
+			pipelineDesc.vertex.bufferCount = 0;
+			pipelineDesc.vertex.buffers = nullptr;
+			pipelineDesc.primitive.topology = PrimitiveTopology::TriangleList;
+		}
 
 		pipelineDesc.vertex.module = shaderModule;
 		pipelineDesc.vertex.entryPoint = "vs_main";
 		pipelineDesc.vertex.constantCount = 0;
 		pipelineDesc.vertex.constants = nullptr;
-
-		pipelineDesc.primitive.topology = vertexBuffer->topology;
 		pipelineDesc.primitive.stripIndexFormat = IndexFormat::Undefined;
 		pipelineDesc.primitive.frontFace = FrontFace::CCW;
-		pipelineDesc.primitive.cullMode = CullMode::Back; // backface culling option, currently thinking about ways to expose this to the mid level wgfx::setState(wgfx::CullBack);
+		pipelineDesc.primitive.cullMode = cullMode;
 
 		pipelineDesc.fragment = &fragmentState;
 		fragmentState.module = shaderModule;
@@ -131,7 +129,7 @@ namespace wgfx
 		fragmentBlend.alpha.operation = BlendOperation::Add;
 
 		for (int ti = 0; ti < 10; ++ti) {
-			colorTargets[ti].format = surfaceFormat;
+			colorTargets[ti].format = targetFormats[ti] == TextureFormat::Undefined ? surfaceFormat : targetFormats[ti];
 			colorTargets[ti].blend = &fragmentBlend;
 			colorTargets[ti].writeMask = ColorWriteMask::All;
 		}
@@ -162,7 +160,7 @@ namespace wgfx
 		
 		// Store the format in a variable as later parts of the code depend on it
 		//TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
-		depthStencilState.format = depthTextureFormat;
+		depthStencilState.format = depthFormat;
 		// Deactivate the stencil alltogether
 		depthStencilState.stencilReadMask = 0;
 		depthStencilState.stencilWriteMask = 0;

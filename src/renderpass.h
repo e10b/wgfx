@@ -13,12 +13,16 @@ namespace wgfx
 	{
 		TextureView depthView = nullptr;
 		wgpu::Texture depthTexture = nullptr; // Store the texture so we can release it
+		wgpu::TextureFormat format = depthTextureFormat;
+		uint32_t fixedWidth = 0;
+		uint32_t fixedHeight = 0;
 		uint32_t textureWidth = 0;
 		uint32_t textureHeight = 0;
 		uint32_t textureSamples = 0;
 
 		bool useDepth = false;
-		DepthTexture() { init(); }
+		DepthTexture(wgpu::TextureFormat format = depthTextureFormat) : format(format) { init(); }
+		DepthTexture(uint32_t width, uint32_t height, wgpu::TextureFormat format = depthTextureFormat) : format(format), fixedWidth(width), fixedHeight(height) { init(); }
 		~DepthTexture() {
 			if (depthView) {
 				depthView.release();
@@ -41,19 +45,19 @@ namespace wgfx
 				depthTexture = nullptr;
 			}
 
-			textureWidth = static_cast<uint32_t>(width);
-			textureHeight = static_cast<uint32_t>(height);
+			textureWidth = fixedWidth ? fixedWidth : static_cast<uint32_t>(width);
+			textureHeight = fixedHeight ? fixedHeight : static_cast<uint32_t>(height);
 			textureSamples = samples;
 
 			TextureDescriptor depthTextureDesc{};
 			depthTextureDesc.dimension = TextureDimension::_2D;
-			depthTextureDesc.format = depthTextureFormat;
+			depthTextureDesc.format = format;
 			depthTextureDesc.mipLevelCount = 1;
 			depthTextureDesc.sampleCount = textureSamples;
 			depthTextureDesc.size = { textureWidth, textureHeight, 1 };
 			depthTextureDesc.usage = TextureUsage::RenderAttachment | TextureUsage::TextureBinding;
 			depthTextureDesc.viewFormatCount = 1;
-			depthTextureDesc.viewFormats = (WGPUTextureFormat*)&depthTextureFormat;
+			depthTextureDesc.viewFormats = (WGPUTextureFormat*)&format;
 			depthTexture = device.createTexture(depthTextureDesc);
 			//std::cout << "Depth texture: " << depthTexture << std::endl;
 
@@ -65,7 +69,7 @@ namespace wgfx
 			depthTextureViewDesc.baseMipLevel = 0;
 			depthTextureViewDesc.mipLevelCount = 1;
 			depthTextureViewDesc.dimension = TextureViewDimension::_2D;
-			depthTextureViewDesc.format = depthTextureFormat;
+			depthTextureViewDesc.format = format;
 			depthView = depthTexture.createView(depthTextureViewDesc);
 			if (!depthView) { std::cerr << "Failed to create depth texture!\n"; }
 			std::cout << "Depth texture: " << depthView << std::endl;
@@ -75,8 +79,10 @@ namespace wgfx
 
 		void ensureCurrentSize()
 		{
-			if (textureWidth != static_cast<uint32_t>(width) ||
-				textureHeight != static_cast<uint32_t>(height) ||
+			const uint32_t expectedWidth = fixedWidth ? fixedWidth : static_cast<uint32_t>(width);
+			const uint32_t expectedHeight = fixedHeight ? fixedHeight : static_cast<uint32_t>(height);
+			if (textureWidth != expectedWidth ||
+				textureHeight != expectedHeight ||
 				textureSamples != samples) {
 				init();
 			}
@@ -89,8 +95,9 @@ namespace wgfx
 		TextureView colorView = nullptr;
 		wgpu::Texture colorTexture = nullptr; // Store the texture so we can release it
 		bool isSurfaceTexture = false; // Flag to indicate if this is a surface texture
+		wgpu::TextureFormat format = wgpu::TextureFormat::BGRA8UnormSrgb;
 
-		ColorTexture(bool useSurface = true) : isSurfaceTexture(useSurface) {
+		ColorTexture(bool useSurface = true, wgpu::TextureFormat format = wgpu::TextureFormat::BGRA8UnormSrgb) : isSurfaceTexture(useSurface), format(format) {
 			if (!useSurface) init();
 		}
 		~ColorTexture() {
@@ -113,7 +120,7 @@ namespace wgfx
 				wgpu::TextureUsage::TextureBinding |
 				wgpu::TextureUsage::CopySrc;
 			colorDesc.size = { (uint32_t)width, (uint32_t)height, 1 };
-			colorDesc.format = wgpu::TextureFormat::BGRA8UnormSrgb;
+			colorDesc.format = format;
 			colorDesc.sampleCount = 1;
 			colorDesc.mipLevelCount = 1;
 			colorDesc.dimension = wgpu::TextureDimension::_2D;
@@ -128,6 +135,8 @@ namespace wgfx
 	};
 
 	TextureView getNextSurfaceTextureView();
+	TextureView getMultiSampleView();
+
 	inline void touch(ColorTexture* colorTex)
 	{
 		//// Only update surface textures
@@ -266,8 +275,13 @@ namespace wgfx
 				}
 				RenderPassColorAttachment attachment{};
 				//std::cout << "HOW MANY???: " << colors.size() << "\n";
-				attachment.view = colors[i]->colorView;
-				attachment.resolveTarget = nullptr;
+				if (wgfx::multiSample && colors[i]->isSurfaceTexture) {
+					attachment.view = getMultiSampleView();
+					attachment.resolveTarget = colors[i]->colorView;
+				} else {
+					attachment.view = colors[i]->colorView;
+					attachment.resolveTarget = nullptr;
+				}
 				attachment.loadOp = shouldClear ? LoadOp::Clear : LoadOp::Load; // Use shouldClear flag
 				//attachment.loadOp = LoadOp::Clear; // Always clear color attachment
 				attachment.storeOp = StoreOp::Store;
@@ -338,6 +352,4 @@ namespace wgfx
 
 	// Memory management utilities
 	void cleanupStaticResources();
-
-	TextureView getMultiSampleView();
 }

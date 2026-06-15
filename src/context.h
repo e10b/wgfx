@@ -37,9 +37,9 @@ namespace wgfx
     inline int width = 0;
     inline int height = 0;
 
-    // Inline type definitions
     inline wgpu::VertexFormat vec1f = VertexFormat::Float32;
     inline wgpu::VertexFormat vec2f = VertexFormat::Float32x2;
     inline wgpu::VertexFormat vec3f = VertexFormat::Float32x3;
+    inline wgpu::VertexFormat vec4f = VertexFormat::Float32x4;
     inline wgpu::VertexFormat u32 = VertexFormat::Uint32;
 }

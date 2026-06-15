@@ -11,6 +11,7 @@ namespace wgfx
 		bool isUint = false;
 		bool is3D = false;
 		bool isReadOnly = false;
+		bool isComparisonSampler = false;
 
 		Buffer buffer;
 		//BindGroupEntry binding;
@@ -34,8 +35,10 @@ namespace wgfx
 	Uniform* createUniform(int i, size_t size, float data);
 	Uniform* createUniform(int i, size_t size, const float* array);
 	Uniform* createTexture(int i, Texture texture);
+	Uniform* createDepthTexture(int i, TextureView textureView);
 	Uniform* createTexture3D_Uint(int i, Texture texture);
 	Uniform* createSampler(int i, Texture texture);
+	Uniform* createComparisonSampler(int i);
 
 	inline void copyUniformToUniform(Uniform* first, Uniform* second)
 	{
@@ -234,7 +237,7 @@ namespace wgfx
 				BindGroupLayoutEntry layout = Default;
 					layout.binding = uniform->binding;
 					layout.visibility = visibility;
-					layout.sampler.type = SamplerBindingType::Filtering;
+					layout.sampler.type = uniform->isComparisonSampler ? SamplerBindingType::Comparison : SamplerBindingType::Filtering;
 				uniforms.push_back(uniform);
 				layouts.push_back(layout);
 				entries.push_back(uniform->entry);
