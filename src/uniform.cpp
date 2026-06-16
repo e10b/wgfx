@@ -103,6 +103,18 @@ Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
 		return uniform;
 	}
 
+	Uniform* createDepthTexture(int i, TextureView textureView)
+	{
+		Uniform* uniform = new Uniform();
+		uniform->binding = i;
+		uniform->isDepth = true;
+
+		uniform->entry.binding = i;
+		uniform->entry.textureView = textureView;
+
+		return uniform;
+	}
+
 	Uniform* createTexture3D_Uint(int i, const Texture& texture)
 	{
 		Uniform* uniform = new Uniform();
@@ -124,6 +136,28 @@ Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
 		uniform->entry.binding = i;
 		uniform->entry.sampler = texture.sampler;
 
+		return uniform;
+	}
+
+	Uniform* createComparisonSampler(int i)
+	{
+		SamplerDescriptor samplerDesc;
+		samplerDesc.addressModeU = AddressMode::ClampToEdge;
+		samplerDesc.addressModeV = AddressMode::ClampToEdge;
+		samplerDesc.addressModeW = AddressMode::ClampToEdge;
+		samplerDesc.magFilter = FilterMode::Linear;
+		samplerDesc.minFilter = FilterMode::Linear;
+		samplerDesc.mipmapFilter = MipmapFilterMode::Nearest;
+		samplerDesc.lodMinClamp = 0.0f;
+		samplerDesc.lodMaxClamp = 1.0f;
+		samplerDesc.compare = CompareFunction::Less;
+		samplerDesc.maxAnisotropy = 1;
+
+		Uniform* uniform = new Uniform();
+		uniform->binding = i;
+		uniform->isComparisonSampler = true;
+		uniform->entry.binding = i;
+		uniform->entry.sampler = device.createSampler(samplerDesc);
 		return uniform;
 	}
 

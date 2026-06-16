@@ -55,11 +55,20 @@ namespace wgfx
 		pipeline->uniforms.clearForNewFrame();
 		renderPass.setBindGroup(0, pipeline->uniforms.bindGroup, pipeline->uniforms.dynamicUniformCount, pipeline->uniforms.dynamicOffsets.data());
 		renderPass.setPipeline(pipeline->pipeline);
-		renderPass.setVertexBuffer(0, pipeline->vbos.current->buffer, 0, pipeline->vbos.current->buffer.getSize());
-		const IndexFormat indexFormat = pipeline->ibos.current->is32Bit ? IndexFormat::Uint32 : IndexFormat::Uint16;
-		renderPass.setIndexBuffer(pipeline->ibos.current->buffer, indexFormat, 0, pipeline->ibos.current->buffer.getSize());
+		if (pipeline->vbos.current) {
+			renderPass.setVertexBuffer(0, pipeline->vbos.current->buffer, 0, pipeline->vbos.current->buffer.getSize());
+		}
 
-		renderPass.drawIndexed(pipeline->ibos.current->indexCount, 1, 0, 0, 0);
+		if (pipeline->ibos.current) {
+			const IndexFormat indexFormat = pipeline->ibos.current->is32Bit ? IndexFormat::Uint32 : IndexFormat::Uint16;
+			renderPass.setIndexBuffer(pipeline->ibos.current->buffer, indexFormat, 0, pipeline->ibos.current->buffer.getSize());
+			renderPass.drawIndexed(pipeline->ibos.current->indexCount, pipeline->instances, 0, 0, 0);
+		} else if (pipeline->vbos.current) {
+			uint32_t vertexCount = pipeline->vbos.current->data.size() / std::max(1, pipeline->vbos.current->fields);
+			renderPass.draw(vertexCount, pipeline->instances, 0, 0);
+		} else {
+			renderPass.draw(pipeline->vertices, pipeline->instances, 0, 0);
+		}
 	}
 
 	//void RenderPass::touch()

@@ -47,6 +47,10 @@ namespace wgfx
 		{
 			typeOffset = 3;
 		}
+		else if (type == wgfx::vec4f)
+		{
+			typeOffset = 4;
+		}
 
 		VertexAttribute attrib;
 		attrib.shaderLocation = location;

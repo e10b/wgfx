@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <array>
 
 #include <glm/glm.hpp>
 
@@ -140,6 +141,22 @@ namespace wgfx
 	{
 		bool useDepth = true;
 		int targets = 1;
+		int instances = 1;
+		int vertices = 0;
+		wgpu::CullMode cullMode = wgpu::CullMode::None;
+		wgpu::TextureFormat depthFormat = depthTextureFormat;
+		std::array<wgpu::TextureFormat, 10> targetFormats = {
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+			wgpu::TextureFormat::Undefined,
+		};
 
 		//std::vector<Uniform*> uniforms; // this is the issue
 		//int dynamicUniformCount = 0; // likewise
@@ -254,11 +271,27 @@ namespace wgfx
 			return uniform;
 		}
 
+		Uniform* addComparisonSampler(int index)
+		{
+			wgfx::Uniform* uniform = wgfx::createComparisonSampler(index);
+			uniforms.visibility = wgpu::ShaderStage::Fragment;
+			uniforms.setSampler(uniform);
+			return uniform;
+		}
+
 		Uniform* addTextureArray(int index, const wgfx::Texture& texture)
 		{
 			wgfx::Uniform* uniform = wgfx::createTexture(index, texture);
 			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
 			uniforms.setTextureArray(uniform);
+			return uniform;
+		}
+
+		Uniform* addDepthTexture(int index, wgpu::TextureView textureView)
+		{
+			wgfx::Uniform* uniform = wgfx::createDepthTexture(index, textureView);
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setTexture(uniform);
 			return uniform;
 		}
 
@@ -275,10 +308,18 @@ namespace wgfx
 			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
 			uniforms.setUniform(uniform);
 		}
-		
-		Uniform* addStorage(int index, size_t size, const void* data)
+
+		Uniform* addUniform(int index, size_t size)
 		{
-			wgfx::Uniform* uniform = wgfx::createStorage(index, size, data);
+			wgfx::Uniform* uniform = wgfx::createUniform(index, size, 1.0f);
+			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+			uniforms.setUniform(uniform);
+			return uniform;
+		}
+		
+		Uniform* addStorage(int index, size_t size, const void* data, bool readOnly = false)
+		{
+			wgfx::Uniform* uniform = wgfx::createStorage(index, size, data, readOnly);
 			uniforms.visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
 			uniforms.setStorage(uniform);
 			return uniform;
