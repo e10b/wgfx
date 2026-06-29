@@ -8,7 +8,6 @@
 #include <sdl2webgpu.h>
 #include <SDL3/SDL.h>
 
-#include <stb_image.h>
 #endif
 
 #include <surface.h>
