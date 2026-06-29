@@ -1,8 +1,12 @@
 #pragma once
 
 #include <webgpu/webgpu.hpp>
+
+#ifdef WGFX_ENABLE_SDL
 #include <sdl2webgpu.h>
 #include <SDL3/SDL.h>
+#endif
+
 #include <cstdint>
 #include <memory> // For std::unique_ptr
 
@@ -20,7 +24,11 @@ namespace wgfx
     inline std::unique_ptr<ErrorCallback> uncapturedErrorCallbackHandle;
     inline TextureFormat surfaceFormat = TextureFormat::Undefined;
     inline RenderPipeline pipeline;
+
+#ifdef WGFX_ENABLE_SDL
     inline SDL_Window* window = nullptr; // Initialize to nullptr
+#endif
+
     inline BufferDescriptor bufferDesc;
     inline TextureFormat depthTextureFormat = TextureFormat::Depth24Plus;
     //inline TextureView depthTextureView = nullptr; // Initialize to nullptr

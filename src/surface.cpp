@@ -4,6 +4,71 @@
 #include <iostream>
 namespace wgfx
 {
+	namespace
+	{
+		void requestDevice()
+		{
+			std::cout << "Requesting device..." << std::endl;
+
+			SupportedLimits adapterSupportedLimits;
+			adapter.getLimits(&adapterSupportedLimits);
+			std::cout << "Adapter supported maxStorageBufferBindingSize: "
+			          << adapterSupportedLimits.limits.maxStorageBufferBindingSize << " bytes" << std::endl;
+
+			RequiredLimits requiredLimits = {};
+			memset(&requiredLimits.limits, 0xFF, sizeof(WGPULimits));
+			requiredLimits.limits.maxStorageBufferBindingSize = 1073741824;
+			requiredLimits.limits.maxBufferSize = 1073741824;
+			requiredLimits.limits.maxComputeWorkgroupStorageSize = 32768;
+			requiredLimits.limits.maxStorageBuffersPerShaderStage = 8;
+
+			DeviceDescriptor deviceDesc = {};
+			deviceDesc.label = "My Device";
+			deviceDesc.requiredFeatureCount = 0;
+#ifdef __EMSCRIPTEN__
+			deviceDesc.requiredLimits = nullptr;
+#else
+			deviceDesc.requiredLimits = &requiredLimits;
+#endif
+			deviceDesc.defaultQueue.nextInChain = nullptr;
+			deviceDesc.defaultQueue.label = "The default queue";
+			deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void*) {
+				std::cout << "Device lost: reason " << reason;
+				if (message) std::cout << " (" << message << ")";
+				std::cout << std::endl;
+			};
+			device = adapter.requestDevice(deviceDesc);
+			std::cout << "Got device: " << device << std::endl;
+
+			SupportedLimits deviceSupportedLimits;
+			device.getLimits(&deviceSupportedLimits);
+			deviceLimits = deviceSupportedLimits.limits;
+
+			std::cout << "Device maxStorageBufferBindingSize: " << deviceLimits.maxStorageBufferBindingSize << " bytes ("
+			          << (deviceLimits.maxStorageBufferBindingSize / (1024.0 * 1024.0 * 1024.0)) << " GB)" << std::endl;
+
+			uncapturedErrorCallbackHandle = device.setUncapturedErrorCallback([](ErrorType type, char const* message) {
+				std::cout << "Uncaptured device error: type " << type;
+				if (message) std::cout << " (" << message << ")";
+				std::cout << std::endl;
+			});
+
+			queue = device.getQueue();
+		}
+	}
+
+	void init()
+	{
+		instance = wgpuCreateInstance(nullptr);
+		std::cout << "Requesting adapter..." << std::endl;
+
+		RequestAdapterOptions adapterOpts = {};
+		adapter = instance.requestAdapter(adapterOpts);
+		std::cout << "Got adapter: " << adapter << std::endl;
+
+		instance.release();
+		requestDevice();
+	}
 
 	void init(Surface surface)
 	{
@@ -15,59 +80,14 @@ namespace wgfx
 
 		instance.release();
 
-		std::cout << "Requesting device..." << std::endl;
-		
-		// Get adapter supported limits first
-		SupportedLimits adapterSupportedLimits;
-		adapter.getLimits(&adapterSupportedLimits);
-		std::cout << "Adapter supported maxStorageBufferBindingSize: " << adapterSupportedLimits.limits.maxStorageBufferBindingSize << " bytes" << std::endl;
-		
-		// Request device with maximum supported limits
-		RequiredLimits requiredLimits = {};
-		memset(&requiredLimits.limits, 0xFF, sizeof(WGPULimits));
-		requiredLimits.limits.maxStorageBufferBindingSize = 1073741824; // 1GB
-		requiredLimits.limits.maxBufferSize = 1073741824; // 1GB
-		requiredLimits.limits.maxComputeWorkgroupStorageSize = 32768;
-		requiredLimits.limits.maxStorageBuffersPerShaderStage = 8;
+		requestDevice();
 
-		DeviceDescriptor deviceDesc = {};
-		deviceDesc.label = "My Device";
-		deviceDesc.requiredFeatureCount = 0;
-#ifdef __EMSCRIPTEN__
-		deviceDesc.requiredLimits = nullptr;
-#else
-		deviceDesc.requiredLimits = &requiredLimits;
-#endif
-		deviceDesc.defaultQueue.nextInChain = nullptr;
-		deviceDesc.defaultQueue.label = "The default queue";
-		deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void* /* pUserData */) {
-			std::cout << "Device lost: reason " << reason;
-			if (message) std::cout << " (" << message << ")";
-			std::cout << std::endl;
-			};
-		device = adapter.requestDevice(deviceDesc);
-		std::cout << "Got device: " << device << std::endl;
-
-		// Get device limits (should match what we requested)
-		SupportedLimits deviceSupportedLimits;
-		device.getLimits(&deviceSupportedLimits);
-		deviceLimits = deviceSupportedLimits.limits;
-		
-		// Log supported storage buffer limit
-		std::cout << "Device maxStorageBufferBindingSize: " << deviceLimits.maxStorageBufferBindingSize << " bytes (" 
-		          << (deviceLimits.maxStorageBufferBindingSize / (1024.0 * 1024.0 * 1024.0)) << " GB)" << std::endl;
-
-		uncapturedErrorCallbackHandle = device.setUncapturedErrorCallback([](ErrorType type, char const* message) {
-			std::cout << "Uncaptured device error: type " << type;
-			if (message) std::cout << " (" << message << ")";
-			std::cout << std::endl;
-			});
-
-		queue = device.getQueue();
-
+#ifdef WGFX_ENABLE_SDL
 		initSurface();
+#endif
 	}
 
+#ifdef WGFX_ENABLE_SDL
 	void initSurface()
 	{
 		SDL_GetWindowSize(window, &width, &height);
@@ -105,6 +125,7 @@ namespace wgfx
 		std::cout << "Requesting adapter..." << std::endl;
 		return surface = SDL_GetWGPUSurface(instance, w);
 	}
+#endif
 
 	void frame()
 	{
@@ -134,7 +155,7 @@ namespace wgfx
 		// At the end of the frame
 		//targetView.release();
 #ifndef __EMSCRIPTEN__
-		surface.present();
+		if (surface) surface.present();
 #endif
 
 #if defined(WEBGPU_BACKEND_DAWN)
