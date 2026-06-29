@@ -5,3 +5,12 @@
 [submodule "deps/imgui"]
 	path = deps/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "deps/sdl3"]
+	path = deps/sdl3
+	url = https://github.com/libsdl-org/SDL
+[submodule "deps/glm"]
+	path = deps/glm
+	url = https://github.com/g-truc/glm/
+[submodule "deps/fastgltf"]
+	path = deps/fastgltf
+	url = https://github.com/spnda/fastgltf.git

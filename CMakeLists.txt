@@ -4,7 +4,18 @@ project(wgfx_examples VERSION 0.1.0 LANGUAGES CXX C)
 option(DEV_MODE "Set up development helper settings" ON)
 
 set(WGFX_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/deps/wgfx")
-add_subdirectory("${WGFX_ROOT}" "${CMAKE_BINARY_DIR}/wgfx")
+
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(SHADERC_SKIP_TESTS ON CACHE BOOL "" FORCE)
+
+add_subdirectory(deps/sdl3)
+add_subdirectory(deps/glm)
+add_subdirectory("${WGFX_ROOT}/deps/webgpu" "${CMAKE_BINARY_DIR}/webgpu")
+add_subdirectory("${WGFX_ROOT}/deps/sdl2webgpu" "${CMAKE_BINARY_DIR}/sdl2webgpu")
+add_subdirectory(deps/fastgltf)
 
 file(GLOB_RECURSE wgfx_src CONFIGURE_DEPENDS "${WGFX_ROOT}/src/*.cpp")
 
@@ -22,7 +33,8 @@ function(add_example_target target_name source_file resource_dir)
 		"${CMAKE_CURRENT_SOURCE_DIR}"
 		"${resource_dir}"
 		"${WGFX_ROOT}/src"
-		"${WGFX_ROOT}/deps/sdl3/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/deps/sdl3/include"
+		"${WGFX_ROOT}/deps/sdl2webgpu"
 		"${WGFX_ROOT}/deps"
 	)
 	target_link_libraries(${target_name} PRIVATE webgpu sdl2webgpu SDL3-static glm::glm fastgltf::fastgltf)
