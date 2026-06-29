@@ -3,7 +3,7 @@
 Context::Context()
 {
 	if (!SDL_Init(SDL_INIT_VIDEO)) { std::cout << "Couldn't init SDL!\n"; }
-	window = SDL_CreateWindow("Learn WebGPU", 1280, 720, SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow("wgfx examples", 1280, 720, SDL_WINDOW_RESIZABLE);
 	wgfx::init(wgfx::getSurface(window));
 }
 

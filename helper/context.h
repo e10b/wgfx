@@ -17,7 +17,7 @@ public:
 	void fps(float averageFrameTime)
 	{
 		float fps = 1.0f / averageFrameTime;
-		std::string title = "Learn WebGPU - FPS: " + std::to_string(static_cast<int>(fps + 0.5f));
+		std::string title = "wgfx examples - FPS: " + std::to_string(static_cast<int>(fps + 0.5f));
 		SDL_SetWindowTitle(window, title.c_str());
 	}
 
