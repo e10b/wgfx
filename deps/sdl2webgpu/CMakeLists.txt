@@ -1,11 +1,14 @@
-# This is only meant to be included as a subdirectory in another project.
-# It assumes that targets 'SDL2' and 'webgpu' exist.
-# Loot at examples/CMakeLists.txt to see how to use it in a project.
+if(TARGET SDL3-static)
+  set(WGFX_SDL3_TARGET SDL3-static)
+elseif(TARGET SDL3::SDL3)
+  set(WGFX_SDL3_TARGET SDL3::SDL3)
+else()
+  message(FATAL_ERROR "sdl2webgpu needs SDL3. Add SDL3 before adding wgfx.")
+endif()
 
-# The sdl2webgpu target
 add_library(sdl2webgpu STATIC "sdl2webgpu.c" "sdl2webgpu.h")
-target_include_directories(sdl2webgpu PUBLIC . "../sdl3/include")
-target_link_libraries(sdl2webgpu PUBLIC SDL3-static webgpu)
+target_include_directories(sdl2webgpu PUBLIC .)
+target_link_libraries(sdl2webgpu PUBLIC ${WGFX_SDL3_TARGET} webgpu)
 
 
 if (APPLE)

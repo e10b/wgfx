@@ -7,8 +7,6 @@
 #include <string>
 #include <array>
 
-#include <glm/glm.hpp>
-
 #include "uniform.h"
 #include "buffer.h"
 
