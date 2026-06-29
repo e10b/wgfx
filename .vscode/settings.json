@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "chrono": "cpp",
-        "filesystem": "cpp",
-        "initializer_list": "cpp",
-        "xutility": "cpp",
-        "xiosbase": "cpp"
-    }
-}

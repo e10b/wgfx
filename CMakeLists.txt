@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5...3.25)
 project(wgfx VERSION 0.1.0 LANGUAGES CXX C)
 
-option(DEV_MODE "Set up development helper settings" ON)
 option(WGFX_BUILD_SDL_BRIDGE "Build the SDL3-to-WebGPU surface bridge" OFF)
 
 add_subdirectory(deps/webgpu)
