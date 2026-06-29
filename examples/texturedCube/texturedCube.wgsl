@@ -1,27 +1,26 @@
-struct Uniforms {
-	modelViewProjectionMatrix: mat4x4f,
+struct VertexInput {
+	@location(0) position: vec3<f32>,
+	@location(1) uv: vec2<f32>,
 };
-
-@group(0) @binding(0) var<uniform> uniforms: Uniforms;
-@group(0) @binding(1) var mySampler: sampler;
-@group(0) @binding(2) var myTexture: texture_2d<f32>;
 
 struct VertexOutput {
-	@builtin(position) Position: vec4f,
-	@location(0) fragUV: vec2f,
-	@location(1) fragPosition: vec4f,
+	@builtin(position) position: vec4<f32>,
+	@location(0) uv: vec2<f32>,
 };
 
+@group(0) @binding(0) var<uniform> mvp: mat4x4<f32>;
+@group(0) @binding(1) var cubeSampler: sampler;
+@group(0) @binding(2) var cubeTexture: texture_2d<f32>;
+
 @vertex
-fn vs_main(@location(0) position: vec4f, @location(1) uv: vec2f) -> VertexOutput {
+fn vs_main(input: VertexInput) -> VertexOutput {
 	var output: VertexOutput;
-	output.Position = uniforms.modelViewProjectionMatrix * position;
-	output.fragUV = uv;
-	output.fragPosition = 0.5 * (position + vec4f(1.0, 1.0, 1.0, 1.0));
+	output.position = mvp * vec4<f32>(input.position, 1.0);
+	output.uv = input.uv;
 	return output;
 }
 
 @fragment
-fn fs_main(@location(0) fragUV: vec2f, @location(1) fragPosition: vec4f) -> @location(0) vec4f {
-	return textureSample(myTexture, mySampler, fragUV) * fragPosition;
+fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+	return textureSample(cubeTexture, cubeSampler, input.uv);
 }
