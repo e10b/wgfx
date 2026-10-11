@@ -1,0 +1,5 @@
+benchmark,workload,raw_average_run_median_ns,wgfx_average_run_median_ns,relative_delta_percent,runs,samples_per_run
+compute_submit,one_dispatch,16625.0,16359.4,-1.6,5,160
+render_encode,one_draw,12191.8,11983.2,-1.7,5,100
+render_encode,100_draws,22033.2,22549.8,2.3,5,100
+render_encode,1000_draws,127008.4,129558.2,2.0,5,40

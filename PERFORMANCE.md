@@ -36,9 +36,10 @@ and application-visible C++ `new` allocations. Queue-writing and asynchronous
 submission tests drain the device *outside* each timed sample so one
 implementation does not inherit more queue backpressure than the other.
 
-Five full suite executions were collected. The table below averages each
-execution's reported median; this makes run-to-run variation visible without
-pretending every call is independent. The allocation counter sees C++
+Five full suite executions were collected. Submission and render comparisons
+reverse raw/wgfx order on every sample so thermal, cache, and queue drift cannot
+consistently favor either path; submission uses 160 samples per implementation.
+The table below averages each execution's reported median. The allocation counter sees C++
 allocations in the executable and static wgfx library, but not allocations
 inside wgpu-native, Metal, SDL, or the OS.
 
@@ -54,19 +55,19 @@ inside wgpu-native, Metal, SDL, or the OS.
 | bind-group recreate | one storage binding | 1.767 us | 1.708 us | -0.059 us | -3.3% |
 | compute pipeline create | one storage binding | 116.575 us | 98.259 us | -18.316 us | -15.7% |
 | compute encode | one dispatch | 5.763 us | 5.779 us | +0.017 us | +0.3% |
-| encode + queue submit | one dispatch | 12.279 us | 15.034 us | +2.755 us | +22.4% |
+| encode + queue submit | one dispatch | 16.625 us | 16.359 us | -0.266 us | -1.6% |
 | submit + completion | one dispatch | 1.194 ms | 1.233 ms | +0.039 ms | +3.3% |
-| render encode | one draw | 19.408 us | 15.792 us | -3.617 us | -18.6% |
-| render encode | 100 draws | 40.575 us | 37.300 us | -3.275 us | -8.1% |
-| render encode | 1,000 draws | 173.117 us | 153.034 us | -20.083 us | -11.6% |
+| render encode | one draw | 12.192 us | 11.983 us | -0.209 us | -1.7% |
+| render encode | 100 draws | 22.033 us | 22.550 us | +0.517 us | +2.3% |
+| render encode | 1,000 draws | 127.008 us | 129.558 us | +2.550 us | +2.0% |
 
-The alternating implementations are not yet randomized inside each individual
-process, and fixed-order effects remain visible: raw and wgfx ultimately call
-the same encoding methods, yet several wgfx medians are lower. Therefore only
-positive, repeatable differences should be treated as upper bounds. The
-forwarding methods themselves are effectively at parity. Submission shows a
-small microsecond-scale difference, whereas queue completion is millisecond
-scale.
+The former fixed-order submission result was +22.4%. With per-sample reversed
+ordering it becomes -1.6%; the five individual run deltas span both signs, from
+-3.8% to +1.3%. That establishes no resolved encode-and-submit overhead at this
+noise floor. Order-controlled render differences likewise contract to within
+2.3%. Raw and wgfx ultimately make the same WebGPU calls here, so these small
+positive and negative values are treated as measurement variability, not
+speedups or regressions. Queue completion remains millisecond scale.
 
 The representative rendering workload varies from one to 1,000 indexed draws.
 The representative compute workload updates a 16 KiB storage buffer and

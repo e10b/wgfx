@@ -16,6 +16,7 @@
 #include <iostream>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace
@@ -99,6 +100,99 @@ Result Measure(const std::string& benchmark, const std::string& implementation,
             std::sqrt(variance),
             static_cast<double>(allocationCount) / (samples * batch),
             static_cast<double>(allocationBytes) / (samples * batch), uploadBytes};
+}
+
+template <typename RawFunction, typename WgfxFunction>
+std::pair<Result, Result> MeasureAlternating(
+    const std::string& benchmark, uint64_t workload, uint64_t batch,
+    uint64_t samples, uint64_t uploadBytes, bool drainAfterSample,
+    RawFunction rawFunction, WgfxFunction wgfxFunction)
+{
+    for (int warmup = 0; warmup < 10; ++warmup)
+    {
+        for (uint64_t item = 0; item < batch; ++item)
+            rawFunction();
+        for (uint64_t item = 0; item < batch; ++item)
+            wgfxFunction();
+        if (drainAfterSample)
+            wgfx::device.poll(true);
+    }
+
+    std::vector<double> rawTimings;
+    std::vector<double> wgfxTimings;
+    rawTimings.reserve(samples);
+    wgfxTimings.reserve(samples);
+    uint64_t rawAllocationCount = 0;
+    uint64_t rawAllocationBytes = 0;
+    uint64_t wgfxAllocationCount = 0;
+    uint64_t wgfxAllocationBytes = 0;
+
+    auto measureOne = [&](auto& function, std::vector<double>& timings,
+                          uint64_t& allocationCount,
+                          uint64_t& allocationBytes)
+    {
+        {
+            AllocationScope allocations;
+            const auto start = Clock::now();
+            for (uint64_t item = 0; item < batch; ++item)
+                function();
+            timings.push_back(std::chrono::duration<double, std::nano>(
+                Clock::now() - start).count() / static_cast<double>(batch));
+            allocationCount += allocations.count();
+            allocationBytes += allocations.bytes();
+        }
+        if (drainAfterSample)
+            wgfx::device.poll(true);
+    };
+
+    for (uint64_t sample = 0; sample < samples; ++sample)
+    {
+        // Reverse the order every sample so thermal, queue, and cache drift do
+        // not consistently favor either implementation.
+        if ((sample & 1u) == 0)
+        {
+            measureOne(rawFunction, rawTimings, rawAllocationCount,
+                       rawAllocationBytes);
+            measureOne(wgfxFunction, wgfxTimings, wgfxAllocationCount,
+                       wgfxAllocationBytes);
+        }
+        else
+        {
+            measureOne(wgfxFunction, wgfxTimings, wgfxAllocationCount,
+                       wgfxAllocationBytes);
+            measureOne(rawFunction, rawTimings, rawAllocationCount,
+                       rawAllocationBytes);
+        }
+    }
+
+    auto summarize = [&](const std::string& implementation,
+                         std::vector<double>& timings, uint64_t allocationCount,
+                         uint64_t allocationBytes)
+    {
+        std::sort(timings.begin(), timings.end());
+        const double mean = std::accumulate(timings.begin(), timings.end(), 0.0) /
+                            timings.size();
+        double variance = 0;
+        for (double timing : timings)
+            variance += (timing - mean) * (timing - mean);
+        variance /= timings.size();
+        return Result{benchmark, implementation, workload, batch, samples, mean,
+            timings[timings.size() / 2],
+            timings[static_cast<size_t>(std::ceil(timings.size() * 0.95)) - 1],
+            std::sqrt(variance),
+            static_cast<double>(allocationCount) / (samples * batch),
+            static_cast<double>(allocationBytes) / (samples * batch), uploadBytes};
+    };
+
+    return {summarize("raw", rawTimings, rawAllocationCount, rawAllocationBytes),
+            summarize("wgfx", wgfxTimings, wgfxAllocationCount,
+                      wgfxAllocationBytes)};
+}
+
+void AppendPair(std::vector<Result>& results, std::pair<Result, Result> pair)
+{
+    results.push_back(std::move(pair.first));
+    results.push_back(std::move(pair.second));
 }
 
 constexpr const char* kComputeShader = R"WGSL(
@@ -375,14 +469,16 @@ int main(int argc, char** argv)
             command.release();
         }));
 
-        results.push_back(Measure("compute_submit", "raw", computeBytes, 8, 80, 0, true, [&] {
-            wgpu::CommandBuffer command = EncodeRaw(rawCompute, 64);
-            wgfx::queue.submit(1, &command); command.release();
-        }));
-        results.push_back(Measure("compute_submit", "wgfx", computeBytes, 8, 80, 0, true, [&] {
-            wgpu::CommandBuffer command = EncodeWgfx(wrappedCompute, 64);
-            wgfx::queue.submit(1, &command); command.release();
-        }));
+        AppendPair(results, MeasureAlternating(
+            "compute_submit", computeBytes, 8, 160, 0, true,
+            [&] {
+                wgpu::CommandBuffer command = EncodeRaw(rawCompute, 64);
+                wgfx::queue.submit(1, &command); command.release();
+            },
+            [&] {
+                wgpu::CommandBuffer command = EncodeWgfx(wrappedCompute, 64);
+                wgfx::queue.submit(1, &command); command.release();
+            }));
 
         results.push_back(Measure("compute_submit_and_wait", "raw", computeBytes, 1, 60, 0, false, [&] {
             wgpu::CommandBuffer command = EncodeRaw(rawCompute, 64);
@@ -508,17 +604,19 @@ int main(int argc, char** argv)
         for (uint32_t drawCalls : {1u, 100u, 1000u})
         {
             const uint64_t samples = drawCalls == 1000 ? 40 : 100;
-            results.push_back(Measure("render_encode", "raw", drawCalls, 1, samples, 0, false, [&] {
-                wgpu::CommandBuffer command = EncodeRawRender(
-                    renderView, renderPipeline, emptyBindGroup,
-                    vertexBuffer->buffer, indexBuffer->buffer, drawCalls);
-                command.release();
-            }));
-            results.push_back(Measure("render_encode", "wgfx", drawCalls, 1, samples, 0, false, [&] {
-                wgpu::CommandBuffer command = EncodeWgfxRender(
-                    &wrappedTarget, &wrappedRenderPipeline, drawCalls);
-                command.release();
-            }));
+            AppendPair(results, MeasureAlternating(
+                "render_encode", drawCalls, 1, samples, 0, false,
+                [&] {
+                    wgpu::CommandBuffer command = EncodeRawRender(
+                        renderView, renderPipeline, emptyBindGroup,
+                        vertexBuffer->buffer, indexBuffer->buffer, drawCalls);
+                    command.release();
+                },
+                [&] {
+                    wgpu::CommandBuffer command = EncodeWgfxRender(
+                        &wrappedTarget, &wrappedRenderPipeline, drawCalls);
+                    command.release();
+                }));
         }
 
         wgfx::device.poll(true);
