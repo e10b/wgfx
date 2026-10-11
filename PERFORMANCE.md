@@ -131,6 +131,14 @@ every-frame validation replay compared 109,440,000 indexed pixels with zero
 mismatches. The unconditional wait was therefore a framework-level bottleneck
 for wDoom rather than wrapper-call overhead.
 
+The subsequent complete four-demo corpus confirmed correctness across 8,738
+frames and 559,232,000 pixels with zero mismatches, readback failures, or
+pending callbacks. Validation-off GPU walls completed the corpus in 8.660
+seconds (1,009.0 FPS), while a matched nonblocking CPU-wall run took 6.732
+seconds (1,297.9 FPS). Removing the wait closes part of the renderer gap but
+does not eliminate it: GPU walls remain 22.3% slower on this workload, leaving
+command preparation, transfers, and wall execution as the next targets.
+
 This is consistent with wDoom's separate end-to-end result: its WebGPU wall path
 averaged 246.6 realtics versus 166.6 for CPU walls on the same machine. That
 48.0% longer duration is **not wgfx wrapper overhead**. It includes wall-command
