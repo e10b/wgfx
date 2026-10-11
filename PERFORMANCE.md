@@ -113,6 +113,24 @@ measured 1.233 ms median for that policy versus 1.194 ms for a single blocking
 poll after the same dispatch. More importantly, either blocking poll serializes
 every frame with GPU completion and prevents normal multi-frame overlap.
 
+The optional `configureFrameExecution(true, collectMetrics, 3)` policy removes
+the unconditional blocking poll while bounding outstanding submissions. Each
+submission receives a queue-completion callback; when the bound is reached,
+wgfx first retires completed submissions and waits only if all slots remain
+occupied. `drainFrames()` provides an explicit synchronization point for
+readback, reporting, and shutdown. WebGPU queue ordering protects persistent
+buffers reused by later frames, and the bound keeps command resources and
+callbacks from accumulating without limit.
+
+In a Release wDoom demo-1 A/B (five alternating reversed-order runs per mode),
+median throughput increased from 416.85 to 786.62 FPS (+88.7%) and median
+run-level mean CPU frame time fell from 2.399 to 1.271 ms (-47.0%). Median GPU
+queue-completion latency rose from 1.196 to 1.329 ms, as expected with work in
+flight, and maximum observed peak RSS rose from 144.7 to 152.1 MiB. One
+every-frame validation replay compared 109,440,000 indexed pixels with zero
+mismatches. The unconditional wait was therefore a framework-level bottleneck
+for wDoom rather than wrapper-call overhead.
+
 This is consistent with wDoom's separate end-to-end result: its WebGPU wall path
 averaged 246.6 realtics versus 166.6 for CPU walls on the same machine. That
 48.0% longer duration is **not wgfx wrapper overhead**. It includes wall-command

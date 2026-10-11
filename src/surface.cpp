@@ -1,7 +1,91 @@
 #include "surface.h"
 #include "renderpass.h"
+#include <algorithm>
+#include <chrono>
+#include <memory>
+#include <vector>
 namespace wgfx
 {
+	namespace
+	{
+		using FrameClock = std::chrono::steady_clock;
+		struct PendingFrame
+		{
+			FrameClock::time_point submittedAt;
+			std::unique_ptr<QueueWorkDoneCallback> callback;
+			bool finished = false;
+		};
+		bool nonBlockingFrames = false;
+		bool collectFrameMetrics = false;
+		uint32_t maximumFramesInFlight = 3;
+		FrameMetrics frameMetrics;
+		std::vector<std::shared_ptr<PendingFrame>> pendingFrames;
+
+		void removeCompletedFrames()
+		{
+			pendingFrames.erase(std::remove_if(pendingFrames.begin(), pendingFrames.end(),
+				[](const std::shared_ptr<PendingFrame>& frame) { return frame->finished; }),
+				pendingFrames.end());
+		}
+
+		void trackSubmittedFrame()
+		{
+			if (!collectFrameMetrics && !nonBlockingFrames)
+				return;
+			auto frame = std::make_shared<PendingFrame>();
+			frame->submittedAt = FrameClock::now();
+			if (collectFrameMetrics)
+				++frameMetrics.submitted;
+			pendingFrames.push_back(frame);
+			if (collectFrameMetrics)
+				frameMetrics.peakFramesInFlight = std::max<uint32_t>(
+					frameMetrics.peakFramesInFlight,
+					static_cast<uint32_t>(pendingFrames.size()));
+			std::weak_ptr<PendingFrame> weakFrame = frame;
+			frame->callback = queue.onSubmittedWorkDone(
+				[weakFrame](QueueWorkDoneStatus status)
+				{
+					auto completedFrame = weakFrame.lock();
+					if (!completedFrame)
+						return;
+					if (status == QueueWorkDoneStatus::Success && collectFrameMetrics)
+					{
+						const uint64_t elapsed = std::chrono::duration_cast<
+							std::chrono::nanoseconds>(FrameClock::now() -
+							completedFrame->submittedAt).count();
+						++frameMetrics.completed;
+						frameMetrics.totalCompletionNanoseconds += elapsed;
+						frameMetrics.maximumCompletionNanoseconds =
+							std::max(frameMetrics.maximumCompletionNanoseconds, elapsed);
+					}
+					completedFrame->finished = true;
+				});
+		}
+	}
+
+	void configureFrameExecution(bool nonBlocking, bool collectMetrics,
+		uint32_t maxFramesInFlight)
+	{
+		nonBlockingFrames = nonBlocking;
+		collectFrameMetrics = collectMetrics;
+		maximumFramesInFlight = std::max(1u, maxFramesInFlight);
+		frameMetrics = {};
+		pendingFrames.clear();
+	}
+
+	FrameMetrics getFrameMetrics() { return frameMetrics; }
+
+	void drainFrames()
+	{
+#if defined(WEBGPU_BACKEND_WGPU)
+		while (std::any_of(pendingFrames.begin(), pendingFrames.end(),
+			[](const std::shared_ptr<PendingFrame>& frame) { return !frame->finished; }))
+			device.poll(true);
+#elif defined(WEBGPU_BACKEND_DAWN)
+		device.tick();
+#endif
+		removeCompletedFrames();
+	}
 
 	void init(Surface surface)
 	{
@@ -97,6 +181,7 @@ namespace wgfx
 
 		//std::cout << "Submitting command..." << std::endl;
 		queue.submit(1, &command);
+		trackSubmittedFrame();
 		command.release();
 		//std::cout << "Command submitted." << std::endl;
 
@@ -115,9 +200,16 @@ namespace wgfx
 		device.tick();
 #elif defined(WEBGPU_BACKEND_WGPU)
 		device.poll(false);
-		// Poll again to ensure all resources are freed
-		device.poll(true);
+		if (!nonBlockingFrames)
+			device.poll(true);
+		else if (pendingFrames.size() >= maximumFramesInFlight)
+		{
+			removeCompletedFrames();
+			if (pendingFrames.size() >= maximumFramesInFlight)
+				device.poll(true);
+		}
 #endif
+		removeCompletedFrames();
 	}
 
 	void initDepth()
