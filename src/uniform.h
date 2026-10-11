@@ -128,19 +128,17 @@ namespace wgfx
 
 		void touch()
 		{
-			std::cout << "Creating bind group layout with " << layouts.size() << " entries..." << std::endl;
+			if (bindGroup) bindGroup.release();
+			if (bindGroupLayout) bindGroupLayout.release();
 			bindGroupLayoutDesc.entryCount = layouts.size();
 			bindGroupLayoutDesc.entries = layouts.data();
 			bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
-			std::cout << "Bind group layout created: " << bindGroupLayout << std::endl;
 
-			std::cout << "Creating bind group with " << entries.size() << " entries..." << std::endl;
 			BindGroupDescriptor bindGroupDesc;
 			bindGroupDesc.layout = bindGroupLayout;
 			bindGroupDesc.entryCount = entries.size();
 			bindGroupDesc.entries = entries.data();
 			bindGroup = device.createBindGroup(bindGroupDesc);
-			std::cout << "Bind group created: " << bindGroup << std::endl;
 		}
 
 		void updateUniform(Uniform* uniform, const float* array)

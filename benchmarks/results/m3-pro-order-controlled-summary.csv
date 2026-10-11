@@ -1,0 +1,15 @@
+benchmark,workload,raw_average_run_median_ns,wgfx_average_run_median_ns,relative_delta_percent,runs
+storage_create_destroy,256_bytes,1883.6,1925.2,2.2,5
+storage_create_destroy,4096_bytes,1941.4,1783.6,-8.1,5
+storage_create_destroy,262144_bytes,3850.0,4708.2,22.3,5
+storage_update,256_bytes,2263.806,2318.494,2.4,5
+storage_update,4096_bytes,2855.731,2921.100,2.3,5
+storage_update,262144_bytes,29910.156,30122.138,0.7,5
+bind_group_recreate,one_storage_binding,1766.4,1716.8,-2.8,5
+compute_pipeline_create,one_storage_binding,96924.6,93583.6,-3.4,5
+compute_encode_dispatch,one_dispatch,6141.688,6138.012,-0.1,5
+compute_submit,one_dispatch,21320.850,21868.725,2.6,5
+compute_submit_and_wait,one_dispatch,1196716.8,1214833.4,1.5,5
+render_encode,one_draw,17666.8,16708.4,-5.4,5
+render_encode,100_draws,33716.6,34108.4,1.2,5
+render_encode,1000_draws,154441.8,158949.8,2.9,5

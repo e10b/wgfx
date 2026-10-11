@@ -3,6 +3,10 @@ project(wgfx VERSION 0.1.0 LANGUAGES CXX C)
 
 option(WGFX_BUILD_SDL_BRIDGE "Build the SDL3-to-WebGPU surface bridge" ON)
 
+if(WGFX_BUILD_SDL_BRIDGE AND NOT TARGET SDL3-static AND NOT TARGET SDL3::SDL3)
+	find_package(SDL3 REQUIRED CONFIG)
+endif()
+
 add_subdirectory(deps/webgpu)
 
 if(WGFX_BUILD_SDL_BRIDGE)
@@ -30,3 +34,11 @@ if(WGFX_BUILD_SDL_BRIDGE)
 endif()
 
 target_compile_features(wgfx PUBLIC cxx_std_17)
+
+option(WGFX_BUILD_BENCHMARKS "Build raw WebGPU comparison benchmarks" OFF)
+if(WGFX_BUILD_BENCHMARKS)
+	add_executable(wgfx_benchmark benchmarks/wgfx_benchmark.cpp)
+	target_link_libraries(wgfx_benchmark PRIVATE wgfx webgpu)
+	target_compile_features(wgfx_benchmark PRIVATE cxx_std_17)
+	target_compile_definitions(wgfx_benchmark PRIVATE WEBGPU_BACKEND_WGPU)
+endif()

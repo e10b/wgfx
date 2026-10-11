@@ -24,8 +24,6 @@ namespace wgfx
 
 Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
 {
-    std::cout << "Creating storage buffer with binding " << i << " and size " << size << " bytes..." << std::endl;
-    
     Uniform* storage = new Uniform();
     storage->binding = i;
     storage->minBindingSize = size;
@@ -41,11 +39,9 @@ Uniform* createStorage(int i, size_t size, const void* data, bool readOnly)
     bufferDesc.mappedAtCreation = false;
 
     storage->buffer = device.createBuffer(bufferDesc);
-    std::cout << "Storage buffer created: " << storage->buffer << std::endl;
 
     if (data != nullptr) {
         queue.writeBuffer(storage->buffer, 0, data, size);
-        std::cout << "Data written to storage buffer" << std::endl;
     }
 
     storage->entry.binding = i;

@@ -37,7 +37,6 @@ namespace wgfx
 
 		Compute()
 		{
-			std::cout << "Create compute pipeline\n";
 			pipelineDesc = ComputePipelineDescriptor();
 		}
 
@@ -143,7 +142,7 @@ namespace wgfx
 			pipelineDesc.compute.module = shaderModule;
 			pipelineDesc.compute.entryPoint = entryPoint.c_str();
 			pipeline = device.createComputePipeline(pipelineDesc);
-			std::cout << "Compute pipeline: " << pipeline << "\n";
+			pipelineLayout.release();
 			shaderModule.release();
 		}
 

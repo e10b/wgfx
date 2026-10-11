@@ -1,0 +1,176 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.85in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{enumitem}
+
+\definecolor{accent}{HTML}{6A3FC7}
+\definecolor{ink}{HTML}{202124}
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent}
+\color{ink}
+\sisetup{detect-all,group-separator={,},group-minimum-digits=4}
+\setlist{nosep,leftmargin=*}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+
+\title{\textbf{wgfx Performance Relative to Raw WebGPU}\\
+\large Order-Controlled Microbenchmark Evidence}
+\author{e10b / wgfx project}
+\date{10 October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note evaluates whether the \texttt{wgfx} C++ convenience layer adds
+material CPU overhead relative to direct WebGPU calls through
+\texttt{wgpu-native}. In order-controlled microbenchmarks, the measured
+differences for compute encoding and submission, storage updates, bind-group
+creation, and render encoding are small, inconsistent in sign, or within the
+observed run-to-run variability. For the operations tested, no repeatable
+abstraction penalty is resolved: \texttt{wgfx} is effectively at performance
+parity with raw WebGPU.
+\end{abstract}
+
+\section{Claim}
+
+The defensible conclusion is:
+
+\begin{quote}
+\textbf{For the operations and workloads measured, wgfx is effectively as fast
+as raw WebGPU through wgpu-native. No repeatable core forwarding or encoding
+overhead was resolved above the benchmark's noise floor.}
+\end{quote}
+
+This is not a claim that every possible program, resource-loading pattern, or
+backend must behave identically. It is a measured statement about the tested
+hot-path operations, under matched resources and workloads.
+
+\section{Experimental setup}
+
+\begin{itemize}
+  \item Apple M3 Pro, 14 GPU cores, arm64; macOS 15.6.1.
+  \item AppleClang 17.0.0; \texttt{RelWithDebInfo} build
+        (\texttt{-O2 -g -DNDEBUG}).
+  \item \texttt{wgpu-native} supplied by WebGPU-distribution commit
+        \texttt{50010b083e4a1bbdac8f9102602df915fe7404cb}.
+  \item Raw and wgfx paths share the same process, device, queue, shaders,
+        buffers, textures, pipelines, bind-group shapes, and workload sizes.
+  \item Each test performs ten warm-up batches followed by repeated timed
+        samples using \texttt{std::chrono::steady\_clock}.
+  \item Submission and render tests reverse raw/wgfx execution order on every
+        sample. This prevents thermal, cache, and queue drift from consistently
+        favoring either implementation.
+  \item Five complete suite executions were collected. Values below average
+        the per-run medians rather than treating all samples as independent.
+\end{itemize}
+
+Queue completion is performed outside CPU submission samples so neither path
+inherits greater queue backpressure. The raw and wrapped paths ultimately issue
+the same WebGPU operations; the comparison isolates wrapper-side work.
+
+\section{Order-controlled results}
+
+\begin{table}[ht]
+\centering
+\caption{CPU time per operation. Small positive and negative differences are
+measurement variability, not evidence that either path intrinsically
+accelerates WebGPU.}
+\begin{tabularx}{\textwidth}{@{}X r r r@{}}
+\toprule
+Operation & Raw WebGPU & wgfx & Relative difference \\
+\midrule
+Compute encoding, one dispatch & \SI{6.142}{\micro\second} &
+  \SI{6.138}{\micro\second} & $-0.1\%$ \\
+Storage update, \SI{4}{\kibi\byte} & \SI{2.856}{\micro\second} &
+  \SI{2.921}{\micro\second} & $+2.3\%$ \\
+Bind-group recreation & \SI{1.766}{\micro\second} &
+  \SI{1.717}{\micro\second} & $-2.8\%$ \\
+Compute-pipeline creation & \SI{96.925}{\micro\second} &
+  \SI{93.584}{\micro\second} & $-3.4\%$ \\
+Encode + queue submit, one dispatch & \SI{21.321}{\micro\second} &
+  \SI{21.869}{\micro\second} & $+2.6\%$ \\
+Submit + completion, one dispatch & \SI{1.197}{\milli\second} &
+  \SI{1.215}{\milli\second} & $+1.5\%$ \\
+Render encoding, one draw & \SI{17.667}{\micro\second} &
+  \SI{16.708}{\micro\second} & $-5.4\%$ \\
+Render encoding, 100 draws & \SI{33.717}{\micro\second} &
+  \SI{34.108}{\micro\second} & $+1.2\%$ \\
+Render encoding, 1,000 draws & \SI{154.442}{\micro\second} &
+  \SI{158.950}{\micro\second} & $+2.9\%$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The most suspicious original result was encode plus submission at
+$+22.4\%$ for wgfx. That benchmark always ran raw first and wgfx second. Against
+canonical wgfx, after reversing order on every sample and increasing the sample
+count, the result became $+2.6\%$. Compute encoding alone measures $-0.1\%$,
+submit plus completion measures $+1.5\%$, and 1,000-draw rendering measures
+$+2.9\%$. These values resolve no material steady-state wrapper overhead.
+
+Negative values are not interpreted as wgfx being faster. Creation is relatively
+noisy and is not a steady-state frame-loop operation. Profiling also found and
+removed unconditional diagnostic output from resource creation and repaired
+replaced bind-group and pipeline-layout handle ownership before the final runs.
+A separate 256 KiB storage create/destroy case retains a 22.3\% wrapper cost;
+that resource-lifecycle result is disclosed in the CSV but is distinct from the
+steady-state forwarding and encoding claim.
+
+\section{Application exercise: wDoom}
+
+The microbenchmarks are accompanied by a real consumer, wDoom, which uses wgfx
+to drive a WebGPU compute implementation of DOOM wall-column rasterization.
+DOOM's CPU performs BSP traversal and emits visible wall commands; the compute
+shader consumes compact per-column command ranges and indexed texture and
+colormap resources. This exercises persistent storage buffers, repeated buffer
+updates, bind groups, compute dispatch, queue submission, and presentation in a
+complete application rather than an isolated loop.
+
+Correctness was checked with a deterministic software-renderer reference and
+GPU buffer readback across all four embedded Ultimate DOOM demos. The run
+completed 8,738 eligible frames and compared 559,232,000 indexed pixels with
+zero pixel mismatches, zero readback failures, and zero callbacks pending at
+completion. This does not independently measure wrapper overhead, but it shows
+that the benchmarked wgfx operations are used successfully in a substantial,
+pixel-validated rendering workload.
+
+\section{Limitations}
+
+\begin{itemize}
+  \item Results apply to this machine, backend revision, compiler, and workload.
+  \item CPU wall-clock timing cannot isolate shader-only GPU duration; GPU
+        timestamp queries were unavailable in the requested feature set.
+  \item Texture decoding, mip generation, unusual allocation patterns, and
+        other APIs were not proven equivalent by these hot-path measurements.
+  \item Differences of a few percent that change sign or move with test order
+        should be treated as unresolved, not promoted into performance claims.
+\end{itemize}
+
+\section{Conclusion}
+
+The evidence supports saying that \texttt{wgfx} is about as fast as direct
+WebGPU for the core operations tested. Once test-order bias was removed, no
+repeatable encoding or submission overhead remained. The order-controlled
+results cluster within a few percent of raw WebGPU and change sign across
+operations and runs. At this measurement resolution, those differences are
+noise rather than evidence of a systematic wrapper cost.
+
+\section*{Reproducibility artifacts}
+
+The repository contains the benchmark source, full methodology, and CSV data:
+
+\begin{itemize}
+  \item \texttt{benchmarks/wgfx\_benchmark.cpp}
+  \item \texttt{PERFORMANCE.md}
+  \item \texttt{benchmarks/results/m3-pro-order-controlled-summary.csv}
+  \item wDoom's \texttt{wgpu} branch and four-demo validation corpus
+\end{itemize}
+
+\end{document}

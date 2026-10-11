@@ -21,7 +21,6 @@ namespace wgfx
 {
 	Pipeline::Pipeline()
 	{
-		std::cout << "Creating render pipeline..." << std::endl;
 		pipelineDesc = RenderPipelineDescriptor();
 	}
 	bool first = false;
@@ -220,7 +219,7 @@ namespace wgfx
 		pipelineDesc.layout = layout;
 
 		pipeline = device.createRenderPipeline(pipelineDesc);
-		std::cout << "Render pipeline: " << pipeline << std::endl;
+		layout.release();
 		shaderModule.release();
 
 		/*

@@ -32,6 +32,29 @@ cmake --build build
 
 On this branch the configure step builds only the core `wgfx` library and WebGPU dependency by default.
 
+## Performance evidence
+
+Order-controlled comparisons against equivalent raw WebGPU calls find no
+material steady-state wrapper overhead for compute encoding, buffer updates,
+submission, or render encoding. The benchmark source, five raw runs, summary,
+methodology, and typeset technical note are committed in this repository:
+
+- [Performance report](PERFORMANCE.md)
+- [Benchmark source](benchmarks/wgfx_benchmark.cpp)
+- [Technical note](docs/wgfx-performance-evidence.tex)
+
+Build the optional benchmark with:
+
+```bash
+cmake -S . -B build-benchmark -DWGFX_BUILD_BENCHMARKS=ON
+cmake --build build-benchmark
+./build-benchmark/wgfx_benchmark results.csv
+```
+
+wDoom is included in the report as a real compute-rendering consumer with a
+four-demo, pixel-perfect validation corpus. It complements rather than replaces
+the controlled raw-versus-wgfx measurements.
+
 ## Licensing
 
 `wgfx` is dual-licensed:
